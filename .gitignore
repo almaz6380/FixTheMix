@@ -44,3 +44,4 @@ android/local.properties
 
 # Vom Icon-Werkzeug erzeugte Zwischenstaende
 assets/
+.screenshots/

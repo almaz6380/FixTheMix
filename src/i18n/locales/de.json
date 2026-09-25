@@ -1,7 +1,28 @@
 {
   "app": {
-    "name": "FixTheMix",
-    "baustelle": "Spiellogik steht — die Oberflaeche kommt in Phase 2."
+    "name": "FixTheMix"
+  },
+  "spiel": {
+    "level": "Level {{n}}/{{gesamt}}",
+    "zuege": "{{n}} Züge",
+    "optimum": "Optimum: {{n}}",
+    "undo": "Zurück",
+    "neustart": "Neu",
+    "tipp": "Tipp",
+    "rechnet": "…",
+    "symbole": "Symbole",
+    "schuetteln": "Schütteln",
+    "glas": "Glas {{n}}",
+    "shaker": "Shaker {{n}}",
+    "gewonnen": "Geschafft!",
+    "bilanz": "{{zuege}} Züge, Optimum {{optimum}}",
+    "dreiSterne": "Drei Sterne gibt es nur für {{n}} Züge.",
+    "nochmal": "Nochmal",
+    "weiter": "Weiter",
+    "ende": "Ende",
+    "levelwahl": "Level wählen",
+    "schliessen": "Fertig",
+    "hinweisShaker": "Zwei verschiedene Grundfarben in den Shaker — je bis zur Markierung — dann schütteln."
   },
   "farben": {
     "rot": "Erdbeere",

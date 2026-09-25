@@ -67,6 +67,27 @@ Code auf seinem Rechner laufen.
       bis es in Phase 4 eine Datenbank gibt)
 - [x] Platzhalter-`App.tsx`, damit `npm run build` von Anfang an grün ist
 
+### M3 Spielbildschirm — GRÖSSTENTEILS FERTIG (25.09.2026)
+- [x] Bar-Look, Spielfeld als SVG, Gläser skalieren mit der Spaltenbreite
+- [x] Antippen = wählen, nochmal antippen = gießen. Bewusst kein Ziehen: mit dem
+      Daumen über ein halbes Display zu ziehen ist unangenehm, und ein abgebrochener
+      Zug ist schwer zu erkennen.
+- [x] Der Shaker hat einen **eigenen Knopf** zum Schütteln. Läge das auf einem Tipp aufs
+      Glas, wäre ein Tipp mal „wählen" und mal „schütteln" — die zentrale Mechanik des
+      Spiels darf nicht raten.
+- [x] Undo, Neustart, Tipp (Löser mit knappem Budget), Sterne live in der Kopfzeile
+- [x] Farbenblind-Modus mit Symbol auf jeder Schicht, Abnahme über einen
+      Graustufen-Screenshot
+- [x] Haptik über `navigator.vibrate` (Android-Browser; iOS ignoriert es still, in der
+      Store-App übernimmt das später Capacitor Haptics)
+- [x] Fortschritt und Einstellungen in `localStorage`, jeder Zugriff eingepackt
+- [x] 20 vorgebaute Level (`tools/level-bauen.mts` → `src/levels/folge.json`) mit
+      Levelwahl zum Springen
+- [ ] **Extra-Glas** — hängt an der Werbung und kommt mit Phase 5
+- [ ] Die Gieß-Animation ist bisher ein Kippen der Quelle plus weiches Einrasten der
+      Schichten, noch kein fließender Strahl
+- [ ] Bar-Geräusche
+
 ### M2 Engine, Löser, Generator — FERTIG (25.09.2026)
 - [x] `src/engine/` vollständig, **144 Zusicherungen in vier Testskripten, alle grün**
 - [x] Löser findet das **bewiesene** Optimum; auf 378 Zufallsbrettern gegen eine
@@ -135,6 +156,14 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 | `wiedergabe.ts` | `replay()` / `replayAusSeed()` — Vorstufe des Schummelschutzes. |
 | `index.ts` | Öffentliche Schnittstelle. |
 
+Darüber liegt die Oberfläche: `src/App.tsx` (Spielbildschirm), `src/components/`
+(`Brett`, `Glas`, `Levelwahl`), `src/lib/fortschritt.ts` (localStorage, Haptik).
+**Die `Partie` liegt im State, nicht in einem Ref** — aus einem Ref während des
+Renderns zu lesen ist genau der Weg, auf dem Anzeige und Wahrheit auseinanderlaufen.
+Weil die Engine ihre Zustände an Ort und Stelle ändert, steht hinter jedem gelungenen
+Zug ein `neuZeichnen()`; `useCallback` ist in `App.tsx` bewusst nirgends im Einsatz, da
+alle Handler an genau diesem veränderlichen Objekt hängen.
+
 Drei Entwurfsentscheidungen, die man kennen muss, bevor man hier etwas ändert:
 
 1. **Der Spielstand ist ein flaches `Uint8Array`, kein Array von Arrays**, und Gläser und
@@ -191,11 +220,14 @@ ist das einspeisbare `jetzt` im Löserbudget.
 ## Phasen
 
 1. ~~**Engine, Löser, Generator und Tests.** Noch ganz ohne Oberfläche.~~ **FERTIG (25.09.2026)**
-2. **Spielbildschirm:** ← **hier geht es weiter**
+2. **Spielbildschirm:** weitgehend fertig (siehe „Aktueller Stand"); offen bleiben
+   Extra-Glas, der fließende Gießstrahl und die Bar-Geräusche.
    - Bar-Look, Gieß-Animation, Haptik
    - Undo, Neustart, Tipp, Extra-Glas
    - Farbenblind-Modus
 3. **Levelfolge:** zuerst Fix-Level, dann der Shaker, Sterne nach Zügen.
+   ← **hier geht es weiter** (die 20 Testlevel in `src/levels/folge.json` sind der
+   Vorgriff darauf, nicht die endgültige Kurve)
 4. **Tagesrätsel:** Teilen, Serie, Bestenliste. Dazu eine Supabase-Migration und die
    Edge Function für die Prüfung.
 5. **Werbung, Kauf, Rechtstexte, Sprachen.** Zuerst DE und EN, danach ES/FR/PT.
@@ -226,6 +258,12 @@ ist das einspeisbare `jetzt` im Löserbudget.
     naiver Undo falsch macht: **nach dem Schütteln muss die genaue Schichtung
     zurückkommen**, nicht nur „zwei Rot, zwei Gelb" — deshalb sichert der Schüttelschritt
     als einziger die Zellen des Shakers mit.
+  - `test-oberflaeche.mjs` (16, braucht Playwright + Chromium, sonst kein Netz und
+    keine Schlüssel) — spielt ein Shaker-Level im echten Browser mit der Lösung des
+    Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
+    Läuft gegen **`dist/`**, also vorher `npm run build`; ist nicht in `npm test`, weil
+    es einen Build voraussetzt. Legt Screenshots in `.screenshots/` ab, darunter
+    `03-graustufen.png` — das ist die Abnahme für den Farbenblind-Modus.
 - **Handprobe:** `node tools/zeige-level.mts --stufe 5 --seed 7 --loesung` druckt ein
   Level und seine kürzeste Lösung als Emoji-Raster. Die Tests sagen nur, ob ein Level
   lösbar ist; ob es sich **gut anfühlt**, sieht man nur so — und vor Phase 2 gibt es
@@ -233,6 +271,11 @@ ist das einspeisbare `jetzt` im Löserbudget.
 - **Schummelschutz:** Die Edge Function lehnt manipulierte Zugfolgen ab.
 - **Farbenblind-Modus:** ein Screenshot in Graustufen. Jede Farbe muss am Symbol zu
   erkennen sein.
+- **Testaufbau am Handy:** Der Build lässt sich als private Seite auf claude.ai
+  veröffentlichen und dort am Telefon spielen. Zwei Fallen dabei: die Seite darf kein
+  eigenes `<html>`/`<head>` mitbringen (der Rahmen setzt das selbst), und die
+  Sicherheitsabstände für Notch und Home-Leiste müssen **vom Rahmen** kommen —
+  `env(safe-area-inset-*)` liefert innerhalb des Rahmens 0.
 - **Am Gerät:** Werbung nur mit Test-IDs. **Nie echte eigene Anzeigen antippen** — am
   AdMob-Konto hängen alle Apps.
 

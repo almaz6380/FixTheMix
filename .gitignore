@@ -1,0 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.env
+.supabase-db-password.txt
+
+# Supabase CLI: lokaler Projekt-Link, enthaelt u. a. pooler-url MIT DB-Passwort
+supabase/.temp/
+
+# Capacitor: native Build-Artefakte (Projekte selbst werden getrackt)
+ios/App/Pods/
+ios/App/App/public/
+android/app/src/main/assets/public/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore
+.vercel
+
+# Claude Code: persoenliche Einstellungen (nicht teilen)
+.claude/settings.local.json
+
+# Vom Icon-Werkzeug erzeugte Zwischenstaende
+assets/
+.screenshots/

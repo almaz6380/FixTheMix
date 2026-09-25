@@ -25,6 +25,79 @@ Code auf seinem Rechner laufen.
   (Apple „Alkohol-Bezüge", IARC) und jüngere Spieler ausschließen.
 - **Werbung:** fair.
 
+### Spielregeln (entschieden am 25.09.2026, beim Bau der Engine)
+
+- **Shaker:** mehrere Slots pro Level. Genau zwei Grundfarben hinein, schütteln, alles
+  wird zur Mischfarbe. Eine dritte Farbe hineinzugießen ist ein **ungültiger Zug**, der
+  abgelehnt wird — es gibt bewusst keine „Fehlfarbe", die ein Level verdirbt.
+- **Siegbedingung:** klassisch sortenrein. Jedes Glas ist leer oder randvoll einfarbig,
+  alle Shaker sind leer. Halbvolle einfarbige Gläser zählen nicht. Die Gästebestellungen
+  sind Themen-Verpackung desselben Ziels.
+- **Farbsystem:** 3 Grund (Erdbeere/Rot, Zitrone/Gelb, Blaubeere/Blau), 3 Misch
+  (Orange = R+G, Apfel/Grün = G+B, Traube/Lila = R+B), 3 Pur, die sich nie mischen
+  lassen (Minze, Kokos, Kaffee). Neun Farben, jede mit eigenem Symbol und Emoji.
+- **Gießen hat zwei Regeln, nicht eine.** Ins Glas gilt die Genre-Regel (Ziel leer oder
+  oben dieselbe Farbe). In den Shaker kann diese Regel gar nicht gelten — sonst bekäme
+  man nie eine zweite Farbe hinein. Dort gilt: nur Grundfarben, höchstens zwei
+  verschiedene, das Paar muss in der Mischtabelle stehen, und **je Farbe passt höchstens
+  die Hälfte hinein**.
+- **Das Kontingent von `hoehe/2` ist der Trick.** Daraus folgt zwangsläufig: ein voller
+  Shaker enthält immer genau zwei Grundfarben zu je der Hälfte. Damit ist Schütteln nur
+  noch eine Füllstandsprüfung, und ein ungültiger Shaker-Zustand ist nicht bloß verboten,
+  sondern unmöglich. **Sichtbare Folge:** Wer drei gleiche Schichten in einen leeren
+  Shaker gießt, gibt nur zwei ab — der Shaker hat eine Hälfte-Markierung. Das weicht von
+  „so viel wie passt" ab und ist Absicht.
+  *Verworfen:* „zwei Farben in beliebigem Verhältnis werden zur Mischfarbe". Damit hätte
+  3 Rot + 1 Gelb vier Orange ergeben, also Rot 1:1 in Orange getauscht. Die Farbbilanz des
+  Generators wäre nicht mehr berechenbar gewesen.
+
+## Aktueller Stand
+
+### M1 Grundgerüst — FERTIG (25.09.2026)
+- [x] Scaffold Vite + React + TS, Tailwind v4 (`@tailwindcss/vite`), Capacitor-Config
+      (`at.gallab.fixthemix`) — Konventionen 1:1 aus anigosha
+- [x] npm, `"type": "module"`, Node 22, oxlint (`.oxlintrc.json`), kein ESLint/Prettier
+- [x] tsconfig als Projektverweise. **Abweichung von anigosha: `strict: true` ist AN.**
+      Die Engine packt Zustände, indiziert Behälter und vergibt später serverseitig
+      Punkte — dort ist ein übersehenes `undefined` teuer.
+- [x] `tsconfig.node.json` schließt `tools/**/*.mts` mit ein, damit `npm run build` die
+      Testskripte mit typprüft (in anigosha bleiben `tools/` ungeprüft)
+- [x] i18n DE/EN mit `appSprache()`/`datenSprache()` wie in anigosha
+- [x] `.claude/settings.json` + SessionStart-Hook (nur `npm install`; die `.env` entfällt,
+      bis es in Phase 4 eine Datenbank gibt)
+- [x] Platzhalter-`App.tsx`, damit `npm run build` von Anfang an grün ist
+
+### M3 Spielbildschirm — GRÖSSTENTEILS FERTIG (25.09.2026)
+- [x] Bar-Look, Spielfeld als SVG, Gläser skalieren mit der Spaltenbreite
+- [x] Antippen = wählen, nochmal antippen = gießen. Bewusst kein Ziehen: mit dem
+      Daumen über ein halbes Display zu ziehen ist unangenehm, und ein abgebrochener
+      Zug ist schwer zu erkennen.
+- [x] Der Shaker hat einen **eigenen Knopf** zum Schütteln. Läge das auf einem Tipp aufs
+      Glas, wäre ein Tipp mal „wählen" und mal „schütteln" — die zentrale Mechanik des
+      Spiels darf nicht raten.
+- [x] Undo, Neustart, Tipp (Löser mit knappem Budget), Sterne live in der Kopfzeile
+- [x] Farbenblind-Modus mit Symbol auf jeder Schicht, Abnahme über einen
+      Graustufen-Screenshot
+- [x] Haptik über `navigator.vibrate` (Android-Browser; iOS ignoriert es still, in der
+      Store-App übernimmt das später Capacitor Haptics)
+- [x] Fortschritt und Einstellungen in `localStorage`, jeder Zugriff eingepackt
+- [x] 20 vorgebaute Level (`tools/level-bauen.mts` → `src/levels/folge.json`) mit
+      Levelwahl zum Springen
+- [ ] **Extra-Glas** — hängt an der Werbung und kommt mit Phase 5
+- [ ] Die Gieß-Animation ist bisher ein Kippen der Quelle plus weiches Einrasten der
+      Schichten, noch kein fließender Strahl
+- [ ] Bar-Geräusche
+
+### M2 Engine, Löser, Generator — FERTIG (25.09.2026)
+- [x] `src/engine/` vollständig, **144 Zusicherungen in vier Testskripten, alle grün**
+- [x] Löser findet das **bewiesene** Optimum; auf 378 Zufallsbrettern gegen eine
+      unabhängige Breitensuche nachgemessen, keine einzige Abweichung
+- [x] Generator: 1.000 Level über alle sieben Stufen, jedes lösbar, jedes Optimum im Band
+      (Gesamtlauf 58 s)
+- [x] Mischung ist **erzwungen, nicht Dekoration** — hart nachgerechnet, nicht angenommen
+- [x] Wiedergabe (Vorstufe des Schummelschutzes) lehnt manipulierte Zugfolgen mit
+      benanntem Grund und Fehlerindex ab
+
 ## Was FixTheMix einzigartig macht
 
 1. **„Fix" und „Mix": zwei Mechaniken, die den Namen erklären.**
@@ -68,17 +141,77 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 | Release auf Josefs Mac | `.github/workflows/{ios,android}-release.yml` mit der Eingabe `laeufer`, `docs/release-ci.md` |
 | Rechtstexte | `src/pages/legal/legalContent.ts` |
 
-**Neu zu bauen:**
+**Die Engine — `src/engine/`** (steht seit 25.09.2026):
 
-- **`src/engine/`**, reines TypeScript ohne React:
-  - Zustand: Gläser als Arrays von Schichten, dazu der Shaker.
-  - Züge: `pour()`, `shake()`, `isSolved()`, ein Undo-Stapel.
-  - `solve()`: A* mit Hash über den Zustand. Liefert die optimale Zugzahl und dient
-    zugleich als Tipp.
-  - `generate(seed, schwierigkeit)`: erzeugt nur Level, die der Löser als lösbar
-    bestätigt.
-  - Alles deterministisch aus dem Seed, damit Tagesrätsel und Duelle für alle gleich
-    sind.
+| Datei | Inhalt |
+|---|---|
+| `typen.ts` | Nur Typen. `Spielstand`, `Zug`, `Level`, `Schwierigkeit`, Ergebnisse. |
+| `farben.ts` | Die neun Farben, die **Mischtabelle als Daten** (kein `if` in der Logik), Symbol fürs Farbenblind-Modus, Emoji fürs Teilen. |
+| `zufall.ts` | mulberry32 + fmix32 + getrennte Streams. Nur 32-Bit-Ganzzahlrechnung. |
+| `zustand.ts` | Aufbau, Klonen, Packen, **kanonischer Schlüssel**, Siegbedingung, Textausgabe. |
+| `zuege.ts` | Die Regeln: `pour`, `shake`, `legaleZuege`. Sonst nichts. |
+| `verlauf.ts` | `Partie` — Zugprotokoll, Undo-Stapel, Sterne, Tipp. Schnittstelle für Phase 2. |
+| `loeser.ts` | `solve()` (A*), `schuettelBedarf()`, `heuristik()`, `loesbar()`, `hint()`. |
+| `generator.ts` | `generate(seed, stufe)`, die sieben `STUFEN`, Sternschwellen. |
+| `wiedergabe.ts` | `replay()` / `replayAusSeed()` — Vorstufe des Schummelschutzes. |
+| `index.ts` | Öffentliche Schnittstelle. |
+
+Darüber liegt die Oberfläche: `src/App.tsx` (Spielbildschirm), `src/components/`
+(`Brett`, `Glas`, `Levelwahl`), `src/lib/fortschritt.ts` (localStorage, Haptik).
+**Die `Partie` liegt im State, nicht in einem Ref** — aus einem Ref während des
+Renderns zu lesen ist genau der Weg, auf dem Anzeige und Wahrheit auseinanderlaufen.
+Weil die Engine ihre Zustände an Ort und Stelle ändert, steht hinter jedem gelungenen
+Zug ein `neuZeichnen()`; `useCallback` ist in `App.tsx` bewusst nirgends im Einsatz, da
+alle Handler an genau diesem veränderlichen Objekt hängen.
+
+Drei Entwurfsentscheidungen, die man kennen muss, bevor man hier etwas ändert:
+
+1. **Der Spielstand ist ein flaches `Uint8Array`, kein Array von Arrays**, und Gläser und
+   Shaker teilen sich einen Indexraum. Der Löser besucht sechsstellige Knotenzahlen;
+   verschachtelte Arrays kosten dort je Knoten eine Handvoll Allokationen.
+2. **Kanonisierung nur als Hash-Schlüssel, nie als Zustand.** Gläser sind untereinander
+   vertauschbar, Shaker ebenso — für den Besucht-Speicher werden die gepackten Wörter
+   deshalb sortiert, **Gläser nur mit Gläsern, Shaker nur mit Shakern**. Der Zustand
+   selbst behält seine Reihenfolge, sonst zeigten die zurückgegebenen Züge auf die
+   falschen Behälter und der Tipp wäre Unsinn.
+3. **Die Heuristik muss zulässig sein**, weil drei Sterne am echten Optimum hängen.
+   Sie teilt die Züge in drei **disjunkte** Klassen und darf deshalb addieren:
+   `h = max(Phi, Streuung) + 2*X + Mischshaker`. Dabei ist `X` die kleinste Zahl
+   Schüttelvorgänge, mit der die Farbbilanz überhaupt aufgeht — und `X = unendlich` ist
+   zugleich der billigste Unlösbarkeitsbeweis, den wir haben.
+   *Erster Anlauf war `max(Phi, X)`: sicher, aber so schwach, dass ein Shaker-Level über
+   40.000 Knoten brauchte. Nach der Verschärfung sind es 5.200.*
+
+**Der Generator spielt RÜCKWÄRTS**, vom gelösten Brett aus. Damit ist jedes Level per
+Konstruktion lösbar, und die Länge des Rückwegs ist eine gültige obere Schranke für A*.
+*Verworfen: vorwärts zufällig befüllen und verwerfen lassen* — das kostet den vollen
+Löserlauf für jedes abgelehnte Brett und gibt keinen Hebel darauf, den Shaker wirklich
+zu erzwingen.
+
+Zwei Fallen, die dabei schon Zeit gekostet haben:
+
+- Beim Rückwärtsgießen darf ein **ganzer** Lauf nur dann zurückwandern, wenn die Quelle
+  dabei **leer** wird — sonst wäre der Vorwärtszug gar nicht erlaubt. Ohne diese
+  Bedingung blieben nur Züge übrig, die ein volles einfarbiges Glas in ein leeres
+  schieben; das Brett blieb gelöst und `generate` fand nie ein Level. Für einen **Shaker**
+  als Quelle gilt sie nicht — dort entscheiden Kontingent und Mischpaar.
+- Die rückwärts ausgebauten **Mischpaare dürfen sich wiederholen**. Zieht man alle drei
+  verschiedenen Paare, bekommt jede Grundfarbe genau `hoehe` dazu, die Bilanz geht ohne
+  einen einzigen Schüttelzug auf, und das Level wäre ohne Shaker lösbar.
+
+**Gemessene Grenze (25.09.2026):** Der Engpass ist nicht das Spielen, sondern der
+**Beweis** der Optimalität. Reine Fix-Level bis 12 Gläser kosten ~100 ms, bis 14 Gläser
+~1,4 s. Mit einem Shaker und zwei Mischungen sind 9 Gläser bei ~800 ms machbar. **Zwei**
+Shaker sprengen das Budget (5 von 6 Anläufen). Die sieben Stufen sind darauf zugeschnitten.
+Größere Level sind möglich — der Generator läuft ohnehin im Voraus, nicht auf dem Gerät;
+dann `maxMs`/`versuche` hoch und einmal über Nacht.
+
+**Portabilität nach Deno:** Jede Datei in `src/engine/` importiert ihre Nachbarn **mit
+ausgeschriebener `.ts`-Endung** (`from './zustand.ts'`). Deno verlangt das, Vite und `tsc`
+erlauben es über `allowImportingTsExtensions`. Damit lässt sich der Ordner unverändert in
+eine Edge Function kopieren. Deshalb gilt hier drinnen: keine Abhängigkeiten, kein React,
+kein `window`, kein `localStorage`, kein `Math.random`, kein `Date.now` — die einzige Uhr
+ist das einspeisbare `jetzt` im Löserbudget.
 - **Schummelschutz für die Bestenliste:** Der Client schickt die Zugfolge, eine Edge
   Function spielt sie mit derselben Engine nach (geteilter Code) und wertet erst dann.
   Dasselbe Prinzip wie „XP nur serverseitig" bei Anigosha.
@@ -86,12 +219,15 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 
 ## Phasen
 
-1. **Engine, Löser, Generator und Tests.** Noch ganz ohne Oberfläche. ← **Hier geht's los**
-2. **Spielbildschirm:**
+1. ~~**Engine, Löser, Generator und Tests.** Noch ganz ohne Oberfläche.~~ **FERTIG (25.09.2026)**
+2. **Spielbildschirm:** weitgehend fertig (siehe „Aktueller Stand"); offen bleiben
+   Extra-Glas, der fließende Gießstrahl und die Bar-Geräusche.
    - Bar-Look, Gieß-Animation, Haptik
    - Undo, Neustart, Tipp, Extra-Glas
    - Farbenblind-Modus
 3. **Levelfolge:** zuerst Fix-Level, dann der Shaker, Sterne nach Zügen.
+   ← **hier geht es weiter** (die 20 Testlevel in `src/levels/folge.json` sind der
+   Vorgriff darauf, nicht die endgültige Kurve)
 4. **Tagesrätsel:** Teilen, Serie, Bestenliste. Dazu eine Supabase-Migration und die
    Edge Function für die Prüfung.
 5. **Werbung, Kauf, Rechtstexte, Sprachen.** Zuerst DE und EN, danach ES/FR/PT.
@@ -101,17 +237,85 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 
 ## Prüfung
 
-- **Engine-Tests** (`npx tsx`):
-  - 1.000 generierte Level, jedes davon löst der Löser.
-  - Eine nachgespielte Zugfolge endet im gelösten Zustand.
-  - Ungültige Züge werden abgelehnt.
-  - Die Mischregeln stimmen.
-  - Gleicher Seed ergibt dasselbe Level.
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle vier nacheinander,
+  Gesamtlaufzeit rund 70 Sekunden. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
+  `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
+  spürbar schneller.
+  - `test-engine.mts` (57) — Mischtabelle, beide Gießregeln, Shaker-Kontingent,
+    Schütteln, Siegbedingung, Packen und Kanonisierung. Darunter die Zusicherung, auf der
+    der ganze Entwurf ruht: **ein voller Shaker enthält immer genau zwei Farben zu je
+    `hoehe/2`**, erschöpfend nachgeprüft.
+  - `test-loeser.mts` (26) — das wichtigste Skript. Vergleicht A* auf 378 Zufallsbrettern
+    gegen eine **unabhängige Breitensuche** und prüft, dass die Heuristik nie überschätzt
+    und konsistent ist. Eine zu hohe Heuristik fällt sonst nirgends auf — sie erzeugt
+    keinen Absturz, sondern falsche Sternschwellen.
+  - `test-generator.mts` (17) — **1.000 Level** über alle Stufen: jedes lösbar, jedes
+    Optimum im Band, Mischbedarf erzwungen, Shaker starten leer, Flüssigkeitsmenge
+    stimmt, JSON-Rundlauf hält. Dazu Determinismus samt **fester Seed-Tabelle** — das ist
+    der eigentliche Regressionsschutz: eine Änderung, die die Seed-zu-Level-Abbildung
+    verschiebt, entwertet jede gespeicherte Wiedergabe und jeden Bestenlisteneintrag.
+  - `test-wiedergabe.mts` (44) — Undo-Stapel und Wiedergabe. Darunter der Fall, den ein
+    naiver Undo falsch macht: **nach dem Schütteln muss die genaue Schichtung
+    zurückkommen**, nicht nur „zwei Rot, zwei Gelb" — deshalb sichert der Schüttelschritt
+    als einziger die Zellen des Shakers mit.
+  - `test-oberflaeche.mjs` (16, braucht Playwright + Chromium, sonst kein Netz und
+    keine Schlüssel) — spielt ein Shaker-Level im echten Browser mit der Lösung des
+    Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
+    Läuft gegen **`dist/`**, also vorher `npm run build`; ist nicht in `npm test`, weil
+    es einen Build voraussetzt. Legt Screenshots in `.screenshots/` ab, darunter
+    `03-graustufen.png` — das ist die Abnahme für den Farbenblind-Modus.
+- **Handprobe:** `node tools/zeige-level.mts --stufe 5 --seed 7 --loesung` druckt ein
+  Level und seine kürzeste Lösung als Emoji-Raster. Die Tests sagen nur, ob ein Level
+  lösbar ist; ob es sich **gut anfühlt**, sieht man nur so — und vor Phase 2 gibt es
+  keine Oberfläche.
 - **Schummelschutz:** Die Edge Function lehnt manipulierte Zugfolgen ab.
 - **Farbenblind-Modus:** ein Screenshot in Graustufen. Jede Farbe muss am Symbol zu
   erkennen sein.
+- **Web-App:** https://fixthemix.vercel.app — Vercel-Projekt `fixthemix` im Konto
+  `almaz6380`, Vite automatisch erkannt, mit `almaz6380/FixTheMix` verknüpft.
+  Ausgeliefert wird nur `dist/`; der Quellcode bleibt im privaten Repo.
+- **Der Deploy-Schutz ist bewusst AUS** (25.09.2026, Josefs Entscheidung). Vercel
+  schützt neue Projekte standardmäßig mit einer Anmeldepflicht — damit wäre die
+  Adresse nicht von überall erreichbar gewesen. Wieder einschaltbar unter
+  Project → Settings → Deployment Protection.
+- **Testaufbau am Handy über claude.ai:** Der Build lässt sich auch als private Seite
+  dort veröffentlichen. Zwei Fallen: die Seite darf kein eigenes `<html>`/`<head>`
+  mitbringen (der Rahmen setzt das selbst), und die Sicherheitsabstände für Notch und
+  Home-Leiste müssen **vom Rahmen** kommen — `env(safe-area-inset-*)` liefert
+  innerhalb des Rahmens 0.
 - **Am Gerät:** Werbung nur mit Test-IDs. **Nie echte eigene Anzeigen antippen** — am
   AdMob-Konto hängen alle Apps.
+
+## Auslieferung auf Vercel
+
+`vercel.json` schreibt alles, was nicht nach Datei aussieht, auf `index.html` um —
+ohne das gibt ein Neuladen auf einer Unterseite 404, weil die Routen erst der Browser
+kennt. Muster aus `anigosha/vercel.json`.
+
+**`npx vercel deploy` schlägt aus einer Cloud-Sitzung fehl.** Die Meldung ist
+`fetch failed`; dahinter steckt der Agent-Proxy, der die lange Verbindung zu
+`api.vercel.com` mittendrin kappt (`ws_closed_mid_exchange`). Vier Anläufe mit
+wachsendem Abstand haben nicht geholfen. Der Weg, der **funktioniert**, ist ein
+einzelner kurzer API-Aufruf — Vercel baut dann selbst aus dem Repo, es wird nichts
+hochgeladen:
+
+```bash
+curl -X POST -H "Authorization: Bearer $Vercel_CLI" -H "Content-Type: application/json" \
+  -d '{"name":"fixthemix","target":"production",
+       "gitSource":{"type":"github","repoId":1388002138,"ref":"<zweig>"}}' \
+  https://api.vercel.com/v13/deployments
+```
+
+Danach den Zustand pollen, bis `readyState` auf `READY` steht.
+
+**Der Produktionszweig ist `main`.** Ein Push auf einen Feature-Zweig erzeugt also
+höchstens eine Vorschau. `"target": "production"` im Aufruf oben hebt das auf und
+hängt `fixthemix.vercel.app` an genau diesen Stand — praktisch zum Testen, aber es
+heißt auch: was auf der Produktionsadresse liegt, muss nicht in `main` stehen.
+
+**Icons:** `node tools/icons-bauen.mjs` erzeugt aus `public/favicon.svg` die
+PNG-Größen. Nur SVG reicht nicht — iOS nimmt für „Zum Home-Bildschirm hinzufügen"
+ausschließlich `apple-touch-icon.png`, und der Android-Manifest will PNG.
 
 ## Regeln (wie in allen Repos)
 

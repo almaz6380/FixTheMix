@@ -1,0 +1,38 @@
+{
+  "app": {
+    "name": "FixTheMix"
+  },
+  "spiel": {
+    "level": "Level {{n}}/{{gesamt}}",
+    "zuege": "{{n}} Züge",
+    "optimum": "Optimum: {{n}}",
+    "undo": "Zurück",
+    "neustart": "Neu",
+    "tipp": "Tipp",
+    "rechnet": "…",
+    "symbole": "Symbole",
+    "schuetteln": "Schütteln",
+    "glas": "Glas {{n}}",
+    "shaker": "Shaker {{n}}",
+    "gewonnen": "Geschafft!",
+    "bilanz": "{{zuege}} Züge, Optimum {{optimum}}",
+    "dreiSterne": "Drei Sterne gibt es nur für {{n}} Züge.",
+    "nochmal": "Nochmal",
+    "weiter": "Weiter",
+    "ende": "Ende",
+    "levelwahl": "Level wählen",
+    "schliessen": "Fertig",
+    "hinweisShaker": "Zwei verschiedene Grundfarben in den Shaker — je bis zur Markierung — dann schütteln."
+  },
+  "farben": {
+    "rot": "Erdbeere",
+    "gelb": "Zitrone",
+    "blau": "Blaubeere",
+    "orange": "Orange",
+    "gruen": "Apfel",
+    "lila": "Traube",
+    "minze": "Minze",
+    "kokos": "Kokos",
+    "kaffee": "Kaffee"
+  }
+}

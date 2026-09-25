@@ -1,7 +1,7 @@
 {
   "name": "FixTheMix",
   "short_name": "FixTheMix",
-  "description": "Mischen und Sortieren an der alkoholfreien Bar.",
+  "description": "Sortieren an der alkoholfreien Saftbar.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

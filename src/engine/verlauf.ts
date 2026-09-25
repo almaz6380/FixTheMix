@@ -1,16 +1,14 @@
 // Eine laufende Partie: Zustand, Zugprotokoll, Undo-Stapel.
 //
-// Das ist die Schnittstelle, gegen die die Oberflaeche in Phase 2 baut. Die
-// Engine darunter (zuege.ts) veraendert Zustaende an Ort und Stelle, weil der
-// Loeser Millionen davon durchgeht; hier oben ist das gekapselt.
+// Das ist die Schnittstelle, gegen die die Oberflaeche baut. Die Engine
+// darunter (zuege.ts) veraendert Zustaende an Ort und Stelle, weil der Loeser
+// Millionen davon durchgeht; hier oben ist das gekapselt.
 //
-// WARUM DER UNDO-STAPEL DELTAS SPEICHERT, NICHT SCHNAPPSCHUESSE
-// Ein Giessvorgang laesst sich vollstaendig aus (von, nach, menge, farbe)
-// umkehren. Ein SCHUETTELN nicht: aus vier Orange geht nicht hervor, ob
-// vorher r,r,g,g oder r,g,g,r im Shaker stand. Der Schuettelschritt sichert
-// deshalb als einziger die vier Zellen des Shakers mit. Das sind ein paar
-// Byte je Schuettelzug — und der Unterschied zwischen „Undo stimmt" und
-// „Undo stimmt meistens".
+// Der Undo-Stapel speichert DELTAS, keine Schnappschuesse: ein Giessvorgang
+// laesst sich vollstaendig aus (von, nach, menge, farbe) umkehren. Solange es
+// den Shaker gab, war das anders — aus vier Orange ging nicht hervor, ob
+// vorher r,r,g,g oder r,g,g,r drin stand, und der Schuettelschritt musste die
+// Zellen mitsichern. Ohne Shaker faellt dieser Sonderfall weg.
 //
 // Ein ABGELEHNTER Zug darf nichts auf den Stapel legen und nichts ins
 // Protokoll schreiben. Sonst zaehlt die Oberflaeche Fehlversuche als Zuege
@@ -20,15 +18,13 @@ import type { FarbCode } from './farben.ts';
 import { sterneFuer } from './generator.ts';
 import { hint, type LoeserOptionen } from './loeser.ts';
 import type { Behaelter, Level, Spielstand, Zug, ZugErgebnis } from './typen.ts';
-import { giessen, giessenZurueck, schuetteln } from './zuege.ts';
+import { giessen, giessenZurueck } from './zuege.ts';
 import { istGeloest, standAusLevel } from './zustand.ts';
 
 interface Schritt {
   zug: Zug;
   menge: number;
   farbe: FarbCode;
-  /** Nur beim Schuetteln: die Zellen des Shakers davor. */
-  vorher: Uint8Array | null;
 }
 
 export class Partie {
@@ -57,30 +53,7 @@ export class Partie {
 
   pour(von: Behaelter, nach: Behaelter): ZugErgebnis {
     const e = giessen(this.stand, von, nach);
-    if (e.ok) {
-      this.stapel.push({
-        zug: { art: 'giessen', von, nach },
-        menge: e.menge,
-        farbe: e.farbe,
-        vorher: null,
-      });
-    }
-    return e;
-  }
-
-  shake(behaelter: Behaelter): ZugErgebnis {
-    const basis = behaelter * this.stand.hoehe;
-    // Sichern VOR dem Zug — danach ist die Anordnung unwiederbringlich weg.
-    const vorher = this.stand.zellen.slice(basis, basis + this.stand.hoehe);
-    const e = schuetteln(this.stand, behaelter);
-    if (e.ok) {
-      this.stapel.push({
-        zug: { art: 'schuetteln', behaelter },
-        menge: 0,
-        farbe: e.farbe,
-        vorher,
-      });
-    }
+    if (e.ok) this.stapel.push({ zug: { von, nach }, menge: e.menge, farbe: e.farbe });
     return e;
   }
 
@@ -91,13 +64,7 @@ export class Partie {
   undo(): boolean {
     const s = this.stapel.pop();
     if (!s) return false;
-    if (s.zug.art === 'giessen') {
-      giessenZurueck(this.stand, s.zug.von, s.zug.nach, s.menge, s.farbe);
-    } else {
-      const basis = s.zug.behaelter * this.stand.hoehe;
-      this.stand.zellen.set(s.vorher!, basis);
-      this.stand.fuell[s.zug.behaelter] = this.stand.hoehe;
-    }
+    giessenZurueck(this.stand, s.zug.von, s.zug.nach, s.menge, s.farbe);
     return true;
   }
 

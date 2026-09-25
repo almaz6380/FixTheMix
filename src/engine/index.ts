@@ -13,24 +13,18 @@
 // Die einzige Uhr ist das einspeisbare `jetzt` im Loeserbudget.
 
 export { Partie } from './verlauf.ts';
-export { solve, hint, loesbar, schuettelBedarf, heuristik, farbSummen } from './loeser.ts';
-export { generate, STUFEN, FIX_STUFEN, MISCH_STUFEN, sterneFuer, sterneSchwellen } from './generator.ts';
+export { solve, hint, loesbar, bilanzStimmt, heuristik, farbSummen } from './loeser.ts';
+export { generate, STUFEN, sterneFuer, sterneSchwellen } from './generator.ts';
 export { replay, replayAusSeed, MAX_ZUEGE } from './wiedergabe.ts';
 export {
   istGeloest as isSolved,
   standAusLevel, startAusStand, leererStand, klone, schluessel,
   bericht, alsText, pruefeInvariante, segmente, oben, laufOben,
 } from './zustand.ts';
-export {
-  giessen as pour, schuetteln as shake, legaleZuege, pruefeGiessen,
-  pruefeSchuetteln, anwenden, pruefe,
-} from './zuege.ts';
-export {
-  FARBEN, MISCHTABELLE, LEER, codeVon, idVon, farbeVon,
-  mischungAus, bestandteileVon, istGrund, istMisch, istPur,
-} from './farben.ts';
+export { giessen as pour, legaleZuege, pruefeGiessen, anwenden, pruefe } from './zuege.ts';
+export { FARBEN, LEER, codeVon, idVon, farbeVon, ALLE_CODES } from './farben.ts';
 export { zufall, mulberry32, fmix32, seedAusText, STROM } from './zufall.ts';
-export type { FarbId, FarbCode, FarbArt, Farbe } from './farben.ts';
+export type { FarbId, FarbCode, Farbe } from './farben.ts';
 export type {
   Behaelter, Budget, Fehlergrund, Level, LevelBericht, Loesung, LoeserStatus,
   Schwierigkeit, Spielstand, Sterne, WiedergabeErgebnis, WiedergabeOptionen,

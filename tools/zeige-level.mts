@@ -8,7 +8,6 @@
 //         npx tsx tools/zeige-level.mts --stufe 5 --seed 7 --loesung
 import { generate, STUFEN } from '../src/engine/generator.ts';
 import { solve } from '../src/engine/loeser.ts';
-import { farbeVon } from '../src/engine/farben.ts';
 import { alsText, klone, standAusLevel } from '../src/engine/zustand.ts';
 import { anwenden } from '../src/engine/zuege.ts';
 
@@ -32,8 +31,8 @@ const ms = Date.now() - t0;
 const z = standAusLevel(level);
 
 console.log(`Stufe ${stufe} "${s.name}", Seed ${seed}  (erzeugt in ${ms} ms)`);
-console.log(`${level.glaeser} Glaeser, ${level.shaker} Shaker, Hoehe ${level.hoehe}`);
-console.log(`Optimum ${level.optimalZuege} Zuege, davon mindestens ${level.schuettelZuege} Schuettelzuege`);
+console.log(`${level.glaeser} Glaeser, Hoehe ${level.hoehe}`);
+console.log(`Optimum ${level.optimalZuege} Zuege`);
 console.log(`Sterne: 3 bei <= ${level.sterne.drei}, 2 bei <= ${level.sterne.zwei}, sonst 1\n`);
 console.log(alsText(z));
 
@@ -43,15 +42,8 @@ if (mitLoesung) {
   const k = klone(z);
   for (let i = 0; i < l.zuege.length; i++) {
     const zug = l.zuege[i]!;
-    if (zug.art === 'schuetteln') {
-      const ergebnis = farbeVon(anwenden(k, zug).farbe);
-      console.log(`  ${String(i + 1).padStart(2)}. Shaker ${zug.behaelter - level.glaeser} schuetteln  -> ${ergebnis.emoji} ${ergebnis.id}`);
-    } else {
-      const e = anwenden(k, zug);
-      const wohin = zug.nach >= level.glaeser ? `Shaker ${zug.nach - level.glaeser}` : `Glas ${zug.nach}`;
-      const woher = zug.von >= level.glaeser ? `Shaker ${zug.von - level.glaeser}` : `Glas ${zug.von}`;
-      console.log(`  ${String(i + 1).padStart(2)}. ${woher} -> ${wohin}  (${e.menge}x ${farbeVon(e.farbe).emoji})`);
-    }
+    const e = anwenden(k, zug);
+    console.log(`  ${String(i + 1).padStart(2)}. Glas ${zug.von} -> Glas ${zug.nach}  (${e.menge}x)`);
   }
   console.log(`\nEndstand:\n${alsText(k)}`);
 }

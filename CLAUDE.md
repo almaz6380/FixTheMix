@@ -271,13 +271,51 @@ ist das einspeisbare `jetzt` im Löserbudget.
 - **Schummelschutz:** Die Edge Function lehnt manipulierte Zugfolgen ab.
 - **Farbenblind-Modus:** ein Screenshot in Graustufen. Jede Farbe muss am Symbol zu
   erkennen sein.
-- **Testaufbau am Handy:** Der Build lässt sich als private Seite auf claude.ai
-  veröffentlichen und dort am Telefon spielen. Zwei Fallen dabei: die Seite darf kein
-  eigenes `<html>`/`<head>` mitbringen (der Rahmen setzt das selbst), und die
-  Sicherheitsabstände für Notch und Home-Leiste müssen **vom Rahmen** kommen —
-  `env(safe-area-inset-*)` liefert innerhalb des Rahmens 0.
+- **Web-App:** https://fixthemix.vercel.app — Vercel-Projekt `fixthemix` im Konto
+  `almaz6380`, Vite automatisch erkannt, mit `almaz6380/FixTheMix` verknüpft.
+  Ausgeliefert wird nur `dist/`; der Quellcode bleibt im privaten Repo.
+- **Der Deploy-Schutz ist bewusst AUS** (25.09.2026, Josefs Entscheidung). Vercel
+  schützt neue Projekte standardmäßig mit einer Anmeldepflicht — damit wäre die
+  Adresse nicht von überall erreichbar gewesen. Wieder einschaltbar unter
+  Project → Settings → Deployment Protection.
+- **Testaufbau am Handy über claude.ai:** Der Build lässt sich auch als private Seite
+  dort veröffentlichen. Zwei Fallen: die Seite darf kein eigenes `<html>`/`<head>`
+  mitbringen (der Rahmen setzt das selbst), und die Sicherheitsabstände für Notch und
+  Home-Leiste müssen **vom Rahmen** kommen — `env(safe-area-inset-*)` liefert
+  innerhalb des Rahmens 0.
 - **Am Gerät:** Werbung nur mit Test-IDs. **Nie echte eigene Anzeigen antippen** — am
   AdMob-Konto hängen alle Apps.
+
+## Auslieferung auf Vercel
+
+`vercel.json` schreibt alles, was nicht nach Datei aussieht, auf `index.html` um —
+ohne das gibt ein Neuladen auf einer Unterseite 404, weil die Routen erst der Browser
+kennt. Muster aus `anigosha/vercel.json`.
+
+**`npx vercel deploy` schlägt aus einer Cloud-Sitzung fehl.** Die Meldung ist
+`fetch failed`; dahinter steckt der Agent-Proxy, der die lange Verbindung zu
+`api.vercel.com` mittendrin kappt (`ws_closed_mid_exchange`). Vier Anläufe mit
+wachsendem Abstand haben nicht geholfen. Der Weg, der **funktioniert**, ist ein
+einzelner kurzer API-Aufruf — Vercel baut dann selbst aus dem Repo, es wird nichts
+hochgeladen:
+
+```bash
+curl -X POST -H "Authorization: Bearer $Vercel_CLI" -H "Content-Type: application/json" \
+  -d '{"name":"fixthemix","target":"production",
+       "gitSource":{"type":"github","repoId":1388002138,"ref":"<zweig>"}}' \
+  https://api.vercel.com/v13/deployments
+```
+
+Danach den Zustand pollen, bis `readyState` auf `READY` steht.
+
+**Der Produktionszweig ist `main`.** Ein Push auf einen Feature-Zweig erzeugt also
+höchstens eine Vorschau. `"target": "production"` im Aufruf oben hebt das auf und
+hängt `fixthemix.vercel.app` an genau diesen Stand — praktisch zum Testen, aber es
+heißt auch: was auf der Produktionsadresse liegt, muss nicht in `main` stehen.
+
+**Icons:** `node tools/icons-bauen.mjs` erzeugt aus `public/favicon.svg` die
+PNG-Größen. Nur SVG reicht nicht — iOS nimmt für „Zum Home-Bildschirm hinzufügen"
+ausschließlich `apple-touch-icon.png`, und der Android-Manifest will PNG.
 
 ## Regeln (wie in allen Repos)
 

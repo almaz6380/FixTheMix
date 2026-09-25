@@ -1,0 +1,17 @@
+{
+  "app": {
+    "name": "FixTheMix",
+    "baustelle": "Spiellogik steht — die Oberflaeche kommt in Phase 2."
+  },
+  "farben": {
+    "rot": "Erdbeere",
+    "gelb": "Zitrone",
+    "blau": "Blaubeere",
+    "orange": "Orange",
+    "gruen": "Apfel",
+    "lila": "Traube",
+    "minze": "Minze",
+    "kokos": "Kokos",
+    "kaffee": "Kaffee"
+  }
+}

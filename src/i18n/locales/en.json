@@ -1,0 +1,17 @@
+{
+  "app": {
+    "name": "FixTheMix",
+    "baustelle": "Game logic is in place — the interface follows in phase 2."
+  },
+  "farben": {
+    "rot": "Strawberry",
+    "gelb": "Lemon",
+    "blau": "Blueberry",
+    "orange": "Orange",
+    "gruen": "Apple",
+    "lila": "Grape",
+    "minze": "Mint",
+    "kokos": "Coconut",
+    "kaffee": "Coffee"
+  }
+}

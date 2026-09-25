@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  /* FixTheMix-Farbwelt: warme, dunkle Bar (Holz, gedaempftes Licht) mit
+     Zitrus-Akzent. Bewusst anders als Anigoshas Nachtviolett und anders als
+     MyPeak-Gold — die drei Apps sollen sich nicht verwechseln lassen.
+
+     WICHTIG: Das hier sind die Toene der OBERFLAECHE. Die Farben der
+     Fluessigkeiten stehen NICHT hier, sondern in src/engine/farben.ts, weil
+     die Engine sie auch ohne CSS braucht (Loeser, Generator, Edge Function).
+     Wer eine Spielfarbe aendert, aendert sie dort. */
+  --color-bar-950: #14100d;
+  --color-bar-900: #1b1410;
+  --color-bar-800: #2a201a;
+  --color-bar-700: #3b2d23;
+  --color-bar-600: #51402f;
+
+  --color-zitrus-300: #fcd34d;
+  --color-zitrus-400: #fbbf24;
+  --color-zitrus-500: #f59e0b;
+
+  --font-sans: 'Avenir Next', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bar-950);
+  color: #f5efe8;
+  font-family: var(--font-sans);
+}

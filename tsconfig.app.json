@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "types": ["vite/client"],
+    "allowArbitraryExtensions": true,
+    "skipLibCheck": true,
+
+    /* Bundler mode.
+       allowImportingTsExtensions ist hier nicht nur Vite-Komfort: src/engine/
+       importiert bewusst MIT ausgeschriebener .ts-Endung, damit dieselben
+       Dateien spaeter unveraendert in einer Deno-Edge-Function laufen
+       (Schummelschutz, Phase 4). Ohne diese Zeile faellt das hier durch. */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Anigosha laesst strict aus (Rest der Vite-Vorlage). Hier bewusst AN:
+       die Engine packt Zustaende, indiziert Behaelter und vergibt spaeter
+       serverseitig Punkte — dort ist ein uebersehenes undefined teuer. */
+    "strict": true,
+
+    /* Linting */
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}

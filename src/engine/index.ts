@@ -19,6 +19,12 @@ export {
   ANZAHL_LEVEL, BLOCK, BLOECKE, ABSCHNITTE,
   stufeFuer, seedFuer, abschnittFuer, blockFuer, istExperte,
 } from './kurve.ts';
+export {
+  TAG_NULL, alsIso, tagesZahl, tagDavor, tagDanach, tagesNummer, wochentag,
+  seedFuerTag, stufeFuerTag, tagLevel, TAG_KNOTEN,
+} from './tagesraetsel.ts';
+export { pruefeTag, DATUM_FENSTER } from './tagespruefung.ts';
+export type { TagEinsendung, TagUrteil, TagAblehnung } from './tagespruefung.ts';
 export { replay, replayAusSeed, MAX_ZUEGE } from './wiedergabe.ts';
 export {
   istGeloest as isSolved,

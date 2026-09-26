@@ -60,6 +60,12 @@ Code auf seinem Rechner laufen.
 - **Ein paar Experten-Level mit hohen Gläsern:** jedes 25. Level ab 225 hat 7 oder 8
   Schichten. Sechs bleiben die Regel — die hohen Gläser sind das einzige Mittel, über
   die Decke von rund 26 Zügen zu kommen.
+- **Tagesrätsel: es gilt der ORTSTAG des Spielers, nicht UTC** (entschieden am
+  26.09.2026 — dieses Dokument hatte die Frage für Phase 4 ausdrücklich offengelassen).
+  Anigosha nimmt `current_date` der Datenbank; damit wechselt das Rätsel in Hawaii um
+  14 Uhr und in Neuseeland um 12 Uhr mittags, mitten am Tag. Ein Tagesrätsel ist ein
+  Ritual, und ein Wechsel am Nachmittag zerstört es. Preis: die Bestenliste eines Tages
+  umfasst weltweit rund 50 Stunden.
 - **Farbsystem:** neun Farben, alle gleichberechtigt, keine Kategorien mehr —
   Erdbeere, Zitrone, Blaubeere, Orange, Apfel, Traube, Minze, Kokos, Kaffee. Jede trägt
   ein eigenes **gezeichnetes** Zeichen für den Farbenblind-Modus (vorher Emoji, die auf
@@ -82,7 +88,7 @@ Code auf seinem Rechner laufen.
 - [x] Platzhalter-`App.tsx`, damit `npm run build` von Anfang an grün ist
 
 ### M2 Engine, Löser, Generator — FERTIG (25.09.2026)
-- [x] `src/engine/` vollständig, **171 Zusicherungen in sechs Testskripten, alle grün**
+- [x] `src/engine/` vollständig, **236 Zusicherungen in sieben Testskripten, alle grün**
 - [x] Löser findet das **bewiesene** Optimum; auf 477 Zufallsbrettern gegen eine
       unabhängige Breitensuche nachgemessen, keine einzige Abweichung — und keine
       Verletzung von Zulässigkeit oder Konsistenz
@@ -165,6 +171,28 @@ Code auf seinem Rechner laufen.
 - [ ] Das **Werbevideo** für Münzen kommt mit Phase 5 (`src/lib/ads.ts` gibt es noch
       nicht). Der Haken dafür steht kommentiert in `muenzen.ts`.
 
+### M7 Tagesrätsel — FERTIG bis auf die Datenbank (26.09.2026)
+- [x] **`src/engine/tagesraetsel.ts`**: Datum → Seed → Schwierigkeit, `tagLevel(iso)` als
+      der **eine** Weg zum Brett des Tages. Ohne `Date`, sogar zum Parsen — die
+      Datumsrechnung ist selbst gerechnet.
+- [x] **Wochenleiter**: montags 6 Gläser, sonntags 14 mit 9 Farben. Der Boden fällt über
+      die Woche nie.
+- [x] Das Rätsel wird **auf dem Gerät** erzeugt (1–584 ms gemessen, deshalb ein
+      Ladezustand). Vorgebaut wird nichts: es gibt unendlich viele künftige Tage, und
+      eine Datei mit zwei Jahren Vorrat wäre in zwei Jahren still kaputt.
+- [x] **Serie** (`src/lib/serie.ts`) mit eigenem Speicherschlüssel, beste Serie wird
+      behalten, ein wiederholter Tag zählt sie nicht hoch
+- [x] **Teilen** (`src/lib/teilen.ts`): spoilerfrei — Sterne, Zugzahl, Optimum und ein
+      Balken, **keine Farben**. Der Test prüft das ausdrücklich.
+- [x] **Schummelschutz-Rechnung** (`src/engine/tagespruefung.ts`): der Server baut das
+      Brett selbst und rechnet Zugzahl und Sterne aus dem Nachspielen. Datumsfenster von
+      einem Tag für die Zeitzonen.
+- [x] `supabase/migrations/0001_tagesraetsel.sql` und
+      `supabase/functions/pruefe-tag/index.ts` liegen fertig im Repo
+- [ ] **Nicht deployt und nicht gegen eine echte Datenbank gelaufen** — es gab in der
+      Sitzung kein Supabase-Projekt. Die Schritte stehen in `docs/phase4-supabase.md`.
+- [ ] Bestenliste in der Oberfläche, anonyme Anmeldung, Fortschritt in der Datenbank
+
 ## Was FixTheMix einzigartig macht
 
 1. **Eine Regel, sechs Schichten, kein Tutorial.** Gegossen wird nur auf dieselbe Farbe
@@ -222,6 +250,8 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 | `loeser.ts` | `solve()` (A*), `heuristik()`, `bilanzStimmt()`, `loesbar()`, `hint()`, `festgefahren()`. |
 | `generator.ts` | `generate(seed, stufe)`, die sechs `STUFEN`, Sternschwellen. |
 | `kurve.ts` | Die ausgelieferte Levelfolge: `ANZAHL_LEVEL`, `stufeFuer(nr)`, `seedFuer(nr)`, `ABSCHNITTE`, `blockFuer(nr)`, `istExperte(nr)`. |
+| `tagesraetsel.ts` | Das Tagesrätsel: `tagLevel(iso)`, `tagesNummer`, `wochentag`, `tagDavor`/`tagDanach`, Datumsrechnung ohne `Date`. |
+| `tagespruefung.ts` | `pruefeTag()` — die Rechnung des Schummelschutzes, ohne Netz und ohne Uhr. |
 | `wiedergabe.ts` | `replay()` / `replayAusSeed()` — Vorstufe des Schummelschutzes. |
 | `index.ts` | Öffentliche Schnittstelle. |
 
@@ -429,6 +459,47 @@ Das Farbenblind-Zeichen schrumpft bei `hoehe >= 7` auf 12 px; bei acht Schichten
 Schicht nur noch rund 16 px hoch. In der Levelwahl trägt eine Experten-Kachel einen
 kleinen Punkt, damit ein plötzlich viel schwereres Level nicht wie ein Fehler wirkt.
 
+### Das Tagesrätsel
+
+Ein Level pro Tag, für alle Spieler dasselbe, erzeugt aus dem Datum:
+`tagLevel(iso)` ist der **eine** Weg dorthin. Client und Edge Function rufen
+dieselbe Funktion — würden sie den Löser mit verschiedenen Budgets aufrufen,
+bekäme derselbe Tag zwei verschiedene Bretter, und die Bestenliste wäre Unsinn.
+Deshalb steht `TAG_KNOTEN` in der Engine und nicht beim Aufrufer.
+
+**Kein `Date` in `tagesraetsel.ts`, nicht einmal zum Parsen.** `new Date('2026-10-05')`
+liest die Zeichenkette als UTC, `new Date('2026-10-05T00:00')` als Ortszeit — ein
+Unterschied, der sich an einem Tag im Jahr zeigt und dann für eine ganze Zeitzone das
+falsche Rätsel liefert. Die Umrechnung Kalenderdatum ↔ Tageszahl ist deshalb selbst
+gerechnet (zwanzig Zeilen, keine Kanten) und im Test über 4.000 Tage und beide
+Schaltjahresregeln nachgeprüft — auch 2100, das **kein** Schaltjahr ist.
+
+Die zweite Zeitzonenfalle liegt in `src/lib/serie.ts`: `heute()` setzt das Datum aus
+`getFullYear/getMonth/getDate` zusammen und **nicht** aus
+`toISOString().slice(0, 10)`. Letzteres wäre UTC und läge für jeden östlich von
+Greenwich am Abend einen Tag zurück. Das ist der häufigste Zeitzonenfehler überhaupt,
+und der Test prüft ihn mit 23:30 Ortszeit.
+
+**Erzeugt wird auf dem Gerät.** Gemessen über zehn Wochen: im Schnitt 1 ms (Montag) bis
+198 ms (Samstag), im schlimmsten Einzelfall 584 ms (ein Freitag) — auf einem Handy also
+bis zu zwei Sekunden, deshalb der Ladezustand. Die Zeit steckt nicht in einem zähen
+Löserlauf, sondern in der **Summe** der Anläufe, die das Zugband verpassen; die Bänder
+der Wochenleiter sind darum bewusst breiter als in `kurve.ts`. Vorgebaut wird nichts: es
+gibt unendlich viele künftige Tage, und eine Datei mit zwei Jahren Vorrat wäre in zwei
+Jahren still kaputt.
+
+**Der Teiltext ist spoilerfrei.** Geteilt werden Sterne, Zugzahl, Optimum und ein Balken
+aus `optimum / zuege` — **keine Farben**. Wer sein Ergebnis in eine Gruppe schickt, darf
+das Rätsel damit nicht verraten, sonst teilt es niemand ein zweites Mal. Das ist die
+Lehre aus Wordle, und `test-tagesraetsel.mts` prüft ausdrücklich, dass kein Frucht-Emoji
+im Text landet.
+
+**Der Schummelschutz rechnet, er glaubt nicht.** Der Client schickt Datum und Zugfolge,
+nichts sonst. Der Server baut das Brett selbst, spielt nach und rechnet Zugzahl und
+Sterne aus dem Ergebnis. Eine Einsendung „ich hatte drei Sterne" gibt es gar nicht.
+Die Rechnung steht in `src/engine/tagespruefung.ts` und ist mit node geprüft; die Edge
+Function ist nur Verkabelung.
+
 **Portabilität nach Deno:** Jede Datei in `src/engine/` importiert ihre Nachbarn **mit
 ausgeschriebener `.ts`-Endung** (`from './zustand.ts'`). Deno verlangt das, Vite und `tsc`
 erlauben es über `allowImportingTsExtensions`. Damit lässt sich der Ordner unverändert in
@@ -451,10 +522,11 @@ ist das einspeisbare `jetzt` im Löserbudget.
 3. ~~**Levelfolge:** sanfter Einstieg, dann mehr Farben und weniger leere Gläser,
    Sterne nach Zügen.~~ **FERTIG (26.09.2026)** — 999 Level aus `src/engine/kurve.ts`,
    der Reihe nach freigeschaltet.
-4. **Tagesrätsel:** Teilen, Serie, Bestenliste. Dazu eine Supabase-Migration und die
-   Edge Function für die Prüfung.
-   ← **hier geht es weiter.** `kurve.ts` ist dafür schon vorbereitet: Datum → Seed →
-   `stufeFuer()`, und die Edge Function baut dasselbe Brett neu.
+4. **Tagesrätsel:** Teilen und Serie sind **FERTIG (26.09.2026)** und laufen ohne
+   Datenbank. Migration und Edge Function liegen im Repo, sind aber **nicht deployt** —
+   dafür braucht es ein Supabase-Projekt. Schritte: `docs/phase4-supabase.md`.
+   ← **hier geht es weiter**, sobald das Projekt steht: anonyme Anmeldung, Bestenliste in
+   der Oberfläche, Fortschritt und Münzen in die Datenbank.
 5. **Werbung, Kauf, Rechtstexte, Sprachen.** Zuerst DE und EN, danach ES/FR/PT.
 6. **Stores:** Capacitor für iOS und Android, Release-Workflows mit `laeufer`, ein
    Runner auf Josefs Mac, die Store-Einträge.
@@ -462,8 +534,8 @@ ist das einspeisbare `jetzt` im Löserbudget.
 
 ## Prüfung
 
-- **Testskripte** (alle grün zu halten). `npm test` fährt alle sechs nacheinander,
-  Gesamtlaufzeit rund 4 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle sieben nacheinander,
+  Gesamtlaufzeit rund 4,5 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
   Generators und 21 s auf die Prüfung der ausgelieferten Folge. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
   `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
   spürbar schneller.
@@ -496,11 +568,18 @@ ist das einspeisbare `jetzt` im Löserbudget.
     den Tipp wirkungslos — und mit ihm die ganze Arbeit an der Schwierigkeitskurve.
     Läuft bewusst **ohne** `localStorage` (Node hat keins) und prüft damit genau den
     Fall, den die App im privaten Fenster erlebt.
+  - `test-tagesraetsel.mts` (65) — Datumsrechnung, Wochenleiter, Serie, Teiltext und die
+    Rechnung des Schummelschutzes. Das größte Skript, und zwar aus einem Grund: die
+    Datumsrechnung ist der Teil, der **still** falsch wird. Ein Fehler am Schaltjahr oder
+    an der Zeitzone zeigt sich an einem Tag im Jahr, trifft dann alle Spieler
+    gleichzeitig, und niemand kann ihn hinterher nachstellen. Also wird über 4.000 Tage
+    gerechnet, beide Schaltjahresregeln (2100 ist keines, 2000 war eines) und 23:30
+    Ortszeit geprüft — und dass kein Frucht-Emoji in den Teiltext gerät.
   - `test-wiedergabe.mts` (37) — Undo-Stapel und Wiedergabe. Der Undo speichert nur den
     **Unterschied** (von, nach, Menge), nicht den ganzen Stand — bei 14 Gläsern und
     60 Zügen ist das der Unterschied zwischen ein paar hundert Bytes und ein paar
     Kilobyte je Partie.
-  - `test-oberflaeche.mjs` (25, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-oberflaeche.mjs` (33, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
     Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein
@@ -510,6 +589,9 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Dazu Münzen und **die Sackgasse im echten Browser**: das Skript sucht sich mit der
     Engine eine Zugfolge, die Level 301 nachweislich tötet (gefunden: zwei Züge), spielt
     sie, und prüft, dass das Fenster erscheint und der Rückkauf genau 10 Münzen kostet.
+    Zuletzt das **Tagesrätsel**: das Skript rechnet das Rätsel des heutigen Tages selbst
+    aus, spielt es mit der Lösung des Lösers durch, und liest den geteilten Text aus der
+    Zwischenablage — inklusive der Prüfung, dass keine Farbe darin steht.
     Läuft gegen **`dist/`**, also vorher `npm run build`; ist nicht in `npm test`, weil
     es einen Build voraussetzt. Legt Screenshots in `.screenshots/` ab, darunter
     `03-graustufen.png` — das ist die Abnahme für den Farbenblind-Modus.
@@ -522,7 +604,11 @@ ist das einspeisbare `jetzt` im Löserbudget.
   Geschrieben wird nach **jedem Block von 20** — ein Abbruch kostet höchstens 20 Level.
   Die Datei ist immer ein lückenloser Anfang der Folge; ein `--von`, das eine Lücke
   ließe, wird abgelehnt.
-- **Schummelschutz:** Die Edge Function lehnt manipulierte Zugfolgen ab.
+- **Schummelschutz:** `pruefeTag()` lehnt manipulierte Zugfolgen ab — geprüft mit node
+  in `test-tagesraetsel.mts`. Die Edge Function darüber ist nur Verkabelung und in dieser
+  Sitzung **nie deployt worden**; sie wird auch von `npm run build` nicht typgeprüft,
+  weil `Deno.serve` und `jsr:`-Importe in Node nicht auflösen. Siehe
+  `docs/phase4-supabase.md`.
 - **Farbenblind-Modus:** ein Screenshot in Graustufen. Jede Farbe muss am Symbol zu
   erkennen sein.
 - **Web-App:** https://fixthemix.vercel.app — Vercel-Projekt `fixthemix` im Konto

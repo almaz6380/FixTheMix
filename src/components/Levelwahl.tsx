@@ -33,11 +33,18 @@ interface Eigenschaften {
   gesperrtTitel: (nr: number) => string;
   zurueck: string;
   vor: string;
+  /** Tagesraetsel-Karte oben. */
+  tagTitel: string;
+  tagZeile: string;
+  tagSerie: string;
+  tagSterne: number;
+  onTag: () => void;
 }
 
 export default function Levelwahl({
   level, aktuell, sterne, hoechstes, onWahl, onZu, titel, schliessen, bilanz,
   abschnittTitel, kachelTitel, gesperrtTitel, zurueck, vor,
+  tagTitel, tagZeile, tagSerie, tagSterne, onTag,
 }: Eigenschaften) {
   const bloecke = Math.min(BLOECKE, Math.ceil(level.length / BLOCK));
   const [block, setBlock] = useState(() => Math.min(Math.floor(aktuell / BLOCK), bloecke - 1));
@@ -63,6 +70,32 @@ export default function Levelwahl({
           className="flex h-[46px] w-[46px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl border-[1.5px] border-kante bg-theke/90 text-creme"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+
+      {/* Das Tagesraetsel steht ueber der Folge, nicht daneben: es ist eine
+          eigene taegliche Verabredung und soll nicht als Level 1000 wirken. */}
+      <div className="px-6 pb-3">
+        <button
+          type="button"
+          onClick={onTag}
+          className="flex w-full touch-manipulation items-center gap-3 rounded-2xl border-[1.5px] border-zitrus/45 bg-theke-hell/70 px-4 py-3 text-left"
+        >
+          <span className="text-2xl leading-none" aria-hidden="true">🍹</span>
+          <span className="min-w-0 flex-grow">
+            <span className="font-anzeige block text-base leading-tight font-bold text-zitrus">{tagTitel}</span>
+            <span className="block truncate text-[11px] leading-tight font-bold text-creme">{tagZeile}</span>
+            <span className="block truncate text-[10px] leading-tight font-bold text-rauch">{tagSerie}</span>
+          </span>
+          <span className="flex flex-shrink-0 gap-[1.5px]" aria-hidden="true">
+            {[0, 1, 2].map((k) => (
+              <svg key={k} width="11" height="11" viewBox="0 0 24 24"
+                fill={k < tagSterne ? 'var(--color-zitrus)' : 'none'}
+                stroke={k < tagSterne ? 'none' : '#2F4A6B'} strokeWidth="2.6" strokeLinejoin="round">
+                <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
+              </svg>
+            ))}
+          </span>
         </button>
       </div>
 

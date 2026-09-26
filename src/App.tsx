@@ -21,6 +21,7 @@ import Brett from './components/Brett.tsx';
 import Levelwahl from './components/Levelwahl.tsx';
 import { Partie } from './engine/verlauf.ts';
 import { festgefahren } from './engine/loeser.ts';
+import { tagLevel, tagesNummer } from './engine/tagesraetsel.ts';
 import type { Level, Zug } from './engine/typen.ts';
 import {
   haptik, istFrei, ladeEinstellung, ladeFortschritt, merkeSterne,
@@ -29,6 +30,10 @@ import {
 import {
   KOSTEN_RUECKKAUF, KOSTEN_TIPP, ladeMuenzen, lohnFuer, reichtFuer, speichereMuenzen,
 } from './lib/muenzen.ts';
+import {
+  heute, ladeTaeglich, merkeTag, serieLaeuft, speichereTaeglich,
+} from './lib/serie.ts';
+import { teilText } from './lib/teilen.ts';
 import roheFolge from './levels/folge.json';
 
 // Der JSON-Import kommt als weit gefasster Typ herein (`version: number`
@@ -46,9 +51,21 @@ const STARTLEVEL = Math.min(
   FOLGE.length - 1,
 );
 
+/**
+ * Der heutige Tag wird EINMAL beim Laden festgehalten, nicht bei jedem Render.
+ * Sonst wechselte das Raetsel einem Spieler, der um Mitternacht mitten in der
+ * Partie sitzt, unter den Haenden weg.
+ */
+const HEUTE = heute();
+
 export default function App() {
   const { t } = useTranslation();
   const [index, setIndex] = useState(STARTLEVEL);
+  const [modus, setModus] = useState<'folge' | 'tag'>('folge');
+  const [tagBrett, setTagBrett] = useState<Level | null>(null);
+  const [taeglich, setTaeglich] = useState(() => ladeTaeglich());
+  const [tagLaedt, setTagLaedt] = useState(false);
+  const [kopiert, setKopiert] = useState(false);
   const [partie, setPartie] = useState(() => new Partie(FOLGE[STARTLEVEL]!));
   const [fortschritt, setFortschritt] = useState(start);
   const [symbole, setSymbole] = useState(() => ladeEinstellung('symbole', false));
@@ -73,13 +90,15 @@ export default function App() {
     window.setTimeout(() => setSteckt(festgefahren(partie.zustand)), 30);
   };
 
-  const level = FOLGE[index]!;
+  const imTag = modus === 'tag' && tagBrett !== null;
+  const level = imTag ? tagBrett! : FOLGE[index]!;
+  const tagNummer = tagesNummer(HEUTE);
   const stand = partie.zustand;
   const geloest = partie.isSolved();
   const zuege = partie.zugzahl;
   const sterne = sterneFuer(level, zuege, geloest);
 
-  const letztes = index >= FOLGE.length - 1;
+  const letztes = !imTag && index >= FOLGE.length - 1;
   const gesamtSterne = Object.values(fortschritt.sterne).reduce((a, b) => a + b, 0);
 
   const wechsle = (i: number) => {
@@ -104,6 +123,70 @@ export default function App() {
     });
   };
 
+  /**
+   * Ins Tagesraetsel wechseln. Das Brett wird HIER erzeugt, nicht vorgebaut:
+   * es gibt unendlich viele kuenftige Tage, und eine Datei mit zwei Jahren
+   * Vorrat waere in zwei Jahren still kaputt. Gemessen 1–584 ms, deshalb der
+   * Ladezustand — auf einem Handy sind das bis zu zwei Sekunden.
+   */
+  const starteTag = () => {
+    setTagLaedt(true);
+    setWahlOffen(false);
+    window.setTimeout(() => {
+      const brett = tagLevel(HEUTE);
+      setTagBrett(brett);
+      setPartie(new Partie(brett));
+      setModus('tag');
+      setGewaehlt(null);
+      setTippZiel(null);
+      setSteckt(false);
+      setGewinn(0);
+      setKopiert(false);
+      setTagLaedt(false);
+    }, 30);
+  };
+
+  const zurFolge = () => {
+    setModus('folge');
+    setPartie(new Partie(FOLGE[index]!));
+    setGewaehlt(null);
+    setTippZiel(null);
+    setSteckt(false);
+    setGewinn(0);
+    setWahlOffen(false);
+  };
+
+  const teilen = () => {
+    const text = teilText(
+      {
+        nummer: tagNummer,
+        zuege,
+        optimum: level.optimalZuege,
+        sterne: partie.sterne(),
+        serie: taeglich.serie,
+      },
+      {
+        zuege: t('spiel.wortZuege'),
+        optimum: t('spiel.wortOptimum'),
+        serie: t('spiel.wortSerie'),
+      },
+    );
+    // Kein `navigator.share`: das gibt es auf dem Schreibtisch nicht und im
+    // Browser nur ueber HTTPS mit Geste. Kopieren geht ueberall, und der
+    // Spieler sieht, dass etwas passiert ist.
+    navigator.clipboard?.writeText(text).then(
+      () => {
+        setKopiert(true);
+        window.setTimeout(() => setKopiert(false), 2500);
+      },
+      () => {
+        // Zwischenablage verweigert (alte Browser, kein sicherer Kontext).
+        // Dann bleibt der Text wenigstens sichtbar.
+        setKopiert(false);
+      },
+    );
+  };
+
   const antippen = (b: number) => {
     if (geloest) return;
     setTippZiel(null);
@@ -122,8 +205,12 @@ export default function App() {
       if (partie.isSolved()) {
         haptik(40);
         // Muenzen NUR fuer die Verbesserung — sonst waere ein leichtes Level
-        // eine Quelle zum Wiederholen. Die Regel steht in lib/muenzen.ts.
-        const verdient = lohnFuer(fortschritt.sterne[index] ?? 0, partie.sterne());
+        // (oder dasselbe Tagesraetsel) eine Quelle zum Wiederholen. Die Regel
+        // steht in lib/muenzen.ts.
+        const vorher = imTag
+          ? taeglich.tage[HEUTE]?.sterne ?? 0
+          : fortschritt.sterne[index] ?? 0;
+        const verdient = lohnFuer(vorher, partie.sterne());
         setGewinn(verdient);
         if (verdient > 0) {
           setMuenzen((m) => {
@@ -132,17 +219,25 @@ export default function App() {
             return neu;
           });
         }
-        setFortschritt((f) => {
-          // `merkeSterne` schaltet das naechste Level frei — das ist die
-          // einzige Stelle, an der das passiert.
-          const neu = merkeSterne(
-            { ...f, zuletzt: Math.min(index + 1, FOLGE.length - 1) },
-            index,
-            partie.sterne(),
-          );
-          speichereFortschritt(neu);
-          return neu;
-        });
+        if (imTag) {
+          setTaeglich((alt) => {
+            const neu = merkeTag(alt, HEUTE, partie.zugzahl, partie.sterne());
+            speichereTaeglich(neu);
+            return neu;
+          });
+        } else {
+          setFortschritt((f) => {
+            // `merkeSterne` schaltet das naechste Level frei — das ist die
+            // einzige Stelle, an der das passiert.
+            const neu = merkeSterne(
+              { ...f, zuletzt: Math.min(index + 1, FOLGE.length - 1) },
+              index,
+              partie.sterne(),
+            );
+            speichereFortschritt(neu);
+            return neu;
+          });
+        }
       } else {
         pruefeSackgasse();
       }
@@ -219,7 +314,7 @@ export default function App() {
           className="flex min-h-[44px] touch-manipulation items-center gap-2 rounded-full border-[1.5px] border-kante bg-theke/85 px-4 text-sm font-bold text-creme"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" className="text-rauch" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
-          {t('spiel.level', { n: index + 1 })}
+          {imTag ? t('spiel.tagNr', { n: tagNummer }) : t('spiel.level', { n: index + 1 })}
         </button>
 
         {/* Bewusst ein div und kein Knopf: der Oberflaechentest greift den
@@ -299,6 +394,20 @@ export default function App() {
         </button>
       </footer>
 
+      {tagLaedt && (
+        <div className="fixed inset-0 z-20 flex items-center justify-center bg-nacht-tief/90 px-6">
+          <p className="font-anzeige text-lg font-bold text-creme">{t('spiel.tagLaedt')}</p>
+        </div>
+      )}
+
+      {kopiert && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-28 z-20 flex justify-center px-6">
+          <p className="rounded-full border border-zitrus/50 bg-theke px-4 py-2 text-xs font-bold text-zitrus">
+            {t('spiel.kopiert')}
+          </p>
+        </div>
+      )}
+
       {tippLeer && (
         <div className="pointer-events-none fixed inset-x-0 bottom-28 z-10 flex justify-center px-6">
           <p className="rounded-full border border-kante bg-theke px-4 py-2 text-xs font-bold text-rauch">
@@ -361,6 +470,11 @@ export default function App() {
                 {t('spiel.durch', { n: gesamtSterne, gesamt: FOLGE.length * 3 })}
               </p>
             )}
+            {imTag && (
+              <p className="mt-2 text-sm font-bold text-zitrus" data-serie={taeglich.serie}>
+                🔥 {t('spiel.serie', { n: taeglich.serie })}
+              </p>
+            )}
             <p className="mt-2 text-sm text-rauch">{t('spiel.bilanz', { zuege, optimum: level.optimalZuege })}</p>
             {gewinn > 0 && (
               <p className="mt-1 text-sm font-bold text-zitrus" data-gewinn={gewinn}>
@@ -374,18 +488,28 @@ export default function App() {
               {/* Beim letzten Level fuehrt der Hauptknopf in die Levelwahl.
                   Vorher stand hier ein abgeschalteter Knopf mit der Aufschrift
                   „Ende" — eine Sackgasse als Belohnung. */}
-              <button
-                type="button"
-                onClick={() => (letztes ? setWahlOffen(true) : wechsle(index + 1))}
-                className="knopf knopf-an"
-              >
-                {letztes ? t('spiel.levelwahl') : t('spiel.weiter')}
-              </button>
+              {imTag ? (
+                <button type="button" onClick={teilen} className="knopf knopf-an">
+                  {t('spiel.teilen')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => (letztes ? setWahlOffen(true) : wechsle(index + 1))}
+                  className="knopf knopf-an"
+                >
+                  {letztes ? t('spiel.levelwahl') : t('spiel.weiter')}
+                </button>
+              )}
               <div className="flex gap-2.5">
                 <button type="button" className="knopf flex-grow" onClick={neustart}>
                   {t('spiel.nochmal')}
                 </button>
-                {!letztes && (
+                {imTag ? (
+                  <button type="button" className="knopf flex-grow" onClick={zurFolge}>
+                    {t('spiel.zurFolge')}
+                  </button>
+                ) : !letztes && (
                   <button type="button" className="knopf flex-grow" onClick={() => setWahlOffen(true)}>
                     {t('spiel.levelwahl')}
                   </button>
@@ -413,6 +537,19 @@ export default function App() {
           gesperrtTitel={(nr) => t('spiel.kachelGesperrt', { n: nr })}
           zurueck={t('spiel.abschnittZurueck')}
           vor={t('spiel.abschnittVor')}
+          tagTitel={t('spiel.tagesraetsel')}
+          tagZeile={
+            taeglich.tage[HEUTE]
+              ? t('spiel.tagFertig', { zuege: taeglich.tage[HEUTE]!.zuege })
+              : t('spiel.tagHeute', { n: tagNummer })
+          }
+          tagSerie={
+            serieLaeuft(taeglich, HEUTE)
+              ? t('spiel.serie', { n: taeglich.serie })
+              : t('spiel.serieKeine')
+          }
+          tagSterne={taeglich.tage[HEUTE]?.sterne ?? 0}
+          onTag={starteTag}
         />
       )}
     </main>

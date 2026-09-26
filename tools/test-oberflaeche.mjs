@@ -19,8 +19,10 @@ import { festgefahren, solve } from '../src/engine/loeser.ts';
 import { istGeloest, klone, standAusLevel } from '../src/engine/zustand.ts';
 import { anwenden, legaleZuege } from '../src/engine/zuege.ts';
 import { zufall } from '../src/engine/zufall.ts';
+import { tagLevel, tagesNummer } from '../src/engine/tagesraetsel.ts';
 import { FOLGE_VERSION } from '../src/lib/fortschritt.ts';
 import { KOSTEN_RUECKKAUF, KOSTEN_TIPP } from '../src/lib/muenzen.ts';
+import { heute } from '../src/lib/serie.ts';
 
 let fehler = 0;
 const ok = (b, msg) => {
@@ -53,7 +55,14 @@ const pfade = ['/opt/pw-browsers/chromium-1194/chrome-linux/chrome'];
 const browser = await chromium.launch(
   pfade.filter(existsSync).length ? { executablePath: pfade.find(existsSync) } : {},
 );
-const seite = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const seite = await browser.newPage({
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 2,
+  // Fuer das Teilen des Tagesergebnisses: ohne diese Rechte lehnt Chromium
+  // `navigator.clipboard.writeText` still ab, und der Test saehe nur, dass
+  // nichts passiert.
+  permissions: ['clipboard-read', 'clipboard-write'],
+});
 const konsole = [];
 seite.on('pageerror', (e) => konsole.push(String(e)));
 seite.on('console', (m) => { if (m.type() === 'error') konsole.push(m.text()); });
@@ -254,6 +263,50 @@ console.log('\n--- Sackgasse ---');
     ok(nachher === vorher - KOSTEN_RUECKKAUF,
        `ein Zug zurueck kostet ${KOSTEN_RUECKKAUF} Muenzen (${vorher} -> ${nachher})`);
   }
+}
+
+console.log('\n--- Tagesraetsel ---');
+{
+  // Der Test rechnet das Raetsel des heutigen Tages selbst aus. Browser und
+  // Skript laufen im selben Container, haben also denselben Ortstag — genau
+  // diese Uebereinstimmung ist es, die spaeter die Edge Function braucht.
+  const iso = heute();
+  const nummer = tagesNummer(iso);
+  const brett = tagLevel(iso);
+  const loesung = solve(standAusLevel(brett));
+  ok(loesung.status === 'optimal', `das Raetsel von ${iso} ist loesbar (Optimum ${loesung.laenge})`);
+
+  await seite.locator('header button').first().click();
+  await seite.waitForTimeout(250);
+  await seite.getByRole('button', { name: new RegExp('Tagesr', 'i') }).click();
+  // Das Brett wird auf dem Geraet erzeugt — dem Ladezustand Zeit lassen.
+  await seite.waitForTimeout(2500);
+  ok((await seite.locator('header').innerText()).includes(`#${nummer}`),
+     `die Kopfzeile zeigt Raetsel #${nummer}`);
+
+  const glaeser = seite.locator('button[aria-label^="Glas"]');
+  ok(await glaeser.count() === brett.glaeser,
+     `so viele Glaeser wie im Tagesraetsel (${brett.glaeser})`);
+
+  for (const zug of loesung.zuege) {
+    await glaeser.nth(zug.von).click();
+    await seite.waitForTimeout(45);
+    await glaeser.nth(zug.nach).click();
+    await seite.waitForTimeout(45);
+  }
+  await seite.waitForTimeout(600);
+  ok(await seite.locator('[data-serie]').count() === 1, 'das Siegfenster zeigt die Serie');
+  ok(await seite.locator('[data-serie]').getAttribute('data-serie') === '1',
+     'der erste geloeste Tag ergibt Serie 1');
+  await seite.screenshot({ path: join(bilder, '07-tagesraetsel.png') });
+
+  await seite.getByRole('button', { name: /teilen|share/i }).click();
+  await seite.waitForTimeout(500);
+  const text = await seite.evaluate(() => navigator.clipboard.readText());
+  ok(text.includes(`#${nummer}`), 'der geteilte Text traegt die Tagesnummer');
+  ok(text.includes('🟩') || text.includes('⬜'), '... und den Balken');
+  ok(!/[🍓🍋🫐🍊🍏🍇🌿🥥☕]/u.test(text),
+     '... aber KEINE Farben — der Teiltext verraet das Raetsel nicht');
 }
 
 ok(konsole.length === 0, `keine Konsolenfehler im ganzen Durchlauf${konsole.length ? `: ${konsole.join(' | ')}` : ''}`);

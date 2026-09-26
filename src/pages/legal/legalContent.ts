@@ -19,10 +19,18 @@
 //
 //  ⚠ ZWEI DINGE SIND VOR DEM LAUNCH ZU PRUEFEN:
 //
-//  1. DIE E-MAIL-ADRESSE. `fixthemix@wellbooked.at` ist dem Muster von
-//     Anigosha (`anigosha@wellbooked.at`) nachgebildet und muss es wirklich
-//     GEBEN — an dieser Adresse haengen Auskunfts- und Loeschbegehren nach der
-//     DSGVO. Anlegen oder hier korrigieren.
+//  1. DIE E-MAIL-ADRESSE ist `63almaz80@gmail.com` (Josef, 26.09.2026). Der
+//     erste Entwurf trug `fixthemix@wellbooked.at`, dem Muster von Anigosha
+//     nachgebildet — die Adresse haette aber erst angelegt werden muessen, und
+//     eine Datenschutzerklaerung, die auf ein totes Postfach zeigt, ist
+//     schlimmer als gar keine: an dieser Adresse haengen Auskunfts- und
+//     Loeschbegehren nach der DSGVO, und die haben Fristen.
+//
+//     WAS DAS HEISST: Die Adresse steht oeffentlich im Impressum und wird von
+//     Bots abgegriffen. Das ist der Preis fuer eine Adresse, die es wirklich
+//     gibt, und er ist bewusst bezahlt. Wer spaeter auf eine eigene Domain
+//     umzieht, aendert genau EINE Zeile — `BETREIBER.email` unten; alle vier
+//     Rechtstexte setzen sie ein, keiner schreibt sie aus.
 //  2. DIE BESTENLISTE IST DRAUSSEN (Josef, 26.09.2026). Sie kommt spaeter,
 //     also darf die Datenschutzerklaerung sie jetzt nicht beschreiben — eine
 //     Erklaerung, die eine Verarbeitung behauptet, die nicht stattfindet, ist
@@ -46,7 +54,7 @@ export const BETREIBER = {
   name: 'Josef Gallab (Einzelunternehmen)',
   adresse: 'Oberhofenweg 21b',
   ort: '6380 St. Johann in Tirol, Österreich',
-  email: 'fixthemix@wellbooked.at',
+  email: '63almaz80@gmail.com',
 };
 
 const bDE = `${BETREIBER.name}\n${BETREIBER.adresse}\n${BETREIBER.ort}\nE-Mail: ${BETREIBER.email}`;

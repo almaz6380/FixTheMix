@@ -48,6 +48,32 @@ Auth und die SQL-Rechte gegen eine echte Datenbank.
   Werbevideos kommen, ist `localStorage` allein nicht mehr tragfähig — es ist
   vom Spieler frei editierbar.
 
+### Duelle gegen Menschen (Version 1.1)
+
+Gegen **Bots** laufen die Duelle bereits ohne Datenbank — Brett und Gegner
+entstehen auf dem Gerät (`src/engine/duell.ts`). Für menschliche Gegner liegen
+`supabase/migrations/0002_duelle.sql` und
+`supabase/functions/duell-einreichen/` fertig im Repo. Was dann noch fehlt:
+
+- `duell_suchen()` aufrufen statt sofort ein Botduell zu starten, und die
+  Antwort auswerten: `status: 'offen'` heißt „warte auf einen Gegner",
+  `'laeuft'` heißt „spiel jetzt".
+- Kommt binnen zehn Minuten kein Gegner (`duell_wartefrist()`), läuft die
+  Partie ab — dann das Botduell anbieten, das es ohnehin gibt.
+- Nach dem Lösen die Zugfolge an `duell-einreichen` schicken. Die Auswertung
+  ändert sich dabei **nicht**: sie steht in `werteDuell()` in der Engine und
+  wird von beiden Seiten gerufen.
+- `duell_stand(id)` für die Anzeige, `duell_bilanz()` für die Statistik.
+
+Zwei Dinge, die man dabei nicht aufweichen darf:
+
+1. **Die Duellnummer kommt aus der Datenbank, nie aus der Anfrage.** Sonst
+   ließe sich die Zugfolge eines leichten Bretts zu einem schweren Duell
+   einreichen. Die Edge Function macht es schon richtig.
+2. **Die Zugzahl des Gegners wird erst herausgegeben, wenn die Partie fertig
+   ist.** Sonst wüsste man vorher, wie viele Züge zum Sieg reichen — und das
+   Duell wäre keines mehr. `duell_stand()` hält sich daran.
+
 ## Zwei Dinge, die beim Deploy schiefgehen können
 
 **Der Import der Engine.** `supabase/functions/pruefe-tag/index.ts` importiert

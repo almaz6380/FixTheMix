@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node tools/test-engine.mts && node tools/test-loeser.mts && node tools/test-generator.mts && node tools/test-wiedergabe.mts && node tools/test-folge.mts && node tools/test-muenzen.mts && node tools/test-tagesraetsel.mts && node tools/test-werbung.mts && node tools/test-recht.mts && node tools/test-release.mts",
+    "test": "node tools/test-engine.mts && node tools/test-loeser.mts && node tools/test-generator.mts && node tools/test-wiedergabe.mts && node tools/test-folge.mts && node tools/test-muenzen.mts && node tools/test-tagesraetsel.mts && node tools/test-duell.mts && node tools/test-werbung.mts && node tools/test-recht.mts && node tools/test-release.mts",
     "test:release": "node tools/test-release.mts --release && node tools/test-folge.mts && node tools/test-werbung.mts && node tools/test-recht.mts"
   },
   "dependencies": {

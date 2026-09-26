@@ -25,6 +25,13 @@ export {
 } from './tagesraetsel.ts';
 export { pruefeTag, DATUM_FENSTER } from './tagespruefung.ts';
 export type { TagEinsendung, TagUrteil, TagAblehnung } from './tagespruefung.ts';
+export {
+  DUELL_STUFE, DUELL_KNOTEN, duellLevel, duellSeed, duellSieger,
+  botSpielt, naechsteStaerke,
+} from './duell.ts';
+export type { Ausgang, Staerke, BotPartie } from './duell.ts';
+export { pruefeDuell, werteDuell } from './duellpruefung.ts';
+export type { DuellEinsendung, DuellUrteil, DuellAblehnung } from './duellpruefung.ts';
 export { replay, replayAusSeed, MAX_ZUEGE } from './wiedergabe.ts';
 export {
   istGeloest as isSolved,

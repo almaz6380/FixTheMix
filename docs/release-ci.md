@@ -28,9 +28,19 @@ node tools/test-release.mts --release  # Bereitschaft — zeigt, was fehlt
    Rewarded-Block dazu. Die vier Block-IDs kommen in `src/lib/werbung.ts` unter
    `PROD`, die beiden App-IDs in `ios/App/App/Info.plist`
    (`GADApplicationIdentifier`) und `android/app/src/main/AndroidManifest.xml`.
-   Dort stehen bis dahin **Googles öffentliche Beispiel-IDs**; `test-release.mts`
-   achtet darauf, dass Test-Anzeigen und Beispiel-IDs immer zusammen auftreten —
-   die gefährliche Lage ist die Mischung.
+   Dort stehen bis dahin **Googles öffentliche Beispiel-IDs**.
+
+   **Die AdMob-App lässt sich anlegen, bevor die App in einem Store ist** — bei
+   „Ist die App in einem unterstützten App Store veröffentlicht?" wählt man *nein*
+   und gibt Name und Plattform an. App-ID und Anzeigenblöcke gibt es sofort. Später,
+   wenn die App live ist, wird der Store-Eintrag verknüpft; solange das nicht
+   geschehen ist, kann Google die Auslieferung begrenzen.
+
+   Die echten **App-IDs** dürfen schon jetzt in `Info.plist` und
+   `AndroidManifest.xml` — `TEST_ANZEIGEN` bleibt davon unberührt auf `true`.
+   Googles Test-Anzeigenblöcke gehören Google; Abrufe darauf erreichen das eigene
+   Konto nicht. Die vier **Block-IDs** und `TEST_ANZEIGEN = false` gehören dagegen
+   zusammen und kommen erst unmittelbar vor dem ersten Release-Build.
    Danach `TEST_ANZEIGEN` in `src/lib/werbung.ts` auf `false`.
    **Niemals die eigenen Live-Anzeigen antippen** — an dem AdMob-Konto hängen
    auch Anigosha, MyPeak und WELLbooked.

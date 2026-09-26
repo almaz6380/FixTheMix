@@ -794,11 +794,21 @@ Beispiel-App-IDs** (`ca-app-pub-3940256099942544~…`). Weglassen geht nicht: fe
 die ID, stürzt das AdMob-SDK beim Start ab, mit einer Meldung, die nicht nach
 AdMob klingt.
 
-Der gefährliche Zustand ist nicht „alles Test" und auch nicht „alles echt",
-sondern die **Mischung**: eine echte App-ID mit Test-Anzeigen füllt die
-AdMob-Statistik mit Scheinabrufen, eine Beispiel-App-ID mit echten Anzeigen
-liefert gar nichts aus. `test-release.mts` prüft deshalb nicht „ist es echt",
-sondern „passt es zusammen" — und läuft damit in beiden Zuständen grün.
+Der gefährliche Zustand ist **echte Anzeigen mit einer Beispiel-App-ID**: das SDK
+startet gegen eine fremde Kennung und liefert gar nichts aus. `test-release.mts` prüft
+deshalb nicht „ist es echt", sondern „passt es zusammen".
+
+*Hier stand bis zum 26.09.2026 eine zu strenge Regel, und Josefs Frage hat sie
+aufgedeckt* („Kann ich AdMob schon anlegen, obwohl nichts eingereicht ist?"). Verlangt
+wurde, dass bei Test-Anzeigen **auch** die App-IDs Googles Beispiel-Kennung tragen —
+begründet damit, eine echte App-ID würde die AdMob-Statistik mit Scheinabrufen füllen.
+**Das stimmt nicht:** Googles Test-Anzeigenblöcke gehören Google, Abrufe darauf
+erreichen das eigene Konto gar nicht, egal welche App-ID danebensteht.
+
+Die Regel verbot damit ausgerechnet den nützlichsten Zwischenstand: AdMob-App angelegt,
+echte App-IDs in `Info.plist` und `AndroidManifest.xml`, ausgeliefert werden weiter
+Test-Anzeigen. Genau so entwickelt man vor dem Launch. Geprüft wird jetzt nur noch, was
+wirklich schadet — und dass bei Test-Anzeigen alle vier Blöcke Googles Test-IDs sind.
 
 #### `tools/test-release.mts` — zwei Betriebsarten
 

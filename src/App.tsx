@@ -22,18 +22,25 @@ import Levelwahl from './components/Levelwahl.tsx';
 import { Partie } from './engine/verlauf.ts';
 import type { Level, Zug } from './engine/typen.ts';
 import {
-  haptik, ladeEinstellung, ladeFortschritt, merkeSterne,
+  haptik, istFrei, ladeEinstellung, ladeFortschritt, merkeSterne,
   speichereEinstellung, speichereFortschritt,
 } from './lib/fortschritt.ts';
 import roheFolge from './levels/folge.json';
 
 // Der JSON-Import kommt als weit gefasster Typ herein (`version: number`
-// statt `2`). Die Datei stammt aus dem Generator und hat garantiert die
-// richtige Form — dafuer steht tools/test-generator.mts.
+// statt `3`). Die Datei stammt aus dem Generator und haelt die richtige Form —
+// dafuer stehen tools/test-generator.mts und tools/test-folge.mts.
 const FOLGE = roheFolge as unknown as Level[];
 
 const start = ladeFortschritt();
-const STARTLEVEL = Math.min(Math.max(start.zuletzt, 0), FOLGE.length - 1);
+// Doppelt geklemmt: an die Laenge der Folge UND an die Freischaltung. Ein
+// Speicherstand aus einer laengeren Folge oder ein von Hand veraenderter darf
+// nicht in ein gesperrtes Level starten.
+const STARTLEVEL = Math.min(
+  Math.max(start.zuletzt, 0),
+  Math.max(start.hoechstes, 0),
+  FOLGE.length - 1,
+);
 
 export default function App() {
   const { t } = useTranslation();
@@ -55,12 +62,27 @@ export default function App() {
   const zuege = partie.zugzahl;
   const sterne = sterneFuer(level, zuege, geloest);
 
+  const letztes = index >= FOLGE.length - 1;
+  const gesamtSterne = Object.values(fortschritt.sterne).reduce((a, b) => a + b, 0);
+
   const wechsle = (i: number) => {
+    // Die Sperre wird hier ein zweites Mal geprueft, nicht nur in der
+    // Levelwahl: sonst haengt die Regel an einem `disabled` in der Anzeige.
+    if (i < 0 || i >= FOLGE.length || !istFrei(fortschritt, i)) return;
     setIndex(i);
     setPartie(new Partie(FOLGE[i]!));
     setGewaehlt(null);
     setTippZiel(null);
     setWahlOffen(false);
+    // Auch das Springen merkt sich die App — vorher stand nach einem Neuladen
+    // wieder das Level, in dem man zuletzt GEWONNEN hatte, nicht das, in dem
+    // man gerade war.
+    setFortschritt((f) => {
+      if (f.zuletzt === i) return f;
+      const neu = { ...f, zuletzt: i };
+      speichereFortschritt(neu);
+      return neu;
+    });
   };
 
   const antippen = (b: number) => {
@@ -81,6 +103,8 @@ export default function App() {
       if (partie.isSolved()) {
         haptik(40);
         setFortschritt((f) => {
+          // `merkeSterne` schaltet das naechste Level frei — das ist die
+          // einzige Stelle, an der das passiert.
           const neu = merkeSterne(
             { ...f, zuletzt: Math.min(index + 1, FOLGE.length - 1) },
             index,
@@ -201,24 +225,36 @@ export default function App() {
             <h2 className="font-anzeige mt-4 text-3xl leading-tight font-bold">
               {sterne === 3 ? t('spiel.perfekt') : t('spiel.gewonnen')}
             </h2>
+            {letztes && (
+              <p className="mt-2 text-sm font-bold text-zitrus">
+                {t('spiel.durch', { n: gesamtSterne, gesamt: FOLGE.length * 3 })}
+              </p>
+            )}
             <p className="mt-2 text-sm text-rauch">{t('spiel.bilanz', { zuege, optimum: level.optimalZuege })}</p>
             {sterne < 3 && (
               <p className="mt-1 text-xs text-rauch">{t('spiel.dreiSterne', { n: level.optimalZuege })}</p>
             )}
             <div className="mt-6 flex flex-col gap-2.5">
-              <button type="button" disabled={index >= FOLGE.length - 1}
-                onClick={() => wechsle(Math.min(index + 1, FOLGE.length - 1))}
-                className="knopf knopf-an">
-                {index >= FOLGE.length - 1 ? t('spiel.ende') : t('spiel.weiter')}
+              {/* Beim letzten Level fuehrt der Hauptknopf in die Levelwahl.
+                  Vorher stand hier ein abgeschalteter Knopf mit der Aufschrift
+                  „Ende" — eine Sackgasse als Belohnung. */}
+              <button
+                type="button"
+                onClick={() => (letztes ? setWahlOffen(true) : wechsle(index + 1))}
+                className="knopf knopf-an"
+              >
+                {letztes ? t('spiel.levelwahl') : t('spiel.weiter')}
               </button>
               <div className="flex gap-2.5">
                 <button type="button" className="knopf flex-grow"
                   onClick={() => { partie.neustart(); setGewaehlt(null); neuZeichnen(); }}>
                   {t('spiel.nochmal')}
                 </button>
-                <button type="button" className="knopf flex-grow" onClick={() => setWahlOffen(true)}>
-                  {t('spiel.levelwahl')}
-                </button>
+                {!letztes && (
+                  <button type="button" className="knopf flex-grow" onClick={() => setWahlOffen(true)}>
+                    {t('spiel.levelwahl')}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -230,14 +266,17 @@ export default function App() {
           level={FOLGE}
           aktuell={index}
           sterne={fortschritt.sterne}
+          hoechstes={fortschritt.hoechstes}
           onWahl={wechsle}
           onZu={() => setWahlOffen(false)}
           titel={t('spiel.levelwahl')}
           schliessen={t('spiel.schliessen')}
-          bilanz={t('spiel.sterneGesamt', {
-            n: Object.values(fortschritt.sterne).reduce((a, b) => a + b, 0),
-            gesamt: FOLGE.length * 3,
-          })}
+          bilanz={t('spiel.sterneGesamt', { n: gesamtSterne, gesamt: FOLGE.length * 3 })}
+          abschnittTitel={(von, bis) => t('spiel.abschnitt', { von, bis })}
+          kachelTitel={(nr, s) => t('spiel.kachel', { n: nr, sterne: s })}
+          gesperrtTitel={(nr) => t('spiel.kachelGesperrt', { n: nr })}
+          zurueck={t('spiel.abschnittZurueck')}
+          vor={t('spiel.abschnittVor')}
         />
       )}
     </main>

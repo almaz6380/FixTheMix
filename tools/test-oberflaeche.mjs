@@ -17,6 +17,7 @@ import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { solve } from '../src/engine/loeser.ts';
 import { standAusLevel } from '../src/engine/zustand.ts';
+import { FOLGE_VERSION } from '../src/lib/fortschritt.ts';
 
 let fehler = 0;
 const ok = (b, msg) => {
@@ -89,6 +90,34 @@ console.log('\n--- Ein Zug, dann zurueck ---');
   ok((await zaehler.getAttribute('data-zuege')) === '0', 'Zurück setzt den Zugzaehler auf 0');
 }
 
+console.log('\n--- Sperre ---');
+{
+  await seite.locator('header button').first().click();
+  await seite.waitForTimeout(250);
+  const zu = seite.getByRole('button', { name: /^Level 2, gesperrt/ });
+  ok(await zu.count() === 1 && await zu.isDisabled(),
+     'bei frischem Start ist Level 2 gesperrt');
+  ok(await seite.getByRole('button', { name: /^Level 1,/ }).isEnabled(),
+     '... und Level 1 offen');
+  // Nicht `[aria-label^="Level "]`: darauf hoert auch der Neustart-Knopf
+  // („Level neu starten"). Es muss eine Zahl folgen.
+  const kacheln = await seite.getByRole('button', { name: /^Level \d+,/ }).count();
+  ok(kacheln <= 20, `die Levelwahl zeigt nur einen Abschnitt (${kacheln} Kacheln, nicht ${folge.length})`);
+
+  // Fuer den Rest des Durchlaufs wird bis Level NR+1 freigeschaltet. Sich
+  // dorthin zu spielen waere reine Wartezeit — geprueft wird die Sperre, nicht
+  // die Geduld.
+  await seite.evaluate(
+    ([h, v]) => localStorage.setItem(
+      'fixthemix.fortschritt.v2',
+      JSON.stringify({ folgeVersion: v, sterne: {}, zuletzt: 0, hoechstes: h }),
+    ),
+    [NR, FOLGE_VERSION],
+  );
+  await seite.reload({ waitUntil: 'networkidle' });
+  await seite.waitForTimeout(350);
+}
+
 console.log('\n--- Farbenblind-Modus ---');
 {
   await seite.getByRole('button', { name: /Symbole|symbols/i }).click();
@@ -138,6 +167,11 @@ console.log('\n--- Weiter und Fortschritt ---');
   await seite.waitForTimeout(250);
   const gemerkt = await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 1},`) }).getAttribute('aria-label');
   ok(gemerkt?.includes('3 von 3'), `die Levelliste merkt sich die drei Sterne (${gemerkt})`);
+  // Der Sieg schaltet genau EIN Level frei, nicht den Rest der Folge.
+  ok(await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 2},`) }).isEnabled(),
+     `der Sieg schaltet Level ${NR + 2} frei`);
+  ok(await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 3}, gesperrt`) }).isDisabled(),
+     `... und Level ${NR + 3} bleibt gesperrt`);
   await seite.screenshot({ path: join(bilder, '05-levelwahl.png') });
   await seite.reload({ waitUntil: 'networkidle' });
   await seite.waitForTimeout(400);

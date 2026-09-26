@@ -19,9 +19,14 @@
     "dreiSterne": "Three stars need {{n}} moves.",
     "nochmal": "Again",
     "weiter": "Next",
-    "ende": "End",
+    "durch": "All levels done — {{n}} of {{gesamt}} stars.",
     "levelwahl": "All levels",
-    "schliessen": "Close"
+    "schliessen": "Close",
+    "abschnitt": "Level {{von}}–{{bis}}",
+    "abschnittZurueck": "Previous section",
+    "abschnittVor": "Next section",
+    "kachel": "Level {{n}}, {{sterne}} of 3 stars",
+    "kachelGesperrt": "Level {{n}}, locked"
   },
   "farben": {
     "rot": "Strawberry",

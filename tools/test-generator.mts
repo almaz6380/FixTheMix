@@ -3,7 +3,6 @@
 // Aufruf: npx tsx tools/test-generator.mts
 // Schneller (empfohlen, das Skript rechnet einige Minuten):
 //   node tools/test-generator.mts
-import { LEER } from '../src/engine/farben.ts';
 import { generate, STUFEN, sterneFuer } from '../src/engine/generator.ts';
 import { loesbar, solve } from '../src/engine/loeser.ts';
 import { anwenden } from '../src/engine/zuege.ts';
@@ -39,15 +38,16 @@ for (let stufe = 0; stufe < STUFEN.length; stufe++) {
     gebaut++;
     const z = standAusLevel(lvl);
 
-    if (lvl.version !== 2) versionFalsch++;
+    if (lvl.version !== 3) versionFalsch++;
     if (lvl.start.length !== lvl.glaeser * lvl.hoehe) formFalsch++;
     if (lvl.hoehe !== s.hoehe || lvl.glaeser !== s.glaeser) formFalsch++;
 
     if (!loesbar(z)) nichtLoesbar++;
     if (lvl.optimalZuege < s.zuegeMin || lvl.optimalZuege > s.zuegeMax || lvl.optimalZuege < 1) bandVerletzt++;
 
+    // `start` ist ab Version 3 eine Ziffernkette — '0' ist die leere Schicht.
     let belegt = 0;
-    for (const c of lvl.start) if (c !== LEER) belegt++;
+    for (const c of lvl.start) if (c !== '0') belegt++;
     if (belegt !== (s.glaeser - s.leer) * s.hoehe) mengeFalsch++;
 
     if (istGeloest(z)) schonGeloest++;
@@ -65,7 +65,7 @@ ok(bandVerletzt === 0, `jedes Optimum liegt im Zugband der Stufe (${bandVerletzt
 ok(mengeFalsch === 0, `Fluessigkeitsmenge passt zu den vollen Glaesern (${mengeFalsch} Ausreisser)`);
 ok(schonGeloest === 0, `kein Level ist schon geloest (${schonGeloest} Ausreisser)`);
 ok(formFalsch === 0, `Brettform stimmt mit der Stufe ueberein (${formFalsch} Ausreisser)`);
-ok(versionFalsch === 0, `jedes Level traegt version 2 (${versionFalsch} Ausreisser)`);
+ok(versionFalsch === 0, `jedes Level traegt version 3 (${versionFalsch} Ausreisser)`);
 ok(jsonKaputt === 0, `Level ueberlebt den JSON-Rundlauf (${jsonKaputt} Ausreisser)`);
 
 console.log('\n  Laufzeit je Stufe:');
@@ -136,7 +136,7 @@ console.log('\n--- Determinismus ---');
   let falsch = 0;
   for (const [seed, stufe, roh, opt] of tabelle) {
     const lvl = generate(seed, stufe);
-    if (lvl.start.join('') !== roh) falsch++;
+    if (lvl.start !== roh) falsch++;
     if (lvl.optimalZuege !== opt) falsch++;
   }
   ok(falsch === 0, `feste Seed-Tabelle stimmt weiterhin (${falsch} Abweichungen bei ${tabelle.length} Faellen)`);

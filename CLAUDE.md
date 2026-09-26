@@ -47,6 +47,9 @@ Code auf seinem Rechner laufen.
 - **Sechs Schichten je Glas** (vorher vier). Ein Glas ist damit sichtbar ein Glas und
   nicht ein Stapel Bauklötze; die Level werden dichter, ohne dass mehr Gläser aufs
   Display müssen.
+- **999 Level, der Reihe nach freigeschaltet** (Josef, 26.09.2026). Gelöste Level plus
+  das nächste sind offen, der Rest ist gesperrt. Die Levelwahl zeigt Abschnitte
+  („Level 621–640") statt eines Rasters mit 999 Kacheln.
 - **Farbsystem:** neun Farben, alle gleichberechtigt, keine Kategorien mehr —
   Erdbeere, Zitrone, Blaubeere, Orange, Apfel, Traube, Minze, Kokos, Kaffee. Jede trägt
   ein eigenes **gezeichnetes** Zeichen für den Farbenblind-Modus (vorher Emoji, die auf
@@ -69,7 +72,7 @@ Code auf seinem Rechner laufen.
 - [x] Platzhalter-`App.tsx`, damit `npm run build` von Anfang an grün ist
 
 ### M2 Engine, Löser, Generator — FERTIG (25.09.2026)
-- [x] `src/engine/` vollständig, **120 Zusicherungen in vier Testskripten, alle grün**
+- [x] `src/engine/` vollständig, **140 Zusicherungen in fünf Testskripten, alle grün**
 - [x] Löser findet das **bewiesene** Optimum; auf 477 Zufallsbrettern gegen eine
       unabhängige Breitensuche nachgemessen, keine einzige Abweichung — und keine
       Verletzung von Zulässigkeit oder Konsistenz
@@ -93,8 +96,8 @@ Code auf seinem Rechner laufen.
 - [x] Haptik über `navigator.vibrate` (Android-Browser; iOS ignoriert es still, in der
       Store-App übernimmt das später Capacitor Haptics)
 - [x] Fortschritt und Einstellungen in `localStorage`, jeder Zugriff eingepackt
-- [x] 20 vorgebaute Level (`tools/level-bauen.mts` → `src/levels/folge.json`) mit
-      Levelwahl zum Springen
+- [x] 999 vorgebaute Level (`tools/level-bauen.mts` → `src/levels/folge.json`) mit
+      Levelwahl in Abschnitten
 - [ ] **Extra-Glas** — hängt an der Werbung und kommt mit Phase 5
 - [ ] Die Gieß-Animation ist bisher ein Kippen der Quelle plus weiches Einrasten der
       Schichten, noch kein fließender Strahl
@@ -120,6 +123,23 @@ Code auf seinem Rechner laufen.
       Kaffee ist die einzige Farbe mit hellem Zeichen — dunkel darauf sind nur 2,2:1.
 - [x] `@media (prefers-reduced-motion: reduce)` schaltet die Bewegungen ab
 
+### M5 Levelfolge — FERTIG (26.09.2026)
+- [x] **Die Kurve ist eine Funktion** (`src/engine/kurve.ts`), keine Liste mehr. Vorher
+      standen 20 Stufenindizes von Hand in `tools/level-bauen.mts` — und mit ihnen die
+      Schwierigkeitskurve an der falschen Stelle.
+- [x] **999 Level**, alle mit bewiesenem Optimum, in `src/levels/folge.json`
+- [x] Aufstieg über die ersten 185 Level in zehn Abschnitten, danach eine Rotation über
+      zwölf Aufbauten. Der Boden (`zuegeMin`) wächst und fällt nie zurück — damit ist
+      der Fehler der alten Folge behoben, in der Level 20 leichter war als Level 10.
+- [x] Freischaltung der Reihe nach, entschieden an **einer** Stelle
+      (`istFrei()` in `src/lib/fortschritt.ts`)
+- [x] Levelwahl in Abschnitten von 20 mit Sternebilanz; nie mehr als 20 Kacheln im DOM
+- [x] Abschluss statt Sackgasse: beim letzten Level führte der Hauptknopf vorher als
+      abgeschalteter Knopf mit der Aufschrift „Ende" ins Nichts
+- [x] `tools/test-folge.mts` prüft die **ausgelieferte Datei** gegen die Kurve
+- [ ] Die Rotation ab Level 186 variiert die Form, nicht die Schwierigkeit — mehr geht
+      bei sechs Schichten nicht, siehe „Die Decke" unten
+
 ## Was FixTheMix einzigartig macht
 
 1. **Eine Regel, sechs Schichten, kein Tutorial.** Gegossen wird nur auf dieselbe Farbe
@@ -135,7 +155,9 @@ Code auf seinem Rechner laufen.
    Das Ergebnis lässt sich als Emoji-Raster teilen („🍹 FixTheMix #12 · 23 Züge ⭐⭐⭐").
    Dazu eine Serie (Streak) und eine Tagesbestenliste nach Zügen.
 4. **Sterne nach Zügen, gemessen am Optimum.** Der Löser kennt die kürzeste Lösung;
-   3 Sterne gibt es nur für das Optimum.
+   3 Sterne gibt es nur für das Optimum. Bei allen 999 Leveln ist dieses Optimum
+   **bewiesen**, nicht geschätzt — das ist der Unterschied zu den meisten Mitbewerbern,
+   deren Sternschwellen geraten sind.
 5. **Fairness:**
    - keine Werbung mitten im Level;
    - höchstens ein Interstitial zwischen zwei Leveln, mit Bremse;
@@ -174,12 +196,22 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 | `verlauf.ts` | `Partie` — Zugprotokoll, Undo-Stapel, Sterne, Tipp. Schnittstelle für Phase 2. |
 | `loeser.ts` | `solve()` (A*), `heuristik()`, `bilanzStimmt()`, `loesbar()`, `hint()`. |
 | `generator.ts` | `generate(seed, stufe)`, die sechs `STUFEN`, Sternschwellen. |
+| `kurve.ts` | Die ausgelieferte Levelfolge: `ANZAHL_LEVEL`, `stufeFuer(nr)`, `seedFuer(nr)`, `ABSCHNITTE`, `blockFuer(nr)`. |
 | `wiedergabe.ts` | `replay()` / `replayAusSeed()` — Vorstufe des Schummelschutzes. |
 | `index.ts` | Öffentliche Schnittstelle. |
 
 Darüber liegt die Oberfläche: `src/App.tsx` (Spielbildschirm), `src/components/`
 (`Brett`, `Glas`, `Symbole`, `Levelwahl`), `src/lib/fortschritt.ts` (localStorage,
-Haptik).
+Haptik, **Freischaltung**).
+**Die Sperre hat genau eine Quelle:** `istFrei()` in `fortschritt.ts`. Die Levelwahl
+zeichnet sie (`disabled` plus Schloss), `wechsle()` in `App.tsx` prüft sie ein zweites
+Mal — eine Regel, die nur an einem `disabled` in der Anzeige hängt, ist keine Regel.
+**Fortschritt ist Format v2** (`fixthemix.fortschritt.v2`): `folgeVersion`, `sterne`,
+`zuletzt`, `hoechstes`. Das neue `folgeVersion` ist der Grund für den Bruch — v1 legte
+Sterne unter dem Levelindex ab, ohne festzuhalten, zu welcher Folge dieser Index gehört.
+Als die Folge von 20 auf 999 Level wuchs, hieß derselbe Index ein anderes Brett. Passt
+`folgeVersion` nicht, wird der Stand **verworfen statt umgedeutet**; der alte v1-Stand
+ist damit weg, und das ist richtig so.
 **Die `Partie` liegt im State, nicht in einem Ref** — aus einem Ref während des
 Renderns zu lesen ist genau der Weg, auf dem Anzeige und Wahrheit auseinanderlaufen.
 Weil die Engine ihre Zustände an Ort und Stelle ändert, steht hinter jedem gelungenen
@@ -238,6 +270,65 @@ Optimum hängen. Bei sechs Schichten je Glas kosten 5–6 Gläser unter 1 ms, 8 
 zugeschnitten. Größere Level sind möglich — der Generator läuft ohnehin im Voraus, nicht
 auf dem Gerät; dann `maxKnoten`/`versuche` hoch und einmal über Nacht.
 
+### Das Levelformat — `version: 3`
+
+999 Level wären im alten Format rund **700 KB** (gemessen: 487 Bytes je Level). Mit
+`start` als **Ziffernkette** statt Zahlenliste sind es 174 Bytes je Level. Möglich ist
+das, weil es genau zehn Farbcodes gibt — `0` ist die leere Schicht, `1`–`9` die neun
+Farben, also ist eine Schicht genau eine Ziffer. `standAusLevel()` und `startAusStand()`
+in `zustand.ts` sind der einzige Ein- und Ausgang; sonst ändert sich nichts.
+Die Versionen: 1 hatte Shaker, 2 hatte `start` als Zahlenliste, 3 hat die Ziffernkette.
+Es gibt **kein** „akzeptiert beides".
+
+### Zwei Leitern — und warum das kein Versehen ist
+
+- **`STUFEN` in `generator.ts`** ist die grobe Leiter für Tests und Handproben
+  (`test-generator.mts` mit seiner goldenen Seed-Tabelle, `zeige-level.mts --stufe`).
+  Dort **steigt `leer` mit der Stufe** (2 → 3 → 4). Das ist ein Überbleibsel aus der
+  Shaker-Zeit und für die Spieler bedeutungslos, weil die ausgelieferte Folge nicht von
+  hier kommt. Ein Umbau würde die goldene Tabelle entwerten, ohne dass ein Spieler etwas
+  davon merkt — deshalb bleibt sie, wie sie ist.
+- **`kurve.ts`** ist die ausgelieferte Folge. Sie macht es richtig: `leer` **sinkt**,
+  wenn es schwerer werden soll.
+
+### Die Decke — gemessen am 26.09.2026
+
+| Aufbau (Gläser/Farben/leer, schritte) | Kosten je Level | erreichte Optima |
+|---|---|---|
+| 8 / 5 / **leer 2**, 18 | 68 ms | 12–17 |
+| 8 / 5 / **leer 1**, 18 | **12 ms** | 11–17 |
+| 10 / 6 / **leer 2**, 20 | 393 ms | 18–19 |
+| 10 / 6 / **leer 1**, 20 | **39 ms** | 18–20 |
+| 14 / 8 / leer 1, **24** | **109 ms** | 20–24 |
+| 14 / 8 / leer 1, **30** | 1849 ms | 25–27 |
+| 14 / 8 / leer 1, **60** | 1739 ms | **25–27 (unverändert)** |
+| 14 / 8 / **leer 2**, 24 | 5129 ms | 24 |
+| 13 / 9 / **leer 2**, 24 | **275 ms** | 23–24 |
+
+Drei Befunde, die den Entwurf der Kurve bestimmen:
+
+1. **Ein leeres Glas weniger macht das Erzeugen fünf- bis zehnmal BILLIGER.** Weniger
+   leere Gläser heißt weniger legale Züge heißt ein schmalerer Suchbaum. Der stärkste
+   Schwierigkeitsregler ist also auch der günstigste — deshalb steigt die Kurve unten
+   über `leer` und nicht über die Gläserzahl.
+2. **Mehr `schritte` bringen ab etwa 30 nichts.** Bei 45 und 60 Schritten kommen
+   bitgenau dieselben Optima heraus wie bei 30: das Rückwärtsspiel sättigt. Und der Weg
+   von 24 auf 30 kostet das 17-fache für drei Züge. In der Rotation steht `schritte: 30`
+   deshalb genau einmal.
+3. **Viele Farben sind billiger als viel Luft.** 13 Gläser mit 9 Farben und `leer: 2`
+   kosten 275 ms, 14 Gläser mit 8 Farben und `leer: 2` kosten 5,1 s — bei praktisch
+   gleichem Optimum. Die beiden „luftigen" Aufbauten der Rotation sind darum die
+   farbreichen.
+
+**Die Decke:** Bei sechs Schichten und höchstens 14 Gläsern (mehr passt nicht aufs
+Handy — `Brett.tsx` deckelt auf fünf Spalten je Reihe) liegt das härteste bezahlbare
+Level bei **rund 26 Zügen**. Die Folge kann also bis Level 185 wirklich steigen; danach
+kommt die Abwechslung aus der **Form** des Bretts, nicht aus mehr Schwierigkeit. Das
+steht hier so deutlich, weil die Versuchung groß ist, 800 Level als „immer schwerer" zu
+verkaufen. Der einzige Hebel, der die Decke heben würde, sind **sieben oder acht
+Schichten** (`MAX_HOEHE` ist 8, wegen 4 Bit je Schicht) — und sechs sind Josefs
+Entscheidung vom 25.09.2026.
+
 **Portabilität nach Deno:** Jede Datei in `src/engine/` importiert ihre Nachbarn **mit
 ausgeschriebener `.ts`-Endung** (`from './zustand.ts'`). Deno verlangt das, Vite und `tsc`
 erlauben es über `allowImportingTsExtensions`. Damit lässt sich der Ordner unverändert in
@@ -257,12 +348,13 @@ ist das einspeisbare `jetzt` im Löserbudget.
    - Bar-Look, Gieß-Animation, Haptik
    - Undo, Neustart, Tipp, Extra-Glas
    - Farbenblind-Modus
-3. **Levelfolge:** sanfter Einstieg, dann mehr Farben und weniger leere Gläser,
-   Sterne nach Zügen.
-   ← **hier geht es weiter** (die 20 Testlevel in `src/levels/folge.json` sind der
-   Vorgriff darauf, nicht die endgültige Kurve)
+3. ~~**Levelfolge:** sanfter Einstieg, dann mehr Farben und weniger leere Gläser,
+   Sterne nach Zügen.~~ **FERTIG (26.09.2026)** — 999 Level aus `src/engine/kurve.ts`,
+   der Reihe nach freigeschaltet.
 4. **Tagesrätsel:** Teilen, Serie, Bestenliste. Dazu eine Supabase-Migration und die
    Edge Function für die Prüfung.
+   ← **hier geht es weiter.** `kurve.ts` ist dafür schon vorbereitet: Datum → Seed →
+   `stufeFuer()`, und die Edge Function baut dasselbe Brett neu.
 5. **Werbung, Kauf, Rechtstexte, Sprachen.** Zuerst DE und EN, danach ES/FR/PT.
 6. **Stores:** Capacitor für iOS und Android, Release-Workflows mit `laeufer`, ein
    Runner auf Josefs Mac, die Store-Einträge.
@@ -270,9 +362,9 @@ ist das einspeisbare `jetzt` im Löserbudget.
 
 ## Prüfung
 
-- **Testskripte** (alle grün zu halten). `npm test` fährt alle vier nacheinander,
-  Gesamtlaufzeit rund 3 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
-  Generators. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle fünf nacheinander,
+  Gesamtlaufzeit rund 3,5 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
+  Generators und 21 s auf die Prüfung der ausgelieferten Folge. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
   `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
   spürbar schneller.
   - `test-engine.mts` (42) — die Gießregel in allen Randfällen, Siegbedingung, Packen
@@ -289,20 +381,39 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Regressionsschutz: eine Änderung, die die Seed-zu-Level-Abbildung verschiebt,
     entwertet jede gespeicherte Wiedergabe und jeden Bestenlisteneintrag. Genau hier fiel
     auf, dass ein Zeitdeckel im Generator die Erzeugung von der Uhr abhängig macht.
+  - `test-folge.mts` (20) — prüft die **ausgelieferte** `src/levels/folge.json` gegen
+    `kurve.ts`: 999 Einträge, Version 3, Form und Abschnitt passen, jedes Optimum liegt
+    im Band seines Abschnitts, kein Level fällt unter den Boden, und eine Stichprobe von
+    31 Leveln wird aus `seedFuer()` + `stufeFuer()` **bitgenau nachgebaut**. Das ist die
+    Brücke zu Phase 4: Tagesrätsel und Schummelschutz bauen Level serverseitig neu, und
+    wenn die Datei nicht zur Kurve gehört, ist jeder Bestenlisteneintrag Zufall.
+    *Hier ist auch eine Falle aufgeflogen:* `loesbar()` ist eine Tiefensuche mit
+    Knotendeckel, und ihr `false` heißt **„nicht gefunden"**, nicht „unmöglich". Mit dem
+    Standardbudget von 60.000 Knoten gab sie bei fünf der großen Level auf. Wer ein
+    belastbares Nein braucht, nimmt `solve()` — dessen `unloesbar` ist bewiesen.
   - `test-wiedergabe.mts` (37) — Undo-Stapel und Wiedergabe. Der Undo speichert nur den
     **Unterschied** (von, nach, Menge), nicht den ganzen Stand — bei 14 Gläsern und
     60 Zügen ist das der Unterschied zwischen ein paar hundert Bytes und ein paar
     Kilobyte je Partie.
-  - `test-oberflaeche.mjs` (14, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-oberflaeche.mjs` (19, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
+    Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein
+    Level weiter. Weil er dafür nicht elf Level durchspielen will, setzt er
+    `fixthemix.fortschritt.v2` von Hand — das ist die einzige Stelle, an der ein Test
+    den Speicher schreibt, und sie ist im Skript so kommentiert.
     Läuft gegen **`dist/`**, also vorher `npm run build`; ist nicht in `npm test`, weil
     es einen Build voraussetzt. Legt Screenshots in `.screenshots/` ab, darunter
     `03-graustufen.png` — das ist die Abnahme für den Farbenblind-Modus.
-- **Handprobe:** `node tools/zeige-level.mts --stufe 4 --seed 7 --loesung` druckt ein
-  Level und seine kürzeste Lösung als Emoji-Raster. Die Tests sagen nur, ob ein Level
-  lösbar ist; ob es sich **gut anfühlt**, sieht man nur so — und vor Phase 2 gibt es
-  keine Oberfläche.
+- **Handprobe:** `node tools/zeige-level.mts --level 120 --loesung` druckt Level 120 der
+  ausgelieferten Folge und seine kürzeste Lösung als Emoji-Raster; `--stufe 4 --seed 7`
+  nimmt stattdessen die grobe `STUFEN`-Leiter. Die Tests sagen nur, ob ein Level lösbar
+  ist; ob es sich **gut anfühlt**, sieht man nur so.
+- **Levelfolge bauen:** `node tools/level-bauen.mts` baut alle 999 Level (gemessen
+  **307 s**), `--von N --bis M` nur einen Bereich, `--neu` verwirft den Bestand.
+  Geschrieben wird nach **jedem Block von 20** — ein Abbruch kostet höchstens 20 Level.
+  Die Datei ist immer ein lückenloser Anfang der Folge; ein `--von`, das eine Lücke
+  ließe, wird abgelehnt.
 - **Schummelschutz:** Die Edge Function lehnt manipulierte Zugfolgen ab.
 - **Farbenblind-Modus:** ein Screenshot in Graustufen. Jede Farbe muss am Symbol zu
   erkennen sein.

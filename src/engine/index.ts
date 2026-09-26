@@ -15,6 +15,10 @@
 export { Partie } from './verlauf.ts';
 export { solve, hint, loesbar, bilanzStimmt, heuristik, farbSummen } from './loeser.ts';
 export { generate, STUFEN, sterneFuer, sterneSchwellen } from './generator.ts';
+export {
+  ANZAHL_LEVEL, BLOCK, BLOECKE, ABSCHNITTE,
+  stufeFuer, seedFuer, abschnittFuer, blockFuer,
+} from './kurve.ts';
 export { replay, replayAusSeed, MAX_ZUEGE } from './wiedergabe.ts';
 export {
   istGeloest as isSolved,

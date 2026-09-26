@@ -340,8 +340,15 @@ export function solve(start: Spielstand, optionen: LoeserOptionen = {}): Loesung
 
 /**
  * Schnelle Ja/Nein-Antwort ohne Optimalitaetsanspruch: Tiefensuche mit
- * Gedaechtnis und Knotendeckel. Gedacht fuer Massenpruefungen (1.000 Level),
- * wo nur „ist das ueberhaupt loesbar?" zaehlt.
+ * Gedaechtnis und Knotendeckel. Gedacht fuer Massenpruefungen, wo nur „ist das
+ * ueberhaupt loesbar?" zaehlt.
+ *
+ * ACHTUNG, hier ist schon jemand hereingefallen: `false` heisst **nicht
+ * gefunden**, nicht **unmoeglich**. Ist das Knotenbudget alle, kommt ebenfalls
+ * `false` zurueck. Die Tiefensuche hat keine Heuristik und verrennt sich auf
+ * grossen Brettern — bei 14 Glaesern reichen 60.000 Knoten nicht. Wer ein
+ * belastbares Nein braucht, nimmt `solve()`: dessen Status `unloesbar` ist
+ * bewiesen, `budget` ist ehrlich als „weiss nicht" gekennzeichnet.
  */
 export function loesbar(start: Spielstand, maxKnoten = 60_000): boolean {
   if (!bilanzStimmt(start)) return false;

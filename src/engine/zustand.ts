@@ -164,18 +164,35 @@ export function istGeloest(z: Spielstand): boolean {
 
 // --- Level <-> Spielstand --------------------------------------------------
 
+/**
+ * Baut den Spielstand aus einem Level. `start` ist ab Version 3 eine
+ * ZIFFERNKETTE, kein Zahlenfeld — siehe den Kommentar an `Level` in typen.ts.
+ *
+ * Geprueft wird hier streng, weil das die Stelle ist, an der Fremddaten
+ * hereinkommen: die Folge aus dem Bundle, spaeter ein Level aus der Datenbank
+ * und die Zugfolge eines Spielers in der Edge Function.
+ */
 export function standAusLevel(level: Level): Spielstand {
   const z = leererStand(level.glaeser, level.hoehe);
   if (level.start.length !== z.zellen.length) {
-    throw new Error(`Level.start hat ${level.start.length} Zellen, erwartet ${z.zellen.length}`);
+    throw new Error(`Level.start hat ${level.start.length} Zeichen, erwartet ${z.zellen.length}`);
   }
-  z.zellen.set(level.start);
+  for (let i = 0; i < level.start.length; i++) {
+    const c = level.start.charCodeAt(i) - 48;
+    if (c < 0 || c > 9) {
+      throw new Error(`Level.start: Zeichen ${i} ist keine Ziffer (${level.start[i]!})`);
+    }
+    z.zellen[i] = c;
+  }
   fuellNachziehen(z);
   return z;
 }
 
-export function startAusStand(z: Spielstand): number[] {
-  return Array.from(z.zellen);
+/** Die Ziffernkette fuer `Level.start`. Gegenstueck zu standAusLevel(). */
+export function startAusStand(z: Spielstand): string {
+  let s = '';
+  for (let i = 0; i < z.zellen.length; i++) s += String.fromCharCode(48 + z.zellen[i]!);
+  return s;
 }
 
 /** Rechnet `fuell` aus `zellen` neu. Nur beim Aufbau noetig — Zuege pflegen es selbst. */

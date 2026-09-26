@@ -205,7 +205,7 @@ export function generate(
     if (loesung.laenge < s.zuegeMin || loesung.laenge > s.zuegeMax) continue;
 
     return {
-      version: 2,
+      version: 3,
       seed,
       stufe: stufenNummer,
       hoehe: s.hoehe,

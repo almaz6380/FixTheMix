@@ -20,20 +20,31 @@ import { useTranslation } from 'react-i18next';
 import Brett from './components/Brett.tsx';
 import Levelwahl from './components/Levelwahl.tsx';
 import { Partie } from './engine/verlauf.ts';
+import { festgefahren } from './engine/loeser.ts';
 import type { Level, Zug } from './engine/typen.ts';
 import {
-  haptik, ladeEinstellung, ladeFortschritt, merkeSterne,
+  haptik, istFrei, ladeEinstellung, ladeFortschritt, merkeSterne,
   speichereEinstellung, speichereFortschritt,
 } from './lib/fortschritt.ts';
+import {
+  KOSTEN_RUECKKAUF, KOSTEN_TIPP, ladeMuenzen, lohnFuer, reichtFuer, speichereMuenzen,
+} from './lib/muenzen.ts';
 import roheFolge from './levels/folge.json';
 
 // Der JSON-Import kommt als weit gefasster Typ herein (`version: number`
-// statt `2`). Die Datei stammt aus dem Generator und hat garantiert die
-// richtige Form — dafuer steht tools/test-generator.mts.
+// statt `3`). Die Datei stammt aus dem Generator und haelt die richtige Form —
+// dafuer stehen tools/test-generator.mts und tools/test-folge.mts.
 const FOLGE = roheFolge as unknown as Level[];
 
 const start = ladeFortschritt();
-const STARTLEVEL = Math.min(Math.max(start.zuletzt, 0), FOLGE.length - 1);
+// Doppelt geklemmt: an die Laenge der Folge UND an die Freischaltung. Ein
+// Speicherstand aus einer laengeren Folge oder ein von Hand veraenderter darf
+// nicht in ein gesperrtes Level starten.
+const STARTLEVEL = Math.min(
+  Math.max(start.zuletzt, 0),
+  Math.max(start.hoechstes, 0),
+  FOLGE.length - 1,
+);
 
 export default function App() {
   const { t } = useTranslation();
@@ -46,8 +57,21 @@ export default function App() {
   const [tippZiel, setTippZiel] = useState<number | null>(null);
   const [rechnet, setRechnet] = useState(false);
   const [wahlOffen, setWahlOffen] = useState(false);
+  const [muenzen, setMuenzen] = useState(() => ladeMuenzen());
+  // Ob das Brett tot ist, steht im State und wird NICHT bei jedem Render
+  // gerechnet — sonst liefe der Loeser bei jeder Kleinigkeit mit.
+  const [steckt, setSteckt] = useState(false);
+  const [tippLeer, setTippLeer] = useState(false);
+  const [gewinn, setGewinn] = useState(0);
   const [takt, setTakt] = useState(0);
   const neuZeichnen = () => setTakt((x) => x + 1);
+
+  /** Nach jedem Zug: ist von hier aus ueberhaupt noch etwas zu holen? */
+  const pruefeSackgasse = () => {
+    // Erst zeichnen lassen, dann rechnen — wie beim Tipp. Die Pruefung kostet
+    // gemessen 1–2 ms, aber sie laeuft synchron im selben Faden.
+    window.setTimeout(() => setSteckt(festgefahren(partie.zustand)), 30);
+  };
 
   const level = FOLGE[index]!;
   const stand = partie.zustand;
@@ -55,12 +79,29 @@ export default function App() {
   const zuege = partie.zugzahl;
   const sterne = sterneFuer(level, zuege, geloest);
 
+  const letztes = index >= FOLGE.length - 1;
+  const gesamtSterne = Object.values(fortschritt.sterne).reduce((a, b) => a + b, 0);
+
   const wechsle = (i: number) => {
+    // Die Sperre wird hier ein zweites Mal geprueft, nicht nur in der
+    // Levelwahl: sonst haengt die Regel an einem `disabled` in der Anzeige.
+    if (i < 0 || i >= FOLGE.length || !istFrei(fortschritt, i)) return;
     setIndex(i);
     setPartie(new Partie(FOLGE[i]!));
     setGewaehlt(null);
     setTippZiel(null);
     setWahlOffen(false);
+    setSteckt(false);
+    setGewinn(0);
+    // Auch das Springen merkt sich die App — vorher stand nach einem Neuladen
+    // wieder das Level, in dem man zuletzt GEWONNEN hatte, nicht das, in dem
+    // man gerade war.
+    setFortschritt((f) => {
+      if (f.zuletzt === i) return f;
+      const neu = { ...f, zuletzt: i };
+      speichereFortschritt(neu);
+      return neu;
+    });
   };
 
   const antippen = (b: number) => {
@@ -80,7 +121,20 @@ export default function App() {
       neuZeichnen();
       if (partie.isSolved()) {
         haptik(40);
+        // Muenzen NUR fuer die Verbesserung — sonst waere ein leichtes Level
+        // eine Quelle zum Wiederholen. Die Regel steht in lib/muenzen.ts.
+        const verdient = lohnFuer(fortschritt.sterne[index] ?? 0, partie.sterne());
+        setGewinn(verdient);
+        if (verdient > 0) {
+          setMuenzen((m) => {
+            const neu = m + verdient;
+            speichereMuenzen(neu);
+            return neu;
+          });
+        }
         setFortschritt((f) => {
+          // `merkeSterne` schaltet das naechste Level frei — das ist die
+          // einzige Stelle, an der das passiert.
           const neu = merkeSterne(
             { ...f, zuletzt: Math.min(index + 1, FOLGE.length - 1) },
             index,
@@ -89,6 +143,8 @@ export default function App() {
           speichereFortschritt(neu);
           return neu;
         });
+      } else {
+        pruefeSackgasse();
       }
     } else {
       // Fehlgriff: statt stumm abzuwaehlen die neue Quelle uebernehmen, wenn
@@ -98,17 +154,56 @@ export default function App() {
   };
 
   const tipp = () => {
+    if (!reichtFuer(muenzen, KOSTEN_TIPP)) return;
     setRechnet(true);
     // Erst zeichnen lassen, dann rechnen — sonst haengt der Knopf, ohne dass
     // man sieht, dass ueberhaupt etwas passiert.
     window.setTimeout(() => {
       const zug: Zug | null = partie.tipp();
       setRechnet(false);
-      if (!zug) return;
+      if (!zug) {
+        // ABGEBUCHT WIRD NUR, WENN DER TIPP ETWAS LIEFERT. `hint()` gibt auch
+        // dann null zurueck, wenn nur das Budget alle war — fuer einen Tipp,
+        // der nichts sagt, Geld zu nehmen, waere schlicht unfair.
+        // Und statt wie frueher stumm zu bleiben, sagt die App jetzt, was los
+        // ist: entweder bewiesen tot oder „ich weiss es nicht".
+        if (festgefahren(partie.zustand)) setSteckt(true);
+        else {
+          setTippLeer(true);
+          window.setTimeout(() => setTippLeer(false), 2500);
+        }
+        return;
+      }
+      const rest = muenzen - KOSTEN_TIPP;
+      setMuenzen(rest);
+      speichereMuenzen(rest);
       setGewaehlt(zug.von);
       setTippZiel(zug.nach);
       window.setTimeout(() => setTippZiel(null), 3000);
     }, 30);
+  };
+
+  /** Einen Zug zurueckkaufen. Je Rueckkauf genau ein Zug. */
+  const rueckkauf = () => {
+    if (!reichtFuer(muenzen, KOSTEN_RUECKKAUF) || !partie.kannUndo()) return;
+    const rest = muenzen - KOSTEN_RUECKKAUF;
+    setMuenzen(rest);
+    speichereMuenzen(rest);
+    partie.undo();
+    setGewaehlt(null);
+    setTippZiel(null);
+    neuZeichnen();
+    // Ein Zug zurueck reicht nicht immer: wer sich drei Zuege zu spaet
+    // verrannt hat, zahlt dreimal. Der Preis waechst mit dem Fehler.
+    setSteckt(festgefahren(partie.zustand));
+  };
+
+  const neustart = () => {
+    partie.neustart();
+    setGewaehlt(null);
+    setTippZiel(null);
+    setSteckt(false);
+    neuZeichnen();
   };
 
   const zugFarbe = zuege <= level.sterne.drei
@@ -126,6 +221,20 @@ export default function App() {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" className="text-rauch" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
           {t('spiel.level', { n: index + 1 })}
         </button>
+
+        {/* Bewusst ein div und kein Knopf: der Oberflaechentest greift den
+            Burger ueber `header button` first(), und das muss so bleiben. */}
+        <div
+          className="flex min-h-[44px] flex-shrink-0 items-center gap-1.5 px-1"
+          data-muenzen={muenzen}
+          aria-label={t('spiel.muenzen', { n: muenzen })}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" fill="var(--color-zitrus)" />
+            <circle cx="12" cy="12" r="5.6" fill="none" stroke="rgba(120,78,10,0.5)" strokeWidth="1.6" />
+          </svg>
+          <span className="text-sm leading-none font-bold text-zitrus tabular-nums">{muenzen}</span>
+        </div>
 
         <div className="flex flex-col items-center">
           <div data-zuege={zuege} className={`font-anzeige text-3xl leading-none font-semibold tabular-nums ${zugFarbe}`}>{zuege}</div>
@@ -165,14 +274,19 @@ export default function App() {
         </button>
 
         <button type="button" aria-label={t('spiel.neustart')} disabled={zuege === 0}
-          onClick={() => { partie.neustart(); setGewaehlt(null); setTippZiel(null); neuZeichnen(); }}
+          onClick={neustart}
           className="knopf w-[54px] flex-shrink-0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 11-2.6-5.9" /><path d="M20 4v5h-5" /></svg>
         </button>
 
-        <button type="button" onClick={tipp} disabled={rechnet || geloest} className="knopf knopf-haupt flex-grow">
+        <button
+          type="button"
+          onClick={tipp}
+          disabled={rechnet || geloest || !reichtFuer(muenzen, KOSTEN_TIPP)}
+          className="knopf knopf-haupt flex-grow"
+        >
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18h6" /><path d="M10 21.5h4" /><path d="M12 2.5a6.5 6.5 0 00-3.7 11.8c.5.4.7.9.7 1.4v.3h6v-.3c0-.5.2-1 .7-1.4A6.5 6.5 0 0012 2.5z" /></svg>
-          {rechnet ? t('spiel.rechnet') : t('spiel.tipp')}
+          {rechnet ? t('spiel.rechnet') : t('spiel.tippPreis', { n: KOSTEN_TIPP })}
         </button>
 
         <button type="button" aria-label={t('spiel.symbole')} aria-pressed={symbole}
@@ -184,6 +298,47 @@ export default function App() {
           </svg>
         </button>
       </footer>
+
+      {tippLeer && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-28 z-10 flex justify-center px-6">
+          <p className="rounded-full border border-kante bg-theke px-4 py-2 text-xs font-bold text-rauch">
+            {t('spiel.tippNichts')}
+          </p>
+        </div>
+      )}
+
+      {/* Festgefahren. Gleiche Bauart wie das Siegfenster, aber mit Ausweg:
+          ein Zug zurueck gegen Muenzen, oder der Neustart — der ist immer
+          gratis, damit niemand mit leerem Guthaben im Nichts steht. */}
+      {steckt && !geloest && (
+        <div className="fixed inset-0 z-10 flex items-center justify-center bg-nacht-tief/85 px-6 backdrop-blur-sm">
+          <div className="w-full max-w-xs rounded-3xl border border-kante bg-theke p-7 text-center" data-steckt="1">
+            <svg width="46" height="46" viewBox="0 0 24 24" className="mx-auto text-rauch" fill="none"
+              stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8.2 8.2l7.6 7.6" />
+            </svg>
+            <h2 className="font-anzeige mt-4 text-3xl leading-tight font-bold">{t('spiel.festgefahren')}</h2>
+            <p className="mt-2 text-sm text-rauch">{t('spiel.festgefahrenText')}</p>
+            {!reichtFuer(muenzen, KOSTEN_RUECKKAUF) && (
+              <p className="mt-1 text-xs text-rauch">{t('spiel.zuWenig')}</p>
+            )}
+            <div className="mt-6 flex flex-col gap-2.5">
+              <button
+                type="button"
+                className="knopf knopf-an"
+                disabled={!partie.kannUndo() || !reichtFuer(muenzen, KOSTEN_RUECKKAUF)}
+                onClick={rueckkauf}
+              >
+                {t('spiel.zurueckkaufen', { n: KOSTEN_RUECKKAUF })}
+              </button>
+              <button type="button" className="knopf" onClick={neustart}>
+                {t('spiel.neustart')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {geloest && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-nacht-tief/85 px-6 backdrop-blur-sm">
@@ -201,24 +356,40 @@ export default function App() {
             <h2 className="font-anzeige mt-4 text-3xl leading-tight font-bold">
               {sterne === 3 ? t('spiel.perfekt') : t('spiel.gewonnen')}
             </h2>
+            {letztes && (
+              <p className="mt-2 text-sm font-bold text-zitrus">
+                {t('spiel.durch', { n: gesamtSterne, gesamt: FOLGE.length * 3 })}
+              </p>
+            )}
             <p className="mt-2 text-sm text-rauch">{t('spiel.bilanz', { zuege, optimum: level.optimalZuege })}</p>
+            {gewinn > 0 && (
+              <p className="mt-1 text-sm font-bold text-zitrus" data-gewinn={gewinn}>
+                {t('spiel.gewinn', { n: gewinn })}
+              </p>
+            )}
             {sterne < 3 && (
               <p className="mt-1 text-xs text-rauch">{t('spiel.dreiSterne', { n: level.optimalZuege })}</p>
             )}
             <div className="mt-6 flex flex-col gap-2.5">
-              <button type="button" disabled={index >= FOLGE.length - 1}
-                onClick={() => wechsle(Math.min(index + 1, FOLGE.length - 1))}
-                className="knopf knopf-an">
-                {index >= FOLGE.length - 1 ? t('spiel.ende') : t('spiel.weiter')}
+              {/* Beim letzten Level fuehrt der Hauptknopf in die Levelwahl.
+                  Vorher stand hier ein abgeschalteter Knopf mit der Aufschrift
+                  „Ende" — eine Sackgasse als Belohnung. */}
+              <button
+                type="button"
+                onClick={() => (letztes ? setWahlOffen(true) : wechsle(index + 1))}
+                className="knopf knopf-an"
+              >
+                {letztes ? t('spiel.levelwahl') : t('spiel.weiter')}
               </button>
               <div className="flex gap-2.5">
-                <button type="button" className="knopf flex-grow"
-                  onClick={() => { partie.neustart(); setGewaehlt(null); neuZeichnen(); }}>
+                <button type="button" className="knopf flex-grow" onClick={neustart}>
                   {t('spiel.nochmal')}
                 </button>
-                <button type="button" className="knopf flex-grow" onClick={() => setWahlOffen(true)}>
-                  {t('spiel.levelwahl')}
-                </button>
+                {!letztes && (
+                  <button type="button" className="knopf flex-grow" onClick={() => setWahlOffen(true)}>
+                    {t('spiel.levelwahl')}
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -230,14 +401,18 @@ export default function App() {
           level={FOLGE}
           aktuell={index}
           sterne={fortschritt.sterne}
+          hoechstes={fortschritt.hoechstes}
           onWahl={wechsle}
           onZu={() => setWahlOffen(false)}
           titel={t('spiel.levelwahl')}
           schliessen={t('spiel.schliessen')}
-          bilanz={t('spiel.sterneGesamt', {
-            n: Object.values(fortschritt.sterne).reduce((a, b) => a + b, 0),
-            gesamt: FOLGE.length * 3,
-          })}
+          bilanz={t('spiel.sterneGesamt', { n: gesamtSterne, gesamt: FOLGE.length * 3 })}
+          abschnittTitel={(von, bis) => t('spiel.abschnitt', { von, bis })}
+          kachelTitel={(nr, s, experte) =>
+            t(experte ? 'spiel.kachelExperte' : 'spiel.kachel', { n: nr, sterne: s })}
+          gesperrtTitel={(nr) => t('spiel.kachelGesperrt', { n: nr })}
+          zurueck={t('spiel.abschnittZurueck')}
+          vor={t('spiel.abschnittVor')}
         />
       )}
     </main>

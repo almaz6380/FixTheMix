@@ -74,14 +74,28 @@ export interface Sterne {
  * Edge Function geht: bewusst `number[]` und kein Uint8Array.
  */
 export interface Level {
-  /** Format-Version. 1 hatte noch Shaker; ab 2 gibt es nur Glaeser. */
-  version: 2;
+  /**
+   * Format-Version.
+   *  1 — mit Shaker.
+   *  2 — nur Glaeser, `start` als Zahlenliste.
+   *  3 — `start` als ZIFFERNKETTE.
+   *
+   * Zu 3: eine Zahlenliste kostet im JSON gemessen 487 Bytes je Level, eine
+   * Ziffernkette 174. Bei 999 Leveln sind das 700 KB gegen 230 KB. Moeglich
+   * ist es, weil es genau zehn Farbcodes gibt (0 = leer, 1..9 die neun Farben)
+   * — eine Schicht ist also genau eine Ziffer.
+   */
+  version: 3;
   seed: number;
+  /** Index des Kurvenabschnitts (src/engine/kurve.ts). -1 bei freier Stufe. */
   stufe: number;
   hoehe: number;
   glaeser: number;
-  /** glaeser * hoehe Zellen, gleiche Anordnung wie Spielstand.zellen. */
-  start: number[];
+  /**
+   * glaeser * hoehe Ziffern, gleiche Anordnung wie Spielstand.zellen:
+   * Zeichen `b * hoehe + i`, i = 0 ist UNTEN.
+   */
+  start: string;
   /** Vom Loeser BEWIESEN, nie geschaetzt. */
   optimalZuege: number;
   sterne: Sterne;

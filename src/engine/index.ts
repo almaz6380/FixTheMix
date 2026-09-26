@@ -13,8 +13,12 @@
 // Die einzige Uhr ist das einspeisbare `jetzt` im Loeserbudget.
 
 export { Partie } from './verlauf.ts';
-export { solve, hint, loesbar, bilanzStimmt, heuristik, farbSummen } from './loeser.ts';
+export { solve, hint, loesbar, festgefahren, bilanzStimmt, heuristik, farbSummen } from './loeser.ts';
 export { generate, STUFEN, sterneFuer, sterneSchwellen } from './generator.ts';
+export {
+  ANZAHL_LEVEL, BLOCK, BLOECKE, ABSCHNITTE,
+  stufeFuer, seedFuer, abschnittFuer, blockFuer, istExperte,
+} from './kurve.ts';
 export { replay, replayAusSeed, MAX_ZUEGE } from './wiedergabe.ts';
 export {
   istGeloest as isSolved,

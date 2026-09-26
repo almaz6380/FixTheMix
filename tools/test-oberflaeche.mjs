@@ -15,8 +15,12 @@ import { chromium } from 'playwright';
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { solve } from '../src/engine/loeser.ts';
-import { standAusLevel } from '../src/engine/zustand.ts';
+import { festgefahren, solve } from '../src/engine/loeser.ts';
+import { istGeloest, klone, standAusLevel } from '../src/engine/zustand.ts';
+import { anwenden, legaleZuege } from '../src/engine/zuege.ts';
+import { zufall } from '../src/engine/zufall.ts';
+import { FOLGE_VERSION } from '../src/lib/fortschritt.ts';
+import { KOSTEN_RUECKKAUF, KOSTEN_TIPP } from '../src/lib/muenzen.ts';
 
 let fehler = 0;
 const ok = (b, msg) => {
@@ -89,6 +93,34 @@ console.log('\n--- Ein Zug, dann zurueck ---');
   ok((await zaehler.getAttribute('data-zuege')) === '0', 'Zurück setzt den Zugzaehler auf 0');
 }
 
+console.log('\n--- Sperre ---');
+{
+  await seite.locator('header button').first().click();
+  await seite.waitForTimeout(250);
+  const zu = seite.getByRole('button', { name: /^Level 2, gesperrt/ });
+  ok(await zu.count() === 1 && await zu.isDisabled(),
+     'bei frischem Start ist Level 2 gesperrt');
+  ok(await seite.getByRole('button', { name: /^Level 1,/ }).isEnabled(),
+     '... und Level 1 offen');
+  // Nicht `[aria-label^="Level "]`: darauf hoert auch der Neustart-Knopf
+  // („Level neu starten"). Es muss eine Zahl folgen.
+  const kacheln = await seite.getByRole('button', { name: /^Level \d+,/ }).count();
+  ok(kacheln <= 20, `die Levelwahl zeigt nur einen Abschnitt (${kacheln} Kacheln, nicht ${folge.length})`);
+
+  // Fuer den Rest des Durchlaufs wird bis Level NR+1 freigeschaltet. Sich
+  // dorthin zu spielen waere reine Wartezeit — geprueft wird die Sperre, nicht
+  // die Geduld.
+  await seite.evaluate(
+    ([h, v]) => localStorage.setItem(
+      'fixthemix.fortschritt.v2',
+      JSON.stringify({ folgeVersion: v, sterne: {}, zuletzt: 0, hoechstes: h }),
+    ),
+    [NR, FOLGE_VERSION],
+  );
+  await seite.reload({ waitUntil: 'networkidle' });
+  await seite.waitForTimeout(350);
+}
+
 console.log('\n--- Farbenblind-Modus ---');
 {
   await seite.getByRole('button', { name: /Symbole|symbols/i }).click();
@@ -138,11 +170,90 @@ console.log('\n--- Weiter und Fortschritt ---');
   await seite.waitForTimeout(250);
   const gemerkt = await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 1},`) }).getAttribute('aria-label');
   ok(gemerkt?.includes('3 von 3'), `die Levelliste merkt sich die drei Sterne (${gemerkt})`);
+  // Der Sieg schaltet genau EIN Level frei, nicht den Rest der Folge.
+  ok(await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 2},`) }).isEnabled(),
+     `der Sieg schaltet Level ${NR + 2} frei`);
+  ok(await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 3}, gesperrt`) }).isDisabled(),
+     `... und Level ${NR + 3} bleibt gesperrt`);
   await seite.screenshot({ path: join(bilder, '05-levelwahl.png') });
   await seite.reload({ waitUntil: 'networkidle' });
   await seite.waitForTimeout(400);
   ok((await seite.locator('header').innerText()).includes(`Level ${NR + 2}`),
      'nach dem Neuladen steht man wieder im richtigen Level');
+}
+
+console.log('\n--- Muenzen und Tipp ---');
+{
+  const muenzen = seite.locator('[data-muenzen]');
+  const vorher = Number(await muenzen.getAttribute('data-muenzen'));
+  ok(vorher > 0, `die Kopfzeile zeigt ein Guthaben (${vorher})`);
+  await seite.getByRole('button', { name: new RegExp(`${KOSTEN_TIPP}`) }).click();
+  await seite.waitForTimeout(600);
+  const nachher = Number(await muenzen.getAttribute('data-muenzen'));
+  ok(nachher === vorher - KOSTEN_TIPP,
+     `ein Tipp kostet ${KOSTEN_TIPP} Muenzen (${vorher} -> ${nachher})`);
+}
+
+console.log('\n--- Sackgasse ---');
+{
+  // Ein grosses Level freischalten und direkt hineinspringen — auf den kleinen
+  // Brettern am Anfang der Folge sind Sackgassen selten.
+  const TOT = 300; // Index, also Level 301
+  const level = folge[TOT];
+
+  // Die Todesfolge wird HIER mit der Engine gesucht, mit gesetztem Zufall.
+  // Damit prueft der Test bei jedem Lauf dieselbe Folge, und er behauptet nie,
+  // ein Brett sei tot, ohne dass der Loeser es bewiesen hat.
+  const r = zufall(20260926, 5);
+  let todesfolge = null;
+  for (let versuch = 0; versuch < 400 && !todesfolge; versuch++) {
+    const z = standAusLevel(level);
+    const zuege = [];
+    for (let t = 0; t < 14; t++) {
+      const moeglich = legaleZuege(z);
+      if (moeglich.length === 0) break;
+      const zug = r.zieh(moeglich);
+      anwenden(z, zug);
+      zuege.push(zug);
+      if (istGeloest(z)) break;
+      if (festgefahren(klone(z))) { todesfolge = zuege.slice(); break; }
+    }
+  }
+  ok(todesfolge !== null, `eine Zugfolge gefunden, die Level ${TOT + 1} nachweislich toetet (${todesfolge?.length} Zuege)`);
+
+  if (todesfolge) {
+    await seite.evaluate(
+      ([i, v]) => localStorage.setItem(
+        'fixthemix.fortschritt.v2',
+        JSON.stringify({ folgeVersion: v, sterne: {}, zuletzt: i, hoechstes: i }),
+      ),
+      [TOT, FOLGE_VERSION],
+    );
+    await seite.reload({ waitUntil: 'networkidle' });
+    await seite.waitForTimeout(400);
+    ok((await seite.locator('header').innerText()).includes(`Level ${TOT + 1}`),
+       `springt in Level ${TOT + 1}`);
+
+    const glaeser = seite.locator('button[aria-label^="Glas"]');
+    for (const zug of todesfolge) {
+      await glaeser.nth(zug.von).click();
+      await seite.waitForTimeout(50);
+      await glaeser.nth(zug.nach).click();
+      await seite.waitForTimeout(50);
+    }
+    await seite.waitForTimeout(700);
+    ok(await seite.locator('[data-steckt]').count() === 1, 'das Fenster „Festgefahren" erscheint');
+    await seite.screenshot({ path: join(bilder, '06-festgefahren.png') });
+
+    const muenzen = seite.locator('[data-muenzen]');
+    const vorher = Number(await muenzen.getAttribute('data-muenzen'));
+    // Nicht ueber den Text suchen: „Zug zurueck · 10" kollidiert mit „Glas 10".
+    await seite.locator('[data-steckt] button').first().click();
+    await seite.waitForTimeout(500);
+    const nachher = Number(await muenzen.getAttribute('data-muenzen'));
+    ok(nachher === vorher - KOSTEN_RUECKKAUF,
+       `ein Zug zurueck kostet ${KOSTEN_RUECKKAUF} Muenzen (${vorher} -> ${nachher})`);
+  }
 }
 
 ok(konsole.length === 0, `keine Konsolenfehler im ganzen Durchlauf${konsole.length ? `: ${konsole.join(' | ')}` : ''}`);

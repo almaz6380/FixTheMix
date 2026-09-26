@@ -23,12 +23,23 @@
 //     Anigosha (`anigosha@wellbooked.at`) nachgebildet und muss es wirklich
 //     GEBEN — an dieser Adresse haengen Auskunfts- und Loeschbegehren nach der
 //     DSGVO. Anlegen oder hier korrigieren.
-//  2. DIE BESTENLISTE. Der Abschnitt „Bestenliste und Tagesraetsel" in der
-//     Datenschutzerklaerung beschreibt die anonyme Anmeldung und die
-//     Supabase-Datenbank aus Phase 4. Die ist zum Zeitpunkt dieser Zeilen
-//     NOCH NICHT in Betrieb (siehe docs/phase4-supabase.md). Geht die App ohne
-//     Bestenliste in den Store, gehoert dieser Abschnitt geloescht — eine
-//     Datenschutzerklaerung darf nichts behaupten, was nicht passiert.
+//  2. DIE BESTENLISTE IST DRAUSSEN (Josef, 26.09.2026). Sie kommt spaeter,
+//     also darf die Datenschutzerklaerung sie jetzt nicht beschreiben — eine
+//     Erklaerung, die eine Verarbeitung behauptet, die nicht stattfindet, ist
+//     genauso falsch wie eine, die eine verschweigt. Entfernt wurden deshalb:
+//     der Abschnitt „Bestenliste und Tagesraetsel", Supabase als Empfaenger,
+//     die 90-Tage-Aufbewahrung der Tagesergebnisse und alle Saetze, die einen
+//     Bestenlisteneintrag voraussetzen.
+//
+//     WAS BEIM EINSCHALTEN ZURUECKMUSS (siehe docs/phase4-supabase.md und den
+//     Verlauf dieser Datei): ein Abschnitt ueber die anonyme Anmeldung und die
+//     uebertragene Zugfolge, Supabase als Auftragsverarbeiter mit Serverstandort,
+//     eine Aufbewahrungsfrist, und der Hinweis bei „Deine Rechte", dass fuer
+//     eine Auskunft zur Bestenliste die Kennung noetig ist.
+//     `tools/test-recht.mts` erzwingt das: es prueft, ob `src/lib/supabase.ts`
+//     existiert, und verlangt Supabase in der Erklaerung GENAU DANN, wenn es
+//     die Datei gibt. Wer die Datenbank anschliesst und die Erklaerung
+//     vergisst, faellt sofort auf.
 // ===========================================================================
 
 export const BETREIBER = {
@@ -154,17 +165,15 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             'Wir erheben keinen Namen, keine Adresse, kein Geburtsdatum und keinen Standort.',
         },
         {
-          titel: 'Bestenliste und Tagesrätsel',
+          titel: 'Tagesrätsel und Duelle',
           text:
-            'Wenn du beim Tagesrätsel in der Bestenliste erscheinen möchtest, meldet die App dich anonym an. Dabei entsteht eine zufällige Kennung — keine E-Mail-Adresse, kein Name. Übertragen werden nur diese Kennung, das Datum des Rätsels und deine Zugfolge.\n\n' +
-            'Die Zugfolge ist nötig, weil wir sie serverseitig nachspielen: nur so lässt sich ein Ergebnis belegen, statt es zu glauben. Aus der Zugfolge entstehen Zugzahl und Sterne für die Bestenliste.\n\n' +
-            'In der Bestenliste ist ausschließlich die Zugzahl sichtbar. Deine Kennung wird anderen Spielerinnen und Spielern nicht angezeigt.\n\n' +
-            'Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO) — ohne diese Übermittlung gibt es keine Bestenliste. Wer nicht teilnehmen will, spielt das Tagesrätsel einfach ohne Bestenliste weiter; das Spiel funktioniert vollständig ohne sie.',
+            'Das Tagesrätsel wird auf deinem Gerät erzeugt, nicht bei uns abgerufen: aus dem Datum entsteht überall dasselbe Rätsel. Dein Ergebnis, deine Serie und deine Duellbilanz bleiben ebenfalls auf dem Gerät.\n\n' +
+            'Es gibt derzeit keine Bestenliste und keine Duelle gegen andere Spieler. Deine Gegner im Duell rechnet die App selbst aus. Deshalb wird dabei nichts an uns übertragen — auch nicht anonym.\n\n' +
+            'Wenn du dein Ergebnis teilst, entsteht ein Text auf deinem Gerät, den du selbst weitergibst. Wir erfahren davon nichts.',
         },
         {
           titel: 'Empfänger deiner Daten',
           text:
-            'Supabase (Auftragsverarbeiter, Serverstandort Frankfurt/EU): die anonyme Kennung und die Ergebnisse des Tagesrätsels.\n\n' +
             'Vercel: Auslieferung der Web-App unter fixthemix.vercel.app. Dabei fallen technisch bedingt Serverprotokolle mit IP-Adresse an.\n\n' +
             'Google AdMob: Werbung in den mobilen Apps. Google kann dabei Gerätekennungen verarbeiten. Ohne deine Einwilligung wird nur nicht personalisierte Werbung ausgeliefert.\n\n' +
             'RevenueCat (Auftragsverarbeiter, USA): Abwicklung und Wiederherstellung des Kaufs „Werbung entfernen", sofern du ihn tätigst.\n\n' +
@@ -189,20 +198,20 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Speicherdauer',
           text:
             'Die Daten auf deinem Gerät bleiben, bis du sie löschst — entweder in den Einstellungen der App oder indem du die App entfernst.\n\n' +
-            'Ergebnisse des Tagesrätsels bewahren wir 90 Tage auf, danach werden sie gelöscht. Länger braucht eine Tagesbestenliste nicht.',
+            'Bei uns liegen keine Spielstände, weil keine zu uns gelangen. Was RevenueCat zum Kauf speichert, bleibt so lange gespeichert, wie die Wiederherstellung des Kaufs möglich sein muss.',
         },
         {
           titel: 'Deine Rechte',
           text:
             'Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Erteilte Einwilligungen kannst du jederzeit mit Wirkung für die Zukunft widerrufen.\n\n' +
-            'Weil wir dich nicht kennen, brauchen wir für eine Auskunft oder Löschung zur Bestenliste deine Kennung. Du findest sie in den Einstellungen der App. Schreib uns damit an ' + BETREIBER.email + '.\n\n' +
+            'Weil wir dich nicht kennen, brauchen wir für eine Auskunft oder Löschung zum Kauf die zufällige Kennung deines Geräts. Du findest sie in den Einstellungen der App. Schreib uns damit an ' + BETREIBER.email + '.\n\n' +
             'Du hast außerdem das Recht, dich bei der Österreichischen Datenschutzbehörde zu beschweren (dsb.gv.at).',
         },
         {
           titel: 'Kinder und Jugendliche',
           text:
             'Das Spiel selbst ist für jedes Alter geeignet. Die Einwilligung in personalisierte Werbung kann man in Österreich allerdings erst ab 14 Jahren selbst erteilen (§ 4 Abs. 4 DSG), in Deutschland erst ab 16; Jüngere brauchen die Zustimmung der Erziehungsberechtigten.\n\n' +
-            'Wir erheben wissentlich keine Daten von Kindern. Erfahren wir, dass ein Eintrag in der Bestenliste von einem Kind stammt, löschen wir ihn. Erziehungsberechtigte können sich dafür jederzeit an uns wenden.',
+            'Wir erheben wissentlich keine Daten von Kindern. Erziehungsberechtigte können sich jederzeit an uns wenden — auch wegen der Einwilligung in personalisierte Werbung.',
         },
         {
           titel: 'Änderungen',
@@ -222,17 +231,15 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             'We collect no name, no address, no date of birth and no location.',
         },
         {
-          titel: 'Leaderboard and daily puzzle',
+          titel: 'Daily puzzle and duels',
           text:
-            'If you want to appear in the daily puzzle leaderboard, the app signs you in anonymously. This creates a random identifier — no email address, no name. Only that identifier, the puzzle’s date and your sequence of moves are transmitted.\n\n' +
-            'The sequence of moves is required because we replay it on the server: that is the only way to prove a result rather than believe it. Move count and stars for the leaderboard are derived from it.\n\n' +
-            'The leaderboard shows the move count only. Your identifier is never shown to other players.\n\n' +
-            'The legal basis is performance of the contract (Art. 6(1)(b) GDPR) — without this transmission there is no leaderboard. If you prefer not to take part, simply keep playing the daily puzzle without it; the game works fully without a leaderboard.',
+            'The daily puzzle is generated on your device rather than fetched from us: the date produces the same puzzle everywhere. Your result, your streak and your duel record stay on the device as well.\n\n' +
+            'There is currently no leaderboard and there are no duels against other players. Your duel opponent is computed by the app itself. Nothing is transmitted to us in the process — not even anonymously.\n\n' +
+            'When you share a result, the text is created on your device and you pass it on yourself. We learn nothing about it.',
         },
         {
           titel: 'Recipients of your data',
           text:
-            'Supabase (processor, servers in Frankfurt/EU): the anonymous identifier and daily puzzle results.\n\n' +
             'Vercel: delivery of the web app at fixthemix.vercel.app. This technically produces server logs containing the IP address.\n\n' +
             'Google AdMob: advertising in the mobile apps. Google may process device identifiers. Without your consent, only non-personalised advertising is served.\n\n' +
             'RevenueCat (processor, USA): handling and restoring the “Remove ads” purchase, if you make it.\n\n' +
@@ -257,20 +264,20 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Retention',
           text:
             'The data on your device stays until you delete it — either in the app’s settings or by removing the app.\n\n' +
-            'Daily puzzle results are kept for 90 days and then deleted. A daily leaderboard needs no longer than that.',
+            'We hold no game data, because none reaches us. What RevenueCat stores about the purchase is kept for as long as restoring that purchase has to remain possible.',
         },
         {
           titel: 'Your rights',
           text:
             'You have the right to access, rectification, erasure, restriction of processing, data portability and objection. Consent given can be withdrawn at any time with effect for the future.\n\n' +
-            'Because we do not know who you are, a request about the leaderboard needs your identifier. You will find it in the app’s settings. Email us with it at ' + BETREIBER.email + '.\n\n' +
+            'Because we do not know who you are, a request about the purchase needs your device’s random identifier. You will find it in the app’s settings. Email us with it at ' + BETREIBER.email + '.\n\n' +
             'You also have the right to lodge a complaint with the Austrian Data Protection Authority (dsb.gv.at).',
         },
         {
           titel: 'Children and young people',
           text:
             'The game itself is suitable for any age. Consent to personalised advertising, however, can only be given from the age of 14 in Austria (sec. 4(4) DSG) and from 16 in Germany; younger people need their guardians’ approval.\n\n' +
-            'We do not knowingly collect data from children. If we learn that a leaderboard entry comes from a child, we delete it. Guardians can contact us about this at any time.',
+            'We do not knowingly collect data from children. Guardians can contact us at any time — including about consent to personalised advertising.',
         },
         {
           titel: 'Changes',
@@ -293,7 +300,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Nutzung',
           text:
             'Die Nutzung ist kostenlos. Du darfst die App für dich privat nutzen.\n\n' +
-            'Nicht erlaubt ist, die App oder ihre Inhalte zu verändern, nachzubauen, automatisiert zu bedienen oder die Bestenliste durch manipulierte Daten zu verfälschen. Einträge, die offensichtlich nicht durch Spielen entstanden sind, entfernen wir.',
+            'Nicht erlaubt ist, die App oder ihre Inhalte zu verändern, nachzubauen oder automatisiert zu bedienen.',
         },
         {
           titel: 'Münzen, Videos und Extra-Glas',
@@ -310,7 +317,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
         },
         {
           titel: 'Verfügbarkeit',
-          text: 'Wir bemühen uns um einen störungsfreien Betrieb, schulden aber keine bestimmte Verfügbarkeit. Bestenliste und Tagesrätsel können ausfallen; das Spiel selbst funktioniert auch ohne Netzverbindung.',
+          text: 'Wir bemühen uns um einen störungsfreien Betrieb, schulden aber keine bestimmte Verfügbarkeit. Das Spiel selbst funktioniert vollständig ohne Netzverbindung — Level, Tagesrätsel und Duelle brauchen keine.',
         },
         {
           titel: 'Haftung',
@@ -335,7 +342,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Use',
           text:
             'Use is free of charge. You may use the app privately.\n\n' +
-            'You may not modify or reproduce the app or its content, operate it automatically, or distort the leaderboard with manipulated data. Entries that clearly did not come from playing are removed.',
+            'You may not modify or reproduce the app or its content, or operate it automatically.',
         },
         {
           titel: 'Coins, videos and the extra glass',
@@ -352,7 +359,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
         },
         {
           titel: 'Availability',
-          text: 'We aim for undisturbed operation but do not owe any particular availability. Leaderboard and daily puzzle may be unavailable; the game itself also works without a network connection.',
+          text: 'We aim for undisturbed operation but do not owe any particular availability. The game itself works entirely without a network connection — levels, the daily puzzle and duels need none.',
         },
         {
           titel: 'Liability',
@@ -393,14 +400,13 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             '• Münzen\n' +
             '• Tagesserie und die Ergebnisse der letzten Tage\n' +
             '• Einstellungen (Sprache, Symbole für Farbenblinde)\n' +
-            '• die zufällige Kennung für Bestenliste und Kauf',
+            '• die zufällige Kennung, die der Kauf braucht',
         },
         {
-          titel: 'Eintrag in der Bestenliste',
+          titel: 'Was bei uns liegt',
           text:
-            'Hast du am Tagesrätsel mit Bestenliste teilgenommen, liegt dort ein Eintrag mit deiner zufälligen Kennung. Diesen Eintrag löschen wir auf Wunsch — schreib uns dazu an ' + BETREIBER.email + ' und nenne die Kennung.\n\n' +
-            'Du findest sie in den Einstellungen der App. Ohne sie können wir den Eintrag nicht zuordnen, denn wir kennen keine Namen und keine E-Mail-Adressen.\n\n' +
-            'Ohne Anfrage werden Einträge nach 90 Tagen von selbst gelöscht.',
+            'Nichts. FixTheMix führt keine Konten, keine Bestenliste und keine Spielstände auf unseren Servern — dein Fortschritt, deine Tagesserie und deine Duellbilanz liegen ausschließlich auf deinem Gerät. Deshalb gibt es bei uns auch nichts zu löschen.\n\n' +
+            'Bleibt eine Frage offen, schreib uns an ' + BETREIBER.email + '. Nenne dabei die zufällige Kennung aus den Einstellungen — wir kennen keine Namen und keine E-Mail-Adressen und können eine Anfrage sonst nicht zuordnen.',
         },
         {
           titel: 'Der Kauf „Werbung entfernen"',
@@ -433,14 +439,13 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             '• coins\n' +
             '• daily streak and the results of recent days\n' +
             '• settings (language, colour-blind symbols)\n' +
-            '• the random identifier used for leaderboard and purchase',
+            '• the random identifier the purchase needs',
         },
         {
-          titel: 'Leaderboard entry',
+          titel: 'What we hold',
           text:
-            'If you took part in the daily puzzle with the leaderboard, an entry with your random identifier is stored there. We will delete that entry on request — email us at ' + BETREIBER.email + ' and state the identifier.\n\n' +
-            'You will find it in the app’s settings. Without it we cannot locate the entry, because we know no names and no email addresses.\n\n' +
-            'Without a request, entries are deleted automatically after 90 days.',
+            'Nothing. FixTheMix keeps no accounts, no leaderboard and no saved games on our servers — your progress, your streak and your duel record live solely on your device. There is therefore nothing for us to delete.\n\n' +
+            'If a question remains, email us at ' + BETREIBER.email + '. Please state the random identifier from the settings — we know no names and no email addresses and cannot otherwise match a request.',
         },
         {
           titel: 'The “Remove ads” purchase',

@@ -156,6 +156,25 @@ body {
   justify-items: center;
 }
 
+/* Der Giessstrahl. Er laeuft von der Quelle zum Ziel und verschwindet dann —
+   `stroke-dashoffset` von 1 auf 0 zeichnet die Kurve, und weil beide Pfade
+   `pathLength="1"` tragen, braucht es dafuer keine gemessene Pfadlaenge.
+
+   Die Bewegung ist reine Zierde: sie haelt nichts auf, verschluckt keinen
+   Klick (`pointer-events: none`) und der Spielstand ist schon weitergezogen,
+   bevor sie beginnt. Ein Strahl, auf den das Spiel warten muesste, waere bei
+   einer Folge schneller Zuege eine Bremse. */
+.guss path {
+  stroke-dasharray: 1;
+  animation: guss-fliesst 380ms ease-out forwards;
+}
+
+@keyframes guss-fliesst {
+  0% { stroke-dashoffset: 1; opacity: 0.9; }
+  55% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
 /* --- Knoepfe ------------------------------------------------------------- */
 
 .knopf {
@@ -201,4 +220,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .glas, .knopf { transition: none; }
+  /* Der Strahl verschwindet ganz, statt still dazustehen: ein halb
+     gezeichneter Bogen ueber dem Brett waere schlimmer als keiner. */
+  .guss { display: none; }
 }

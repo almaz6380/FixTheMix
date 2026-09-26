@@ -92,7 +92,8 @@
     "duellDuOhne": "Toi : non résolu",
     "duellNochmal": "Un autre duel",
     "duellAufgeben": "Abandonner le duel",
-    "duellOptimum": "Optimum : {{n}} coups"
+    "duellOptimum": "Optimum : {{n}} coups",
+    "ton": "Activer ou couper les sons du bar"
   },
   "farben": {
     "rot": "Fraise",

@@ -104,9 +104,21 @@ console.log('\n--- Ein Zug, dann zurueck ---');
     gezogen = (await zaehler.getAttribute('data-zuege')) === '1';
   }
   ok(gezogen, 'ein Giessvorgang laesst sich per Antippen ausloesen');
+
+  // Der Giessstrahl. Er ist reine Zierde und darf deshalb nichts aufhalten —
+  // geprueft wird beides: dass er ueberhaupt kommt, und dass er den Zug nicht
+  // blockiert (der Zaehler steht oben schon auf 1, bevor hier gemessen wird).
+  ok(await seite.locator('svg.guss path').count() === 2,
+     'ein Guss zeichnet den Strahl (zwei Pfade: Fluessigkeit und Lichtkante)');
+  // 380 ms Bewegung plus Reserve — danach ist er weg und liegt nicht ueber
+  // dem naechsten Zug.
+  await seite.waitForTimeout(700);
+
   await seite.getByRole('button', { name: 'Zug zurücknehmen' }).click();
   await seite.waitForTimeout(150);
   ok((await zaehler.getAttribute('data-zuege')) === '0', 'Zurück setzt den Zugzaehler auf 0');
+  ok(await seite.locator('svg.guss').count() === 0,
+     '... und nimmt den Strahl mit — er zeigte sonst auf ein Brett, das es nicht mehr gibt');
 }
 
 console.log('\n--- Sperre ---');
@@ -391,6 +403,20 @@ console.log('\n--- Einstellungen und Rechtstexte ---');
   ok(await seite.getByRole('button', { name: 'Deutsch' }).count() === 1, 'die Sprachwahl ist da');
   const stand = await seite.locator('[data-muenzstand]').getAttribute('data-muenzstand');
   ok(Number(stand) >= 0, `der Muenzstand steht drin (${stand})`);
+  // Der Ton-Schalter. Er steht auf AN und bleibt aus, wenn man ihn ausschaltet
+  // — ein Schalter, der einen Neustart nicht uebersteht, ist keiner.
+  const tonKnopf = seite.locator('[data-ton]');
+  ok(await tonKnopf.getAttribute('data-ton') === '1', 'der Ton ist von Haus aus an');
+  await tonKnopf.click();
+  await seite.waitForTimeout(200);
+  ok(await tonKnopf.getAttribute('data-ton') === '0', 'und laesst sich abschalten');
+  await seite.reload({ waitUntil: 'networkidle' });
+  await seite.waitForTimeout(400);
+  ok(await seite.locator('[data-ton]').getAttribute('data-ton') === '0',
+     '... und bleibt nach dem Neuladen aus');
+  await seite.locator('[data-ton]').click();
+  await seite.waitForTimeout(200);
+
   const kennung = (await seite.locator('[data-kennung]').innerText()).trim();
   ok(kennung.startsWith('ftm-'), `die Kennung fuer Auskunft und Loeschung steht drin (${kennung.slice(0, 12)}…)`);
   await seite.screenshot({ path: join(bilder, '08-einstellungen.png') });

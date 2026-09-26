@@ -35,10 +35,17 @@ interface Eigenschaften {
   symbole: boolean;
   onTap: () => void;
   beschriftung: string;
+  /**
+   * Wird von `Brett` gesetzt, um die Lage des Glases zu messen — daraus
+   * entsteht der Giessstrahl. Bewusst eine Eigenschaft statt `forwardRef`:
+   * gemessen wird genau EIN Element, und ein Weiterreichen von Refs waere
+   * hier nur Zeremonie.
+   */
+  innerRef?: (el: HTMLButtonElement | null) => void;
 }
 
 export default function Glas({
-  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung,
+  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef,
 }: Eigenschaften) {
   const hoehe = stand.hoehe;
   const fuell = stand.fuell[glas]!;
@@ -102,6 +109,7 @@ export default function Glas({
   return (
     <button
       type="button"
+      ref={innerRef}
       onClick={onTap}
       aria-label={beschriftung}
       className={`glas ${gewaehlt ? 'glas-gewaehlt' : ''} ${kippt ? 'glas-kippt' : ''}`}

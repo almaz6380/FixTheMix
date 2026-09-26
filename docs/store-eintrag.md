@@ -233,15 +233,36 @@ der Erklärung **genau dann**, wenn es die Datei gibt.
 | Screenshots Telefon | 6,7″ (1290×2796) und 6,5″, je 3–10 | 2–8, mindestens 320 px Kante |
 | Screenshots Tablet | nur wenn iPad unterstützt wird | optional |
 
-`node tools/test-oberflaeche.mjs` legt bei jedem Lauf Screenshots in
-`.screenshots/` ab — brauchbar als Vorlage, aber nicht als Store-Material: sie
-sind 390×844 und damit zu klein. Für echte Screenshots den Oberflächentest mit
-einem größeren Viewport laufen lassen oder am Gerät aufnehmen.
+**Alles davon erzeugt `node tools/store-bilder.mjs`** (nach `npm run build`), Ergebnis
+in `.store/`:
 
-Vorschlag für die Reihenfolge, weil die ersten beiden das meiste entscheiden:
+```
+ios-6.7-1-spiel.png        1290×2796   mitten im Spiel, mit gewähltem Lauf
+ios-6.7-2-farbenblind.png  1290×2796   Farbenblind-Modus
+ios-6.7-3-levelwahl.png    1290×2796   Levelwahl mit Sternen, Tagesrätsel, Duellen
+ios-6.7-4-tagesraetsel.png 1290×2796   das Rätsel des Tages
+ios-6.5-*.png              1242×2688   dieselben vier
+play-*.png                 1080×1920   dieselben vier
+play-feature-1024x500.png  1024×500    Feature-Grafik (Pflicht bei Play)
+play-icon-512.png           512×512    Symbol für Play, ohne Alphakanal
+```
 
-1. Ein mittleres Level mit gewähltem Lauf — man sieht sofort, worum es geht
-2. Das Tagesrätsel mit Serie
-3. Die Levelwahl mit Sternen
-4. Der Farbenblind-Modus
-5. Das Fenster „Festgefahren" mit den drei Auswegen
+Aufgenommen wird aus dem **echten Bundle**, nicht aus einem Entwurf — ein
+aufgehübschter Store-Screenshot ist bei Apple ein Ablehnungsgrund.
+
+Die Screenshots des Oberflächentests in `.screenshots/` taugen dafür **nicht**:
+die sind 390×844, und Apple weist zu kleine Bilder erst beim Hochladen ab, nach
+dem ganzen Build.
+
+Für die englischen Store-Seiten in `tools/store-bilder.mjs` `locale: 'de-DE'` auf
+`'en-US'` stellen und noch einmal laufen lassen.
+
+Die Reihenfolge im Store ist die der Dateinamen, und sie ist bewusst so gewählt:
+das erste Bild entscheidet, ob jemand weiterliest.
+
+1. **Spiel** — ein mittleres Level mit gewähltem Lauf. Man sieht sofort, worum es
+   geht, und dazu die Vorschau, die FixTheMix von den meisten Mitbewerbern
+   unterscheidet.
+2. **Farbenblind-Modus** — ein Verkaufsargument, das man sehen muss.
+3. **Levelwahl** — Sterne, Tagesrätsel und Duelle auf einen Blick.
+4. **Tagesrätsel** — der Grund, jeden Tag wiederzukommen.

@@ -92,7 +92,8 @@
     "duellDuOhne": "Tu: não resolvido",
     "duellNochmal": "Outro duelo",
     "duellAufgeben": "Desistir do duelo",
-    "duellOptimum": "Ótimo: {{n}} jogadas"
+    "duellOptimum": "Ótimo: {{n}} jogadas",
+    "ton": "Ligar ou desligar os sons do bar"
   },
   "farben": {
     "rot": "Morango",

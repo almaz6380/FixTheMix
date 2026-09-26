@@ -14,6 +14,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { SPRACHEN, appSprache, setzeSprache } from '../i18n/index.ts';
 import { ladeEinstellung, loescheAlles, speichereEinstellung } from '../lib/fortschritt.ts';
+import { klangWahl, setzeTon, tonGeladen } from '../lib/klang.ts';
 import { BELOHNUNG_VIDEO, ladeMuenzen, speichereMuenzen } from '../lib/muenzen.ts';
 import {
   kaufMoeglich, kaufeWerbefrei, kennung, preisHolen, stelleKaufWiederHer,
@@ -34,6 +35,7 @@ export default function Einstellungen() {
   const rechtsSprache = sprache === 'de' ? 'de' : 'en';
 
   const [symbole, setSymbole] = useState(() => ladeEinstellung('symbole', false));
+  const [ton, setTon] = useState(() => tonGeladen());
   const [muenzen, setMuenzen] = useState(() => ladeMuenzen());
   const [preis, setPreis] = useState<string | null>(null);
   const [werbefrei, setWerbefrei] = useState(false);
@@ -151,6 +153,24 @@ export default function Einstellungen() {
           className={`knopf justify-start px-4 ${symbole ? 'knopf-an' : ''}`}
         >
           {t('spiel.symbole')}
+        </button>
+        {/* Der Ton-Schalter gibt beim EINSCHALTEN gleich eine Probe — sonst
+            tippt man ihn an und weiss nicht, ob etwas passiert ist. Beim
+            Ausschalten schweigt er, was die Antwort ja schon ist. */}
+        <button
+          type="button"
+          onClick={() => {
+            const neu = !ton;
+            setTon(neu);
+            setzeTon(neu);
+            speichereEinstellung('ton', neu);
+            if (neu) klangWahl();
+          }}
+          aria-pressed={ton}
+          data-ton={ton ? '1' : '0'}
+          className={`knopf justify-start px-4 ${ton ? 'knopf-an' : ''}`}
+        >
+          {t('spiel.ton')}
         </button>
         <p className="px-1 text-sm font-bold text-zitrus" data-muenzstand={muenzen}>
           {t('spiel.muenzen', { n: muenzen })}

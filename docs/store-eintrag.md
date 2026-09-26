@@ -183,7 +183,7 @@ aufpassen muss:
 | Glücksspiel / simuliertes Glücksspiel | nein | Münzen sind eine Spielwährung ohne Zufallsziehung, keine Lootbox. |
 | Gewalt, Schrecken, Sexualität | nein | — |
 | Nutzergenerierte Inhalte | nein | Es gibt keine Texteingabe und keinen Chat. |
-| Nutzer können interagieren | **ja, sobald die Bestenliste live ist** | Eine Tagesbestenliste zeigt fremde Ergebnisse. Ohne Supabase noch „nein". |
+| Nutzer können interagieren | **nein** | Version 1.0 hat keine Bestenliste (Josef, 26.09.2026) und Duelle nur gegen Bots. Kommt die Bestenliste, wird daraus **ja**. |
 | Standort wird geteilt | nein | — |
 | Digitale Käufe | ja | `fixthemix_no_ads` |
 | Werbung enthalten | ja | — |
@@ -192,7 +192,9 @@ Erwartetes Ergebnis: Apple 4+, Play USK 0 / PEGI 3.
 
 ## Datensicherheit (Play) und Datenschutzangaben (Apple)
 
-**Stand heute, ohne Supabase.** Ändert sich mit Phase 4 — siehe unten.
+**Stand 1.0: ohne Datenbank.** Josef hat am 26.09.2026 entschieden, ohne
+Bestenliste in den Store zu gehen. Es verlässt also nichts das Gerät außer dem,
+was Werbung und Kauf brauchen. Ändert sich mit Phase 4 — siehe unten.
 
 | Datenart | Erhoben? | Wofür | Wohin |
 |---|---|---|---|
@@ -212,10 +214,15 @@ Daraus für die Formulare:
   ja. Löschanfrage möglich: ja, über die Adresse oben.
 
 **Sobald die Bestenliste live ist**, kommt dazu: die Kennung und das Tagesergebnis
-(Züge, Sterne, Datum) gehen an Supabase. Dann muss diese Tabelle ergänzt und in
-beiden Formularen nachgezogen werden — und erst dann stimmt auch der Abschnitt
-„Bestenliste und Tagesrätsel" in der Datenschutzerklärung. Geht die App **ohne**
-Bestenliste in den Store, gehört dieser Abschnitt gelöscht.
+(Züge, Sterne, Datum) gehen an Supabase. Dann muss diese Tabelle ergänzt, in beiden
+Formularen nachgezogen und die Altersfreigabe auf „Nutzer können interagieren: ja"
+geändert werden — und die Datenschutzerklärung braucht ihren Abschnitt über die
+anonyme Anmeldung zurück.
+
+Der Abschnitt ist am 26.09.2026 **gelöscht** worden, weil er eine Verarbeitung
+beschrieb, die nicht stattfindet. `tools/test-recht.mts` bewacht das jetzt in beide
+Richtungen: es prüft, ob `src/lib/supabase.ts` existiert, und verlangt Supabase in
+der Erklärung **genau dann**, wenn es die Datei gibt.
 
 ## Bilder
 

@@ -8,7 +8,7 @@
 //
 // Aufruf: npx tsx tools/test-recht.mts
 // Schneller: node tools/test-recht.mts
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { BETREIBER, RECHTS_PFADE, STAND, rechtsTexte } from '../src/pages/legal/legalContent.ts';
 import type { RechtsSchluessel } from '../src/pages/legal/legalContent.ts';
 
@@ -51,7 +51,14 @@ console.log('\n--- Nichts vergessen ---');
   // beides hier NICHT gibt („keine E-Mail-Adresse, keinen Spielernamen"). Ein
   // Verbot haette also den richtigen Satz verboten — der erste Lauf dieses
   // Tests hat genau das getan.
-  for (const wort of ['Anigosha', 'anigosha', 'Elo-', 'Quizfrage', 'Duell']) {
+  //
+  // „Duell" stand bis Phase 7 ebenfalls auf der Liste, und zu Recht: damals
+  // konnte es nur ein Rest aus Anigosha sein. Seit es in FixTheMix wirklich
+  // Duelle gibt, ist dasselbe Wort ein richtiger Satz — dieselbe Falle wie bei
+  // „Spielername", nur ein Jahr spaeter. Eine Verbotsliste veraltet mit dem
+  // Projekt; wer hier ein Wort eintraegt, sollte dazuschreiben, warum es in
+  // DIESER App nicht vorkommen kann.
+  for (const wort of ['Anigosha', 'anigosha', 'Elo-', 'Quizfrage']) {
     ok(!alles.includes(wort), `kein Rest von Anigosha: „${wort}"`);
   }
 }
@@ -78,10 +85,40 @@ console.log('\n--- Die Angaben, an denen Pflichten haengen ---');
   // Und die Datenschutzerklaerung muss jeden Empfaenger nennen, an den wirklich
   // Daten gehen. Faellt einer weg, ist die Erklaerung unvollstaendig.
   const ds = rechtsTexte.datenschutz.de.abschnitte.map((a) => a.text).join('\n');
-  for (const empfaenger of ['Supabase', 'Vercel', 'AdMob', 'RevenueCat']) {
+  for (const empfaenger of ['Vercel', 'AdMob', 'RevenueCat']) {
     ok(ds.includes(empfaenger), `die Datenschutzerklaerung nennt ${empfaenger}`);
   }
   ok(ds.includes('DSGVO'), '... und die Rechtsgrundlagen');
+
+  // SUPABASE IST DER SONDERFALL, und deshalb steht er hier eigens.
+  //
+  // Eine Datenschutzerklaerung darf nicht nur nichts verschweigen — sie darf
+  // auch nichts BEHAUPTEN, was nicht passiert. Am 26.09.2026 hat Josef
+  // entschieden, ohne Bestenliste in den Store zu gehen; damit gehen keine
+  // Daten an Supabase, und Supabase darf dort nicht als Empfaenger stehen.
+  //
+  // Geprueft wird deshalb die Uebereinstimmung mit der Wirklichkeit, nicht ein
+  // fester Wortlaut: gibt es einen Supabase-Client in der App, MUSS er genannt
+  // werden; gibt es keinen, darf er NICHT genannt werden. Wer die Datenbank
+  // anschliesst und die Erklaerung vergisst, faellt hier sofort auf — und wer
+  // sie wieder abschaltet, ebenso.
+  const redetMitSupabase = existsSync(new URL('../src/lib/supabase.ts', import.meta.url));
+  const alleTexte = SCHLUESSEL.flatMap((k) =>
+    (['de', 'en'] as const).flatMap((sp) =>
+      rechtsTexte[k][sp].abschnitte.map((a) => `${a.titel}\n${a.text}`))).join('\n');
+  if (redetMitSupabase) {
+    ok(ds.includes('Supabase'),
+       'die App spricht mit Supabase — also steht es als Empfaenger in der Erklaerung');
+  } else {
+    ok(!alleTexte.includes('Supabase'),
+       'ohne Supabase-Client wird Supabase auch nicht als Empfaenger behauptet');
+    // Dasselbe fuer die Bestenliste: sie darf nur als VERNEINUNG vorkommen
+    // („es gibt derzeit keine"), nie als beschriebene Verarbeitung.
+    for (const satz of ['in der Bestenliste erscheinen', 'meldet die App dich anonym',
+                        'appear in the daily puzzle leaderboard', 'signs you in anonymously']) {
+      ok(!alleTexte.includes(satz), `kein Rest der Bestenlisten-Beschreibung: „${satz}"`);
+    }
+  }
 }
 
 console.log('\n--- Die Adressen fuer die Store-Formulare ---');

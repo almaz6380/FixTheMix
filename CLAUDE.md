@@ -72,6 +72,16 @@ Code auf seinem Rechner laufen.
   Wertung auf zwei Sterne** — das Optimum ist für das Brett ohne dieses Glas bewiesen.
 - **Fünf Sprachen** (Josef, 26.09.2026): DE, EN, ES, FR, PT. Die Rechtstexte bleiben bei
   DE und EN, weil sie gegengelesen werden müssen.
+- **Version 1.0 geht OHNE Bestenliste in den Store** (Josef, 26.09.2026). Damit gibt es
+  keine Datenbank, keine anonyme Anmeldung und keine Duelle gegen Menschen — das
+  Tagesrätsel läuft auf dem Gerät, der Duellgegner ist ein Bot. Die Folge ist keine
+  Codeänderung, sondern eine **rechtliche**: der Abschnitt „Bestenliste und Tagesrätsel"
+  ist aus der Datenschutzerklärung gelöscht, Supabase steht nicht mehr als Empfänger
+  darin, und die Altersfreigabe-Antwort „Nutzer können interagieren" ist jetzt **nein**.
+  Eine Datenschutzerklärung darf nichts behaupten, was nicht passiert — das ist derselbe
+  Fehler wie etwas zu verschweigen, nur andersherum. Migration, Edge Functions und die
+  Rückbau-Anleitung liegen im Repo; `tools/test-recht.mts` erzwingt die Übereinstimmung
+  in **beide** Richtungen.
 - **Farbsystem:** neun Farben, alle gleichberechtigt, keine Kategorien mehr —
   Erdbeere, Zitrone, Blaubeere, Orange, Apfel, Traube, Minze, Kokos, Kaffee. Jede trägt
   ein eigenes **gezeichnetes** Zeichen für den Farbenblind-Modus (vorher Emoji, die auf
@@ -796,14 +806,26 @@ Zwei Dinge sind vor dem Launch zu prüfen, und beide stehen auch im Kopf der Dat
 
 1. **Die E-Mail-Adresse `fixthemix@wellbooked.at` muss es geben.** Sie ist dem Muster von
    Anigosha nachgebildet; an ihr hängen Auskunfts- und Löschbegehren nach der DSGVO.
-2. **Der Abschnitt „Bestenliste und Tagesrätsel"** beschreibt die anonyme Anmeldung und
-   die Supabase-Datenbank aus Phase 4. Geht die App **ohne** Bestenliste in den Store,
-   gehört dieser Abschnitt gelöscht — eine Datenschutzerklärung darf nichts behaupten,
-   was nicht passiert.
+2. ~~Der Abschnitt „Bestenliste und Tagesrätsel"~~ **ist am 26.09.2026 gelöscht worden**,
+   weil Version 1.0 ohne Bestenliste in den Store geht. Mit ihm sind Supabase als
+   Empfänger, die 90-Tage-Aufbewahrung und alle Sätze verschwunden, die einen
+   Bestenlisteneintrag voraussetzen. Was beim Einschalten zurückmuss, steht im Kopf von
+   `legalContent.ts` und in `docs/phase4-supabase.md`.
 
 `tools/test-recht.mts` prüft, dass keine Platzhalter übrig sind, dass kein Rest von
-Anigosha stehengeblieben ist, dass jeder Empfänger genannt wird (Supabase, Vercel, AdMob,
+Anigosha stehengeblieben ist, dass jeder Empfänger genannt wird (Vercel, AdMob,
 RevenueCat) und dass die Kontaktadresse in Datenschutz und Löschseite steht.
+
+**Supabase ist dort der Sonderfall**, und die Prüfung läuft in beide Richtungen: gibt es
+einen Client (`src/lib/supabase.ts`), **muss** Supabase in der Erklärung stehen; gibt es
+keinen, darf es **nicht** darin stehen. Wer die Datenbank anschließt und die Erklärung
+vergisst, fällt sofort auf — und wer sie wieder abschaltet, ebenso.
+
+*Eine zweite Lehre steckt in derselben Datei:* „Duell" stand bis Phase 7 auf der
+Verbotsliste der Anigosha-Reste, und zu Recht — damals konnte es nur ein Rest sein. Seit
+es in FixTheMix wirklich Duelle gibt, ist dasselbe Wort ein richtiger Satz. Eine
+Verbotsliste veraltet mit dem Projekt; genau dasselbe war vorher schon mit „Spielername"
+passiert.
 
 **Portabilität nach Deno:** Jede Datei in `src/engine/` importiert ihre Nachbarn **mit
 ausgeschriebener `.ts`-Endung** (`from './zustand.ts'`). Deno verlangt das, Vite und `tsc`

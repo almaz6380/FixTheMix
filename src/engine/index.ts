@@ -29,7 +29,7 @@ export { replay, replayAusSeed, MAX_ZUEGE } from './wiedergabe.ts';
 export {
   istGeloest as isSolved,
   standAusLevel, startAusStand, leererStand, klone, schluessel,
-  bericht, alsText, pruefeInvariante, segmente, oben, laufOben,
+  bericht, alsText, pruefeInvariante, segmente, oben, laufOben, mitExtraGlas,
 } from './zustand.ts';
 export { giessen as pour, legaleZuege, pruefeGiessen, anwenden, pruefe } from './zuege.ts';
 export { FARBEN, LEER, codeVon, idVon, farbeVon, ALLE_CODES } from './farben.ts';

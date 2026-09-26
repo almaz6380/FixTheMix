@@ -66,6 +66,12 @@ Code auf seinem Rechner laufen.
   14 Uhr und in Neuseeland um 12 Uhr mittags, mitten am Tag. Ein Tagesrätsel ist ein
   Ritual, und ein Wechsel am Nachmittag zerstört es. Preis: die Bestenliste eines Tages
   umfasst weltweit rund 50 Stunden.
+- **Extra-Glas ZUSÄTZLICH zum Münz-Rückkauf** (Josef, 26.09.2026). Es gibt damit zwei
+  Rettungswege aus einer Sackgasse: ein Zug zurück für Münzen, oder ein leeres Glas für
+  ein freiwilliges Werbevideo. Höchstens ein Extra-Glas je Partie, und es **deckelt die
+  Wertung auf zwei Sterne** — das Optimum ist für das Brett ohne dieses Glas bewiesen.
+- **Fünf Sprachen** (Josef, 26.09.2026): DE, EN, ES, FR, PT. Die Rechtstexte bleiben bei
+  DE und EN, weil sie gegengelesen werden müssen.
 - **Farbsystem:** neun Farben, alle gleichberechtigt, keine Kategorien mehr —
   Erdbeere, Zitrone, Blaubeere, Orange, Apfel, Traube, Minze, Kokos, Kaffee. Jede trägt
   ein eigenes **gezeichnetes** Zeichen für den Farbenblind-Modus (vorher Emoji, die auf
@@ -88,7 +94,7 @@ Code auf seinem Rechner laufen.
 - [x] Platzhalter-`App.tsx`, damit `npm run build` von Anfang an grün ist
 
 ### M2 Engine, Löser, Generator — FERTIG (25.09.2026)
-- [x] `src/engine/` vollständig, **236 Zusicherungen in sieben Testskripten, alle grün**
+- [x] `src/engine/` vollständig, **332 Zusicherungen in neun Testskripten, alle grün**
 - [x] Löser findet das **bewiesene** Optimum; auf 477 Zufallsbrettern gegen eine
       unabhängige Breitensuche nachgemessen, keine einzige Abweichung — und keine
       Verletzung von Zulässigkeit oder Konsistenz
@@ -192,6 +198,30 @@ Code auf seinem Rechner laufen.
 - [ ] **Nicht deployt und nicht gegen eine echte Datenbank gelaufen** — es gab in der
       Sitzung kein Supabase-Projekt. Die Schritte stehen in `docs/phase4-supabase.md`.
 - [ ] Bestenliste in der Oberfläche, anonyme Anmeldung, Fortschritt in der Datenbank
+
+### M8 Werbung, Kauf, Recht, Sprachen — FERTIG bis auf die Store-Konten (26.09.2026)
+- [x] **`src/lib/werbung.ts`** (aus `anigosha/src/lib/ads.ts`): AdMob mit UMP-Einwilligung
+      und ATT-Warteschleife. **Nur Test-Anzeigen** (`TEST_ANZEIGEN = true`) — für
+      FixTheMix gibt es noch keine AdMob-App.
+- [x] **Die Bremse als reine Funktion** (`darfInterstitial`): jedes dritte Level, nie
+      öfter als alle zwei Minuten. Dreißig Level in einer Stunde ergeben zehn Anzeigen,
+      dreißig Level in zehn Minuten nur fünf — beides im Test nachgerechnet.
+- [x] **`src/lib/kauf.ts`** (aus `anigosha/src/lib/purchases.ts`): „Werbung entfernen"
+      über RevenueCat, samt der **Thenable-Falle** und Zeitlimits auf jedem Aufruf.
+      Ohne Schlüssel bleibt alles stumm.
+- [x] **Extra-Glas** gegen ein freiwilliges Werbevideo, angeboten im
+      Festgefahren-Fenster — dort, wo es etwas rettet
+- [x] **Werbevideo für Münzen** (30, in den Einstellungen und im Festgefahren-Fenster)
+- [x] **Einstellungen** (`/einstellungen`): Sprache, Farbenblind-Modus, Kauf,
+      Wiederherstellung, Werbe-Einwilligung, Münzstand, Kennung, Daten löschen
+- [x] **Vier Rechtstexte** mit eigenen Adressen: `/impressum`, `/datenschutz`,
+      `/nutzungsbedingungen`, `/daten-loeschen`
+- [x] **Fünf Sprachen**, alle 79 Schlüssel vollständig; beim ersten Start entscheidet die
+      Gerätesprache
+- [ ] **AdMob-App, RevenueCat-Schlüssel und die Store-Produkte fehlen** — dafür braucht
+      es Konten und Store-Einträge. Kommt mit Phase 6.
+- [ ] Die E-Mail-Adresse `fixthemix@wellbooked.at` aus den Rechtstexten **muss es
+      wirklich geben** — daran hängen Auskunfts- und Löschbegehren.
 
 ## Was FixTheMix einzigartig macht
 
@@ -500,6 +530,103 @@ Sterne aus dem Ergebnis. Eine Einsendung „ich hatte drei Sterne" gibt es gar n
 Die Rechnung steht in `src/engine/tagespruefung.ts` und ist mit node geprüft; die Edge
 Function ist nur Verkabelung.
 
+### Werbung, Kauf und Extra-Glas
+
+**Alle Anzeigen sind Test-Anzeigen** (`TEST_ANZEIGEN = true` in `src/lib/werbung.ts`).
+Das bleibt so, bis es in AdMob eine App „FixTheMix" gibt. Eigene Live-Anzeigen anzusehen
+oder anzuklicken ist ein Richtlinienverstoß — an Josefs AdMob-Konto hängen auch Anigosha,
+MyPeak und WELLbooked. Die fünf Schritte vor dem ersten Release-Build stehen im Kopf der
+Datei.
+
+**Die Bremse** ist eine reine Funktion (`darfInterstitial`), damit sie ohne AdMob, ohne
+Capacitor und ohne Browser prüfbar ist: jedes dritte beendete Level, Mindestabstand zwei
+Minuten. Beide Bremsen wirken unabhängig — wer drei Level in zwei Minuten durchspielt,
+bekommt trotzdem nur eine Anzeige. Das Tagesrätsel zählt mit, bekommt aber **keine eigene
+Gelegenheit**: nach dem einen Rätsel am Tag zuverlässig Werbung wäre die unangenehmste
+Stelle im ganzen Spiel.
+
+**Zwei Fallen aus Anigosha sind mitgewandert**, weil sie dort Wochen gekostet haben:
+
+1. **ATT wird nicht von hier gefragt.** Capacitor führt Plugin-Aufrufe auf einer
+   Hintergrund-Warteschlange aus, und `ATTrackingManager` zeigt dort nichts an. Gefragt
+   wird nativ im AppDelegate; `werbung.ts` *wartet* nur auf die Antwort (mit sechs
+   Sekunden Deckel). Genau daran ist Anigosha 1.0 an Apples Richtlinie 2.1 gescheitert.
+2. **Die Thenable-Falle** in `kauf.ts`. `Purchases` ist ein Capacitor-Proxy, der jeden
+   Eigenschaftszugriff in einen Plugin-Aufruf verwandelt — auch `.then`. Das Objekt ist
+   damit ein falsches „Thenable": `await` oder `return` aus einer async-Funktion ruft
+   `Purchases.then(...)`, und die Promise löst **nie** auf. Deshalb wird es nur in der
+   Hülle `SdkZugang` weitergereicht. In Anigosha war das der „Kauf hängt auf iOS"-Fehler,
+   zehn Builds lang.
+
+**Das Extra-Glas** hängt am `Spielstand`, und dort war es nicht vorgesehen — `glaeser` ist
+fest. `mitExtraGlas()` baut deshalb einen neuen Stand mit einem leeren Glas **am Ende**.
+Angehängt und nicht eingeschoben, und das ist der ganze Trick: alle bestehenden
+Glasindizes bleiben gültig, damit bleibt der Undo-Stapel brauchbar (er merkt sich
+Indizes).
+
+Drei Folgen, die zusammenhängen:
+
+- **Höchstens ein Extra-Glas je Partie.** Zwei machten aus fast jedem Brett eine
+  Fingerübung, und die 999 Level wären umsonst gebaut.
+- **Es deckelt die Wertung auf zwei Sterne.** Das Optimum ist für das Brett *ohne* dieses
+  Glas bewiesen. Drei Sterne dafür zu vergeben würde die Zusicherung entwerten, auf der
+  die ganze Sternwertung ruht.
+- **Im Tagesrätsel gibt es kein Extra-Glas.** `replay()` baut das Brett aus dem Level,
+  also ohne das zusätzliche Glas; eine Zugfolge, die es benutzt, ist serverseitig nicht
+  nachspielbar (`grund: 'index'`). Eine Bestenliste muss vergleichbar bleiben.
+- **Der Neustart behält das Extra-Glas.** Wer dafür ein Werbevideo gesehen hat, soll es
+  nicht durch einen Neustart verlieren — sonst wird aus der Hilfe eine Falle.
+
+### Routen — und warum es sie überhaupt gibt
+
+Seit Phase 5 hat die App einen Router, und zwar nicht aus Schönheit: **Apple und Google
+verlangen eine öffentlich erreichbare Datenschutz-URL**, Google Play zusätzlich eine
+Adresse für den Weg zur Datenlöschung. Beides muss ohne App und ohne Anmeldung aufrufbar
+sein — ein Fenster über dem Spiel hat keine Adresse, die man in ein Store-Formular
+eintragen kann. Dass `vercel.json` alles auf `index.html` umschreibt, ist dafür die
+Voraussetzung.
+
+Der Weg zu den Einstellungen führt über die **Levelwahl**, nicht über die Kopfzeile: die
+ist voll, und der Burger muss das erste `button` im `<header>` bleiben — daran hängt der
+Oberflächentest.
+
+### Sprachen
+
+Fünf Dateien in `src/i18n/locales/`, alle mit denselben 79 Schlüsseln;
+`tools/test-recht.mts` prüft das, samt der Platzhalter (`{{n}}`) und daran, dass keine
+Zeile unübersetzt deutsch in einer fremden Datei steht.
+
+**Beim ersten Start entscheidet die Gerätesprache**, nicht Deutsch — ein Spieler in
+Madrid sah vorher eine deutsche App, obwohl es Spanisch gibt.
+
+*Hier ist ein Fehler aufgeflogen, der es wert ist, aufgeschrieben zu werden:* Die
+Funktion `geraeteSprache()` stand zunächst **unter** ihrer Verwendung. Bei `const` greift
+dann die temporale Todeszone, der Zugriff auf `SPRACHEN` wirft — und ein zu weit
+gefasstes `catch` hat den Fehler verschluckt und einfach Englisch geliefert. Die App war
+damit auf jedem deutschen Gerät englisch, ohne eine Zeile in der Konsole. Gefunden hat es
+der Oberflächentest, weil er nach deutschen Knopftexten sucht. Das `catch` fängt jetzt nur
+noch, ob es `navigator` überhaupt gibt.
+
+### Die Rechtstexte
+
+`src/pages/legal/legalContent.ts`, aus `anigosha/src/pages/legal/legalContent.ts`
+**angepasst, nicht kopiert** — der Unterschied ist erheblich: Anigosha hat Konten mit
+E-Mail-Adresse, Spielernamen, Avatare, Push, Elo und gemeldete Fragen. FixTheMix hat
+davon nichts. Die Texte sind darum kürzer, und sie stimmen.
+
+Zwei Dinge sind vor dem Launch zu prüfen, und beide stehen auch im Kopf der Datei:
+
+1. **Die E-Mail-Adresse `fixthemix@wellbooked.at` muss es geben.** Sie ist dem Muster von
+   Anigosha nachgebildet; an ihr hängen Auskunfts- und Löschbegehren nach der DSGVO.
+2. **Der Abschnitt „Bestenliste und Tagesrätsel"** beschreibt die anonyme Anmeldung und
+   die Supabase-Datenbank aus Phase 4. Geht die App **ohne** Bestenliste in den Store,
+   gehört dieser Abschnitt gelöscht — eine Datenschutzerklärung darf nichts behaupten,
+   was nicht passiert.
+
+`tools/test-recht.mts` prüft, dass keine Platzhalter übrig sind, dass kein Rest von
+Anigosha stehengeblieben ist, dass jeder Empfänger genannt wird (Supabase, Vercel, AdMob,
+RevenueCat) und dass die Kontaktadresse in Datenschutz und Löschseite steht.
+
 **Portabilität nach Deno:** Jede Datei in `src/engine/` importiert ihre Nachbarn **mit
 ausgeschriebener `.ts`-Endung** (`from './zustand.ts'`). Deno verlangt das, Vite und `tsc`
 erlauben es über `allowImportingTsExtensions`. Damit lässt sich der Ordner unverändert in
@@ -527,15 +654,21 @@ ist das einspeisbare `jetzt` im Löserbudget.
    dafür braucht es ein Supabase-Projekt. Schritte: `docs/phase4-supabase.md`.
    ← **hier geht es weiter**, sobald das Projekt steht: anonyme Anmeldung, Bestenliste in
    der Oberfläche, Fortschritt und Münzen in die Datenbank.
-5. **Werbung, Kauf, Rechtstexte, Sprachen.** Zuerst DE und EN, danach ES/FR/PT.
+5. **Werbung, Kauf, Rechtstexte, Sprachen.** **FERTIG (26.09.2026)**, soweit es ohne
+   Store-Konten geht: Werbung läuft mit Test-IDs, der Kauf bleibt ohne Schlüssel stumm,
+   die vier Rechtstexte stehen, fünf Sprachen sind vollständig. Was fehlt, braucht Konten
+   — AdMob-App, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
 6. **Stores:** Capacitor für iOS und Android, Release-Workflows mit `laeufer`, ein
    Runner auf Josefs Mac, die Store-Einträge.
+   ← **hier geht es weiter.** Vorher: AdMob-App anlegen und `TEST_ANZEIGEN` auf false,
+   RevenueCat-Schlüssel als `VITE_REVENUECAT_*`, Produkt `fixthemix_no_ads` in beiden
+   Stores, und die E-Mail-Adresse aus den Rechtstexten anlegen.
 7. **Version 1.1: Duelle.**
 
 ## Prüfung
 
-- **Testskripte** (alle grün zu halten). `npm test` fährt alle sieben nacheinander,
-  Gesamtlaufzeit rund 4,5 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle neun nacheinander,
+  Gesamtlaufzeit rund 5 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
   Generators und 21 s auf die Prüfung der ausgelieferten Folge. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
   `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
   spürbar schneller.
@@ -575,11 +708,25 @@ ist das einspeisbare `jetzt` im Löserbudget.
     gleichzeitig, und niemand kann ihn hinterher nachstellen. Also wird über 4.000 Tage
     gerechnet, beide Schaltjahresregeln (2100 ist keines, 2000 war eines) und 23:30
     Ortszeit geprüft — und dass kein Frucht-Emoji in den Teiltext gerät.
+  - `test-werbung.mts` (39) — die Werbebremse und das Extra-Glas. Beides lässt sich am
+    Gerät nicht ausprobieren, ohne echte Anzeigen anzusehen — und genau das ist verboten.
+    Also wird die **Regel** geprüft, nicht das SDK: wie viele Anzeigen dreißig Level in
+    einer Stunde ergeben, dass das Extra-Glas angehängt und nicht eingeschoben wird, dass
+    es auf zwei Sterne deckelt, und dass eine Zugfolge mit Extra-Glas serverseitig
+    **nicht** nachspielbar ist.
+    *Ein Anlauf war hier falsch:* Die Zusicherung „mit Extra-Glas nicht nachspielbar"
+    schlug fehl, weil die kürzeste Lösung das zusätzliche Glas gar nicht anfasste. Jetzt
+    erzwingt der Test einen Zug hinein — sonst prüfte er nichts.
+  - `test-recht.mts` (57) — Rechtstexte und Sprachdateien. Zwei Stellen, an denen ein
+    Fehler nicht auffällt, bis es zu spät ist: ein fehlender Textschlüssel zeigt einem
+    spanischen Spieler eine deutsche Zeile, und ein Rechtstext mit einem übrig gebliebenen
+    Platzhalter geht so in den Store. Apple und Google prüfen das nicht — die prüfen nur,
+    ob die Seite erreichbar ist.
   - `test-wiedergabe.mts` (37) — Undo-Stapel und Wiedergabe. Der Undo speichert nur den
     **Unterschied** (von, nach, Menge), nicht den ganzen Stand — bei 14 Gläsern und
     60 Zügen ist das der Unterschied zwischen ein paar hundert Bytes und ein paar
     Kilobyte je Partie.
-  - `test-oberflaeche.mjs` (33, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-oberflaeche.mjs` (45, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
     Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein
@@ -592,6 +739,10 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Zuletzt das **Tagesrätsel**: das Skript rechnet das Rätsel des heutigen Tages selbst
     aus, spielt es mit der Lösung des Lösers durch, und liest den geteilten Text aus der
     Zwischenablage — inklusive der Prüfung, dass keine Farbe darin steht.
+    Zuletzt **Einstellungen und Rechtstexte**: alle vier Adressen werden aufgerufen und
+    ihre Überschrift geprüft, und „Daten löschen" muss den Speicher wirklich leeren.
+    Der Test läuft mit `locale: 'de-DE'`, weil die App seit Phase 5 die Gerätesprache
+    wählt; ohne das prüfte er plötzlich die englische Oberfläche.
     Läuft gegen **`dist/`**, also vorher `npm run build`; ist nicht in `npm test`, weil
     es einen Build voraussetzt. Legt Screenshots in `.screenshots/` ab, darunter
     `03-graustufen.png` — das ist die Abnahme für den Farbenblind-Modus.
@@ -625,6 +776,10 @@ ist das einspeisbare `jetzt` im Löserbudget.
   innerhalb des Rahmens 0.
 - **Am Gerät:** Werbung nur mit Test-IDs. **Nie echte eigene Anzeigen antippen** — am
   AdMob-Konto hängen alle Apps.
+- **`npm audit` meldet drei mittlere Funde** in `@capacitor/cli` → `xcode` → `uuid`. Das
+  ist eine reine Baukette (kein Code, der im Bundle landet), und der Fund bestand schon
+  vor Phase 5. `npm audit fix` würde die Capacitor-CLI anheben; das gehört in Phase 6,
+  wenn die nativen Projekte ohnehin angefasst werden.
 
 ## Auslieferung auf Vercel
 

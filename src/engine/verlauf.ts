@@ -19,7 +19,7 @@ import { sterneFuer } from './generator.ts';
 import { hint, type LoeserOptionen } from './loeser.ts';
 import type { Behaelter, Level, Spielstand, Zug, ZugErgebnis } from './typen.ts';
 import { giessen, giessenZurueck } from './zuege.ts';
-import { istGeloest, standAusLevel } from './zustand.ts';
+import { istGeloest, mitExtraGlas, standAusLevel } from './zustand.ts';
 
 interface Schritt {
   zug: Zug;
@@ -31,6 +31,8 @@ export class Partie {
   readonly level: Level;
   private stand: Spielstand;
   private stapel: Schritt[] = [];
+  /** Wie viele Extra-Glaeser dazugekauft wurden. Hoechstens eines. */
+  private extra = 0;
 
   constructor(level: Level) {
     this.level = level;
@@ -70,16 +72,47 @@ export class Partie {
 
   neustart(): void {
     this.stand = standAusLevel(this.level);
+    // Das Extra-Glas BLEIBT ueber den Neustart. Wer dafuer ein Werbevideo
+    // gesehen hat, soll es nicht durch einen Neustart verlieren — sonst wird
+    // aus der Hilfe eine Falle. Mit dem Levelwechsel ist es weg, denn dann gibt
+    // es eine neue Partie.
+    for (let k = 0; k < this.extra; k++) this.stand = mitExtraGlas(this.stand);
     this.stapel = [];
+  }
+
+  /** Ist bereits ein Extra-Glas im Spiel? */
+  get hatExtraGlas(): boolean {
+    return this.extra > 0;
+  }
+
+  /**
+   * Ein leeres Glas dazu. Hoechstens EINES je Partie: zwei machten aus fast
+   * jedem Brett eine Fingeruebung, und die 999 Level waeren umsonst gebaut.
+   *
+   * Gibt false zurueck, wenn es schon eines gibt oder die Partie gewonnen ist.
+   */
+  extraGlas(): boolean {
+    if (this.extra > 0 || this.isSolved()) return false;
+    this.stand = mitExtraGlas(this.stand);
+    this.extra += 1;
+    return true;
   }
 
   isSolved(): boolean {
     return istGeloest(this.stand);
   }
 
-  /** 0..3. Drei nur fuer das Optimum. */
+  /**
+   * 0..3. Drei nur fuer das Optimum — und NUR ohne Extra-Glas.
+   *
+   * Das Optimum ist fuer das Brett ohne das zusaetzliche Glas bewiesen. Mit
+   * einem Glas mehr ist dasselbe Level leichter; drei Sterne dafuer zu
+   * vergeben wuerde die Zusicherung entwerten, auf der die ganze Sternwertung
+   * ruht („drei Sterne nur fuer die kuerzeste Loesung").
+   */
   sterne(): number {
-    return sterneFuer(this.level, this.stapel.length, this.isSolved());
+    const s = sterneFuer(this.level, this.stapel.length, this.isSolved());
+    return this.extra > 0 ? Math.min(2, s) : s;
   }
 
   /**

@@ -95,9 +95,15 @@ export function reichtFuer(guthaben: number, kosten: number): boolean {
   return guthaben >= kosten;
 }
 
-// HAKEN FUER PHASE 5: Hier kommt `belohnungsVideo()` hin — ein freiwilliges
-// Werbevideo, das Muenzen gutschreibt (CLAUDE.md: „Werbevideos nur
-// freiwillig"). Dafuer braucht es src/lib/ads.ts, und das kommt mit der
-// Werbung. Bis dahin kommen Muenzen allein aus Sternen; wer blank ist, hat
-// immer noch den kostenlosen Neustart, das Spiel bleibt also in jeder Lage
-// spielbar.
+/**
+ * Was ein freiwilliges Werbevideo einbringt (Phase 5).
+ *
+ * Etwas MEHR als ein perfekt geloestes Level (25), damit das Video eine echte
+ * Wahl ist — und nicht so viel, dass Sterne sich nicht mehr lohnen. Wer
+ * sauber spielt, soll weiter die guenstigste Quelle haben.
+ *
+ * Das Video selbst liegt in `src/lib/werbung.ts` (`zeigeBelohnungsVideo`).
+ * Gutgeschrieben wird NUR, wenn es vollstaendig gesehen wurde — das entscheidet
+ * Googles SDK, nicht wir.
+ */
+export const BELOHNUNG_VIDEO = 30;

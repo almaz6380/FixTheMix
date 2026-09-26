@@ -188,6 +188,30 @@ export function standAusLevel(level: Level): Spielstand {
   return z;
 }
 
+/**
+ * Derselbe Stand mit einem zusaetzlichen, LEEREN Glas am Ende.
+ *
+ * Angehaengt und nicht eingeschoben, und das ist der ganze Trick: alle
+ * bestehenden Glasindizes bleiben gueltig. Damit bleibt der Undo-Stapel der
+ * `Partie` brauchbar (er merkt sich Indizes), und das Zugprotokoll erzaehlt
+ * weiter dieselbe Geschichte.
+ *
+ * WAS DAS KOSTET, und warum es an zwei Stellen Folgen hat:
+ *  - Das bewiesene Optimum des Levels gilt fuer das Brett OHNE dieses Glas.
+ *    Mit Extra-Glas ist das Level leichter, also darf es keine drei Sterne mehr
+ *    geben — `Partie.sterne()` deckelt auf zwei.
+ *  - `replay()` baut das Brett aus dem Level, also ohne Extra-Glas. Eine
+ *    Zugfolge, die das Extra-Glas benutzt, ist serverseitig nicht nachspielbar.
+ *    Deshalb gibt es im Tagesraetsel kein Extra-Glas — die Bestenliste muss
+ *    vergleichbar bleiben.
+ */
+export function mitExtraGlas(z: Spielstand): Spielstand {
+  const neu = leererStand(z.glaeser + 1, z.hoehe);
+  neu.zellen.set(z.zellen);
+  neu.fuell.set(z.fuell);
+  return neu;
+}
+
 /** Die Ziffernkette fuer `Level.start`. Gegenstueck zu standAusLevel(). */
 export function startAusStand(z: Spielstand): string {
   let s = '';

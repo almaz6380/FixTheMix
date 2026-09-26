@@ -65,6 +65,8 @@
     "datenschutz": "Privacidad",
     "nutzung": "Condiciones de uso",
     "loeschen": "Borrar los datos",
+    "loeschenStarten": "Borrar todos los datos",
+    "bereichSpiel": "Juego",
     "zurueck": "Volver",
     "standVom": "Actualizado: {{datum}}",
     "kaufNichtEingerichtet": "La compra aún no está configurada.",

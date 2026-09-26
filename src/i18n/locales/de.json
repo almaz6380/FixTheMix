@@ -65,6 +65,8 @@
     "datenschutz": "Datenschutz",
     "nutzung": "Nutzungsbedingungen",
     "loeschen": "Daten löschen",
+    "loeschenStarten": "Alle Daten löschen",
+    "bereichSpiel": "Spiel",
     "zurueck": "Zurück",
     "standVom": "Stand: {{datum}}",
     "kaufNichtEingerichtet": "Der Kauf ist noch nicht eingerichtet.",

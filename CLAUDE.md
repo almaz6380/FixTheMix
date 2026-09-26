@@ -50,6 +50,16 @@ Code auf seinem Rechner laufen.
 - **999 Level, der Reihe nach freigeschaltet** (Josef, 26.09.2026). Gelöste Level plus
   das nächste sind offen, der Rest ist gesperrt. Die Levelwahl zeigt Abschnitte
   („Level 621–640") statt eines Rasters mit 999 Kacheln.
+- **Sackgassen bleiben möglich, und das Spiel sagt es jetzt** (Josef, 26.09.2026).
+  Wer sich festfährt, kann **einen Zug gegen Münzen zurückkaufen**; der Neustart ist
+  immer gratis.
+- **Der Tipp kostet Münzen.** Er verrät nicht irgendeinen Zug, sondern den ersten Zug
+  der beweisbar kürzesten Lösung — gratis und unbegrenzt war er eine Lösungsmaschine,
+  und damit war jede Arbeit an der Schwierigkeit umsonst.
+- **Münzen kommen aus Sternen und (ab Phase 5) aus freiwilligen Werbevideos.**
+- **Ein paar Experten-Level mit hohen Gläsern:** jedes 25. Level ab 225 hat 7 oder 8
+  Schichten. Sechs bleiben die Regel — die hohen Gläser sind das einzige Mittel, über
+  die Decke von rund 26 Zügen zu kommen.
 - **Farbsystem:** neun Farben, alle gleichberechtigt, keine Kategorien mehr —
   Erdbeere, Zitrone, Blaubeere, Orange, Apfel, Traube, Minze, Kokos, Kaffee. Jede trägt
   ein eigenes **gezeichnetes** Zeichen für den Farbenblind-Modus (vorher Emoji, die auf
@@ -72,7 +82,7 @@ Code auf seinem Rechner laufen.
 - [x] Platzhalter-`App.tsx`, damit `npm run build` von Anfang an grün ist
 
 ### M2 Engine, Löser, Generator — FERTIG (25.09.2026)
-- [x] `src/engine/` vollständig, **140 Zusicherungen in fünf Testskripten, alle grün**
+- [x] `src/engine/` vollständig, **171 Zusicherungen in sechs Testskripten, alle grün**
 - [x] Löser findet das **bewiesene** Optimum; auf 477 Zufallsbrettern gegen eine
       unabhängige Breitensuche nachgemessen, keine einzige Abweichung — und keine
       Verletzung von Zulässigkeit oder Konsistenz
@@ -140,6 +150,21 @@ Code auf seinem Rechner laufen.
 - [ ] Die Rotation ab Level 186 variiert die Form, nicht die Schwierigkeit — mehr geht
       bei sechs Schichten nicht, siehe „Die Decke" unten
 
+### M6 Härte — FERTIG (26.09.2026)
+- [x] **`festgefahren()`** in `src/engine/loeser.ts`: erkennt ein totes Brett. Nur
+      `solve()`-Status `unloesbar` zählt — `budget` heißt „weiß nicht", und ein falscher
+      Alarm triebe den Spieler in einen Neustart, der nicht nötig war.
+- [x] Fenster „Festgefahren" mit **Rückkauf gegen Münzen** (je Rückkauf ein Zug) und
+      kostenlosem Neustart
+- [x] **`src/lib/muenzen.ts`**: Startguthaben 100, Tipp 15, Rückkauf 10, Lohn nach
+      Sternen 5/12/25 — und **nur die Verbesserung** wird gezahlt
+- [x] Münz-Chip in der Kopfzeile, Preis auf dem Tipp-Knopf
+- [x] 31 Experten-Level mit 7 oder 8 Schichten, Optima 24–30 (statt 20–27)
+- [x] Der Tipp schweigt nicht mehr, wenn er nichts findet: entweder „festgefahren"
+      (bewiesen) oder eine Meldung
+- [ ] Das **Werbevideo** für Münzen kommt mit Phase 5 (`src/lib/ads.ts` gibt es noch
+      nicht). Der Haken dafür steht kommentiert in `muenzen.ts`.
+
 ## Was FixTheMix einzigartig macht
 
 1. **Eine Regel, sechs Schichten, kein Tutorial.** Gegossen wird nur auf dieselbe Farbe
@@ -194,9 +219,9 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 | `zustand.ts` | Aufbau, Klonen, Packen, **kanonischer Schlüssel**, Siegbedingung, Textausgabe. |
 | `zuege.ts` | Die eine Regel: `pour`, `giessenZurueck`, `legaleZuege`. Sonst nichts. |
 | `verlauf.ts` | `Partie` — Zugprotokoll, Undo-Stapel, Sterne, Tipp. Schnittstelle für Phase 2. |
-| `loeser.ts` | `solve()` (A*), `heuristik()`, `bilanzStimmt()`, `loesbar()`, `hint()`. |
+| `loeser.ts` | `solve()` (A*), `heuristik()`, `bilanzStimmt()`, `loesbar()`, `hint()`, `festgefahren()`. |
 | `generator.ts` | `generate(seed, stufe)`, die sechs `STUFEN`, Sternschwellen. |
-| `kurve.ts` | Die ausgelieferte Levelfolge: `ANZAHL_LEVEL`, `stufeFuer(nr)`, `seedFuer(nr)`, `ABSCHNITTE`, `blockFuer(nr)`. |
+| `kurve.ts` | Die ausgelieferte Levelfolge: `ANZAHL_LEVEL`, `stufeFuer(nr)`, `seedFuer(nr)`, `ABSCHNITTE`, `blockFuer(nr)`, `istExperte(nr)`. |
 | `wiedergabe.ts` | `replay()` / `replayAusSeed()` — Vorstufe des Schummelschutzes. |
 | `index.ts` | Öffentliche Schnittstelle. |
 
@@ -329,6 +354,81 @@ verkaufen. Der einzige Hebel, der die Decke heben würde, sind **sieben oder ach
 Schichten** (`MAX_HOEHE` ist 8, wegen 4 Bit je Schicht) — und sechs sind Josefs
 Entscheidung vom 25.09.2026.
 
+### Sackgassen — und warum sie bleiben
+
+Im Genre kann man sich festfahren: wer eine einzelne Schicht in sein letztes leeres Glas
+gießt, verbaut sich den Weg. **Gemessen am 26.09.2026** (zwölf zufällige Züge, 40 Läufe
+je Level): Level 10 endet in 3 % der Fälle unrettbar, Level 300 in 28 %, Level 700 in
+**40 %**. Auf Level 301 genügten im Test **zwei** Züge — unabhängig mit einer
+Breitensuche nachgeprüft, die vom toten Brett aus nur noch zwei erreichbare Zustände
+fand.
+
+`festgefahren()` in `loeser.ts` erkennt das. Zwei Regeln sind dort nicht verhandelbar:
+
+1. **Nur `unloesbar` zählt.** `budget` heißt „weiß nicht". Ein falscher Alarm wäre
+   schlimmer als gar keiner — er triebe den Spieler in einen Neustart, der nicht nötig
+   war. `loesbar()` ist dafür ebenfalls untauglich (sein `false` heißt „nicht gefunden").
+   `test-loeser.mts` sichert genau das ab: mit drei Knoten Budget gibt der Löser auf, und
+   `festgefahren()` meldet **trotzdem** keine Sackgasse.
+2. **Kein Zeitdeckel, nur ein Knotendeckel.** Eine Uhr hat die Engine nicht (außer dem
+   einspeisbaren `jetzt`), und eine Zählschranke ist reproduzierbar — dieselbe Lehre wie
+   beim Generator.
+
+Billig ist es trotzdem: ein totes Brett hat kaum Suchraum, gemessen 1–2 ms im Schnitt,
+10 ms im schlimmsten Fall. Geprüft wird nach jedem Zug, im `setTimeout`-Muster des Tipps
+(erst zeichnen, dann rechnen).
+
+### Die Münzen — `src/lib/muenzen.ts`
+
+| Posten | Wert |
+|---|---|
+| Startguthaben | 100 |
+| Tipp | 15 |
+| Ein Zug zurück aus der Sackgasse | 10 |
+| Lohn für 1 / 2 / 3 Sterne | 5 / 12 / 25 |
+
+Vier Entscheidungen, die man kennen muss:
+
+1. **Gezahlt wird nur die VERBESSERUNG.** Ohne das wäre ein einmal gelöstes leichtes
+   Level eine Münzquelle zum Wiederholen. Wer sich von einem auf drei Sterne verbessert,
+   bekommt die Differenz.
+2. **Eigener Speicherschlüssel `fixthemix.muenzen.v1`, nicht im Fortschritt.**
+   `ladeFortschritt()` verwirft den gesamten Stand, sobald `folgeVersion` nicht passt —
+   bei Sternen ist das richtig, bei Münzen, für die jemand ein Werbevideo gesehen hat,
+   wäre es ein Support-Fall. (Genau das ist mit dieser Änderung passiert:
+   `FOLGE_VERSION` steht jetzt auf **2**, weil die Experten-Level die Folge verändern.)
+3. **Der Tipp bucht nur ab, wenn er etwas liefert.** `hint()` gibt auch dann `null`
+   zurück, wenn bloß das Budget alle war. Für einen Tipp, der nichts sagt, Geld zu
+   nehmen, wäre unfair.
+4. **Der Neustart ist immer gratis.** Damit bleibt das Spiel in jeder Lage spielbar,
+   auch mit leerem Guthaben — das ist die Bedingung dafür, dass die Sackgasse eine
+   Entscheidung ist und keine Wand.
+
+Der Tipp kostet **mehr** als ein Zug zurück, und das ist Absicht: der Rückkauf behebt
+einen Fehler, der Tipp nimmt die Aufgabe ab.
+
+**Offene Spannung, in Phase 5 zu entscheiden:** Als Rettung aus derselben Lage sieht
+dieses Dokument seit dem ersten Tag das **Extra-Glas** vor, gekoppelt an ein freiwilliges
+Werbevideo. Mit den Münzen gibt es nun zwei Rettungswege. Der Münz-Rückkauf war ungleich
+billiger zu bauen — ein Extra-Glas bräuchte einen neuen Spielstand, weil
+`Spielstand.glaeser` und `Level.glaeser` fest sind, und es würde Undo-Stapel und
+Sternwertung berühren.
+
+### Experten-Level
+
+Jedes **25. Level ab 225** (31 Stück) hat hohe Gläser: abwechselnd 12 Gläser mit **7**
+Schichten und 14 Gläser mit **8**. Gemessene Optima 24–30 statt 20–27 — das ist der
+einzige Hebel, der über die Decke der Sechser hinausführt. Mehr als acht Schichten gehen
+nicht (`MAX_HOEHE`, vier Bit je Schicht).
+
+Umsetzung: die Experten-Level liegen **über** der Rotation, nicht **in** ihr. Würden sie
+eingeschoben, verschöbe sich die Phase von `(nr - 186) % 12`, und alle 800 Level ab 186
+wären andere. So ändern sich genau die 31 — nachgebaut wurden sie einzeln mit
+`--von N --bis N`.
+Das Farbenblind-Zeichen schrumpft bei `hoehe >= 7` auf 12 px; bei acht Schichten ist eine
+Schicht nur noch rund 16 px hoch. In der Levelwahl trägt eine Experten-Kachel einen
+kleinen Punkt, damit ein plötzlich viel schwereres Level nicht wie ein Fehler wirkt.
+
 **Portabilität nach Deno:** Jede Datei in `src/engine/` importiert ihre Nachbarn **mit
 ausgeschriebener `.ts`-Endung** (`from './zustand.ts'`). Deno verlangt das, Vite und `tsc`
 erlauben es über `allowImportingTsExtensions`. Damit lässt sich der Ordner unverändert in
@@ -362,8 +462,8 @@ ist das einspeisbare `jetzt` im Löserbudget.
 
 ## Prüfung
 
-- **Testskripte** (alle grün zu halten). `npm test` fährt alle fünf nacheinander,
-  Gesamtlaufzeit rund 3,5 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle sechs nacheinander,
+  Gesamtlaufzeit rund 4 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
   Generators und 21 s auf die Prüfung der ausgelieferten Folge. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
   `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
   spürbar schneller.
@@ -371,7 +471,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
     und Kanonisierung. Darunter: mehr als 8 Schichten werden abgelehnt (4 Bit je
     Schicht), und zwei vertauschte gleiche Gläser ergeben denselben Schlüssel, zwei
     verschiedene nie.
-  - `test-loeser.mts` (25) — das wichtigste Skript. Vergleicht A* auf 477 Zufallsbrettern
+  - `test-loeser.mts` (32) — das wichtigste Skript. Vergleicht A* auf 477 Zufallsbrettern
     gegen eine **unabhängige Breitensuche** und prüft, dass die Heuristik nie überschätzt
     und konsistent ist. Eine zu hohe Heuristik fällt sonst nirgends auf — sie erzeugt
     keinen Absturz, sondern falsche Sternschwellen.
@@ -381,7 +481,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Regressionsschutz: eine Änderung, die die Seed-zu-Level-Abbildung verschiebt,
     entwertet jede gespeicherte Wiedergabe und jeden Bestenlisteneintrag. Genau hier fiel
     auf, dass ein Zeitdeckel im Generator die Erzeugung von der Uhr abhängig macht.
-  - `test-folge.mts` (20) — prüft die **ausgelieferte** `src/levels/folge.json` gegen
+  - `test-folge.mts` (23) — prüft die **ausgelieferte** `src/levels/folge.json` gegen
     `kurve.ts`: 999 Einträge, Version 3, Form und Abschnitt passen, jedes Optimum liegt
     im Band seines Abschnitts, kein Level fällt unter den Boden, und eine Stichprobe von
     31 Leveln wird aus `seedFuer()` + `stufeFuer()` **bitgenau nachgebaut**. Das ist die
@@ -391,17 +491,25 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Knotendeckel, und ihr `false` heißt **„nicht gefunden"**, nicht „unmöglich". Mit dem
     Standardbudget von 60.000 Knoten gab sie bei fünf der großen Level auf. Wer ein
     belastbares Nein braucht, nimmt `solve()` — dessen `unloesbar` ist bewiesen.
+  - `test-muenzen.mts` (21) — die Münzregeln. Klein, aber hier hängt die Balance dran:
+    zahlt ein Level mehrfach, lässt sich die Währung farmen, und dann ist der Preis für
+    den Tipp wirkungslos — und mit ihm die ganze Arbeit an der Schwierigkeitskurve.
+    Läuft bewusst **ohne** `localStorage` (Node hat keins) und prüft damit genau den
+    Fall, den die App im privaten Fenster erlebt.
   - `test-wiedergabe.mts` (37) — Undo-Stapel und Wiedergabe. Der Undo speichert nur den
     **Unterschied** (von, nach, Menge), nicht den ganzen Stand — bei 14 Gläsern und
     60 Zügen ist das der Unterschied zwischen ein paar hundert Bytes und ein paar
     Kilobyte je Partie.
-  - `test-oberflaeche.mjs` (19, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-oberflaeche.mjs` (25, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
     Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein
     Level weiter. Weil er dafür nicht elf Level durchspielen will, setzt er
     `fixthemix.fortschritt.v2` von Hand — das ist die einzige Stelle, an der ein Test
     den Speicher schreibt, und sie ist im Skript so kommentiert.
+    Dazu Münzen und **die Sackgasse im echten Browser**: das Skript sucht sich mit der
+    Engine eine Zugfolge, die Level 301 nachweislich tötet (gefunden: zwei Züge), spielt
+    sie, und prüft, dass das Fenster erscheint und der Rückkauf genau 10 Münzen kostet.
     Läuft gegen **`dist/`**, also vorher `npm run build`; ist nicht in `npm test`, weil
     es einen Build voraussetzt. Legt Screenshots in `.screenshots/` ab, darunter
     `03-graustufen.png` — das ist die Abnahme für den Farbenblind-Modus.

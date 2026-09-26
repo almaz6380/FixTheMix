@@ -112,7 +112,41 @@ const DECKE: readonly Schwierigkeit[] = [
 ];
 
 /** Alle Abschnitte hintereinander — Index davon landet als `stufe` im Level. */
-export const ABSCHNITTE: readonly Schwierigkeit[] = [...AUFSTIEG, ...DECKE];
+/**
+ * Die Experten-Level: jedes 25. Level ab 225, also 225, 250, … 975 — 31 Stueck.
+ *
+ * HOHE GLAESER. Sechs Schichten sind und bleiben die Regel (Josefs
+ * Entscheidung vom 25.09.2026), aber sie sind auch die Decke: 14 Glaeser mit
+ * sechs Schichten geben gemessen 23–24 Zuege her, mit sieben 27–28, mit acht
+ * bis zu 30. Ein hohes Glas ist der einzige Hebel, der die Folge ueber ihre
+ * Decke hebt — deshalb ein paar davon, verteilt, als Ausrufezeichen.
+ *
+ * Mehr als acht Schichten gehen nicht: der Loeser packt vier Bit je Schicht in
+ * ein uint32 (`MAX_HOEHE` in zustand.ts).
+ *
+ * Die beiden Aufbauten wechseln sich ab. Kosten beim Bauen 0,7–1,4 s je Level,
+ * bei 31 Leveln also rund eine halbe Minute extra.
+ */
+const EXPERTE: readonly Schwierigkeit[] = [
+  { name: 'Experte A', glaeser: 12, hoehe: 7, farben: 7, leer: 1, schritte: 28, zuegeMin: 24, zuegeMax: 31 },
+  { name: 'Experte B', glaeser: 14, hoehe: 8, farben: 8, leer: 1, schritte: 30, zuegeMin: 26, zuegeMax: 34 },
+];
+
+/** Ab hier gibt es Experten-Level, und dann jedes `EXPERTE_JEDES`-te. */
+const EXPERTE_AB = 225;
+const EXPERTE_JEDES = 25;
+
+/**
+ * Traegt dieses Level hohe Glaeser? Auch die Oberflaeche fragt hier —
+ * die Levelwahl markiert solche Kacheln, damit ein ploetzlich viel schwereres
+ * Level nicht wie ein Fehler wirkt.
+ */
+export function istExperte(nr: number): boolean {
+  pruefeNummer(nr);
+  return nr >= EXPERTE_AB && nr % EXPERTE_JEDES === 0;
+}
+
+export const ABSCHNITTE: readonly Schwierigkeit[] = [...AUFSTIEG, ...DECKE, ...EXPERTE];
 
 /** Wo der Aufstieg endet und die Rotation beginnt. */
 const DECKE_AB = 186;
@@ -128,6 +162,13 @@ export function abschnittFuer(nr: number): number {
   pruefeNummer(nr);
   for (let i = 0; i < AUFSTIEG.length; i++) {
     if (nr <= AUFSTIEG[i]!.bis) return i;
+  }
+  // Die Experten-Level liegen UEBER der Rotation, nicht IN ihr. Wuerden sie
+  // eingeschoben, verschoebe sich die Phase von `(nr - DECKE_AB) % DECKE.length`
+  // und alle 800 Level ab 186 waeren andere. So aendern sich genau die 31.
+  if (istExperte(nr)) {
+    const k = Math.floor((nr - EXPERTE_AB) / EXPERTE_JEDES) % EXPERTE.length;
+    return AUFSTIEG.length + DECKE.length + k;
   }
   return AUFSTIEG.length + ((nr - DECKE_AB) % DECKE.length);
 }

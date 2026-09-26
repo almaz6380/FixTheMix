@@ -42,6 +42,9 @@ export default function Glas({
 }: Eigenschaften) {
   const hoehe = stand.hoehe;
   const fuell = stand.fuell[glas]!;
+  // Bei sieben oder acht Schichten (den Experten-Leveln) ist eine Schicht nur
+  // noch rund 16 px hoch — ein 16-px-Zeichen laege dann ueber der Kante.
+  const zeichenGroesse = hoehe >= 7 ? 12 : 16;
   const schichtHoehe = `${((1 - KOPFRAUM) / hoehe) * 100}%`;
   const hervor = gewaehlt || tipp;
 
@@ -69,7 +72,7 @@ export default function Glas({
           justifyContent: symbole ? 'center' : undefined,
         }}
       >
-        {symbole && <Symbol id={idVon(code)} groesse={16} />}
+        {symbole && <Symbol id={idVon(code)} groesse={zeichenGroesse} />}
       </div>,
     );
   }

@@ -4,9 +4,10 @@
 // Aufruf: npx tsx tools/test-loeser.mts
 // Schneller: node tools/test-loeser.mts
 import { codeVon } from '../src/engine/farben.ts';
-import { istGeloest, klone, leererStand, schluessel } from '../src/engine/zustand.ts';
+import { istGeloest, klone, leererStand, schluessel, standAusLevel } from '../src/engine/zustand.ts';
+import { generate } from '../src/engine/generator.ts';
 import { anwenden, legaleZuege } from '../src/engine/zuege.ts';
-import { bilanzStimmt, farbSummen, heuristik, hint, loesbar, solve } from '../src/engine/loeser.ts';
+import { bilanzStimmt, farbSummen, festgefahren, heuristik, hint, loesbar, solve } from '../src/engine/loeser.ts';
 import { zufall } from '../src/engine/zufall.ts';
 import type { FarbId } from '../src/engine/farben.ts';
 import type { Spielstand } from '../src/engine/typen.ts';
@@ -172,6 +173,45 @@ console.log('\n--- Tipp ---');
   ok(t !== null, 'der Tipp liefert einen Zug');
   ok(JSON.stringify(t) === JSON.stringify(l.zuege[0]), 'der Tipp ist der erste Zug der kuerzesten Loesung');
   ok(hint(stand(4, [[R, R, R, R]])) === null, 'im geloesten Zustand gibt es keinen Tipp');
+}
+
+console.log('\n--- Festgefahren ---');
+{
+  ok(!festgefahren(stand(4, [[R, R, R, R]])), 'ein geloestes Brett gilt nie als festgefahren');
+  ok(!festgefahren(stand(4, [[R, G, R, G], [G, R, G, R], []])),
+     'ein loesbares Brett gilt nicht als festgefahren');
+
+  // Voll, und kein Oberlauf passt auf einen anderen: es gibt gar keinen Zug.
+  ok(festgefahren(stand(3, [[R, R, G], [G, G, R]])),
+     'ein Brett ohne einen einzigen legalen Zug ist festgefahren');
+
+  // Der haeufigere Fall: Zuege gibt es noch, nur fuehrt keiner ans Ziel.
+  // Gesucht wird er so, wie er im Spiel entsteht — mit gesetztem Zufall, damit
+  // der Test bei jedem Lauf dasselbe Brett prueft.
+  const start = standAusLevel(generate(20_260_926, 3));
+  const r = zufall(4711, 3);
+  let tot: Spielstand | null = null;
+  for (let versuch = 0; versuch < 200 && !tot; versuch++) {
+    const z = klone(start);
+    for (let t = 0; t < 12; t++) {
+      const zs = legaleZuege(z);
+      if (zs.length === 0) break;
+      anwenden(z, r.zieh(zs));
+      if (istGeloest(z)) break;
+    }
+    if (!istGeloest(z) && legaleZuege(z).length > 0 && solve(z).status === 'unloesbar') tot = z;
+  }
+  ok(tot !== null, 'ein totes Brett MIT verbleibenden Zuegen laesst sich finden');
+  ok(tot !== null && festgefahren(tot), '... und festgefahren() erkennt es');
+
+  // Die wichtigste Zusicherung ueberhaupt: ein zu knappes Budget darf NIE als
+  // Sackgasse durchgehen. Ein falscher Alarm triebe den Spieler in einen
+  // Neustart, der gar nicht noetig war.
+  const schwer = stand(6, [
+    [R, G, B, R, G, B], [G, B, R, G, B, R], [B, R, G, B, R, G], [], [],
+  ]);
+  ok(solve(schwer, { maxKnoten: 3 }).status === 'budget', 'mit drei Knoten gibt der Loeser auf');
+  ok(!festgefahren(schwer, 3), '... und festgefahren() meldet trotzdem KEINE Sackgasse');
 }
 
 console.log(fehler === 0 ? '\nAlles gruen.' : `\n${fehler} Fehler.`);

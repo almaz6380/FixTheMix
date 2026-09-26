@@ -11,7 +11,7 @@
 // Regel zwei Orte und irgendwann zwei Meinungen.
 
 import { useState } from 'react';
-import { BLOCK, BLOECKE } from '../engine/kurve.ts';
+import { BLOCK, BLOECKE, istExperte } from '../engine/kurve.ts';
 import type { Level } from '../engine/typen.ts';
 
 interface Eigenschaften {
@@ -27,8 +27,8 @@ interface Eigenschaften {
   bilanz: string;
   /** (von, bis) -> „Level 621–640" */
   abschnittTitel: (von: number, bis: number) => string;
-  /** (nr, sterne) -> Vorlesetext der Kachel. */
-  kachelTitel: (nr: number, sterne: number) => string;
+  /** (nr, sterne, experte) -> Vorlesetext der Kachel. */
+  kachelTitel: (nr: number, sterne: number, experte: boolean) => string;
   /** (nr) -> Vorlesetext einer gesperrten Kachel. */
   gesperrtTitel: (nr: number) => string;
   zurueck: string;
@@ -103,13 +103,16 @@ export default function Levelwahl({
           const s = sterne[i] ?? 0;
           const jetzt = i === aktuell;
           const frei = i <= hoechstes;
+          // Experten-Level haben hohe Glaeser und sind spuerbar schwerer. Ohne
+          // Markierung wirkt so ein Sprung wie ein Fehler.
+          const experte = istExperte(i + 1);
           return (
             <button
               key={i}
               type="button"
               onClick={() => onWahl(i)}
               disabled={!frei}
-              aria-label={frei ? kachelTitel(i + 1, s) : gesperrtTitel(i + 1)}
+              aria-label={frei ? kachelTitel(i + 1, s, experte) : gesperrtTitel(i + 1)}
               className={`flex aspect-square touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border transition ${
                 !frei
                   ? 'border-kante/60 bg-theke/40 text-rauch'
@@ -120,7 +123,12 @@ export default function Levelwahl({
             >
               {frei ? (
                 <>
-                  <span className="font-anzeige text-xl leading-none font-semibold">{i + 1}</span>
+                  <span className="font-anzeige relative text-xl leading-none font-semibold">
+                    {i + 1}
+                    {experte && (
+                      <span className="absolute -top-0.5 -right-2.5 h-1.5 w-1.5 rounded-full bg-zitrus" aria-hidden="true" />
+                    )}
+                  </span>
                   <span className="flex gap-[1.5px]" aria-hidden="true">
                     {[0, 1, 2].map((j) => (
                       <svg key={j} width="9" height="9" viewBox="0 0 24 24"

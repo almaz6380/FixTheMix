@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs';
 import { generate, sterneSchwellen } from '../src/engine/generator.ts';
 import {
   ABSCHNITTE, ANZAHL_LEVEL, BLOCK, BLOECKE,
-  abschnittFuer, blockFuer, seedFuer, stufeFuer,
+  abschnittFuer, blockFuer, istExperte, seedFuer, stufeFuer,
 } from '../src/engine/kurve.ts';
 import { loesbar, solve } from '../src/engine/loeser.ts';
 import { istGeloest, standAusLevel } from '../src/engine/zustand.ts';
@@ -157,6 +157,28 @@ console.log('\n--- Das gespeicherte Optimum ist wirklich das Optimum ---');
   }
   ok(falsch === 0, `${proben.length} Optima unabhaengig nachgerechnet (${falsch} Abweichungen)`);
   ok(loestNicht === 0, `die nachgerechneten Zugfolgen loesen (${loestNicht} Ausreisser)`);
+}
+
+console.log('\n--- Experten-Level ---');
+{
+  const hoch: number[] = [];
+  const markiert: number[] = [];
+  let falscheHoehe = 0, zuLeicht = 0;
+  for (let i = 0; i < folge.length; i++) {
+    const nr = i + 1;
+    if (folge[i]!.hoehe !== 6) hoch.push(nr);
+    if (istExperte(nr)) {
+      markiert.push(nr);
+      if (folge[i]!.hoehe !== 7 && folge[i]!.hoehe !== 8) falscheHoehe++;
+      // Der ganze Zweck der hohen Glaeser: ueber die Decke der Sechser
+      // kommen. Ein Experten-Level mit 22 Zuegen waere keines.
+      if (folge[i]!.optimalZuege < 24) zuLeicht++;
+    }
+  }
+  ok(hoch.length === markiert.length && hoch.every((n, k) => n === markiert[k]),
+     `hohe Glaeser gibt es genau bei den ${markiert.length} Experten-Leveln (gefunden ${hoch.length})`);
+  ok(falscheHoehe === 0, `jedes Experten-Level hat 7 oder 8 Schichten (${falscheHoehe} Ausreisser)`);
+  ok(zuLeicht === 0, `kein Experten-Level liegt unter 24 Zuegen (${zuLeicht} Ausreisser)`);
 }
 
 console.log('\n--- Abschnitte der Levelwahl ---');

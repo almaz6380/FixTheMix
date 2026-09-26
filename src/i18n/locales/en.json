@@ -26,7 +26,17 @@
     "abschnittZurueck": "Previous section",
     "abschnittVor": "Next section",
     "kachel": "Level {{n}}, {{sterne}} of 3 stars",
-    "kachelGesperrt": "Level {{n}}, locked"
+    "kachelGesperrt": "Level {{n}}, locked",
+    "muenzen": "{{n}} coins",
+    "tippPreis": "Hint · {{n}}",
+    "tippNichts": "No hint available",
+    "gewinn": "+{{n}} coins",
+    "festgefahren": "Stuck",
+    "festgefahrenText": "No move from here leads to a solution.",
+    "zurueckkaufen": "Undo · {{n}}",
+    "zuWenig": "Not enough coins — restart is free.",
+    "kachelExperte": "Level {{n}}, {{sterne}} of 3 stars, expert",
+    "experte": "Expert"
   },
   "farben": {
     "rot": "Strawberry",

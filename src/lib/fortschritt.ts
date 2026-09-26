@@ -21,7 +21,7 @@ const SCHLUESSEL = 'fixthemix.fortschritt.v2';
  * Zaehlt hoch, sobald sich die Zuordnung Levelnummer -> Brett aendert (neue
  * Kurve, umsortierte Folge, neue Seeds). Steht auch in der CLAUDE.md.
  */
-export const FOLGE_VERSION = 1;
+export const FOLGE_VERSION = 2;
 
 export interface Fortschritt {
   /** Zu welcher Levelfolge dieser Stand gehoert. */

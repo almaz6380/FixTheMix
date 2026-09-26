@@ -26,7 +26,17 @@
     "abschnittZurueck": "Vorheriger Abschnitt",
     "abschnittVor": "Nächster Abschnitt",
     "kachel": "Level {{n}}, {{sterne}} von 3 Sternen",
-    "kachelGesperrt": "Level {{n}}, gesperrt"
+    "kachelGesperrt": "Level {{n}}, gesperrt",
+    "muenzen": "{{n}} Münzen",
+    "tippPreis": "Tipp · {{n}}",
+    "tippNichts": "Kein Tipp möglich",
+    "gewinn": "+{{n}} Münzen",
+    "festgefahren": "Festgefahren",
+    "festgefahrenText": "Von hier führt kein Zug mehr zur Lösung.",
+    "zurueckkaufen": "Zug zurück · {{n}}",
+    "zuWenig": "Zu wenig Münzen — bleibt der Neustart.",
+    "kachelExperte": "Level {{n}}, {{sterne}} von 3 Sternen, Experte",
+    "experte": "Experte"
   },
   "farben": {
     "rot": "Erdbeere",

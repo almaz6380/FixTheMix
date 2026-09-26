@@ -5,22 +5,32 @@
 // die Kommentare, die davon erzaehlen, stehen bewusst mit hier drin.
 //
 // ES LAUFEN NUR TEST-ANZEIGEN (`TEST_ANZEIGEN = true`), und das bleibt so, bis
-// es in AdMob eine App „FixTheMix" gibt. Eigene Live-Anzeigen anzusehen oder
-// anzuklicken ist ein Richtlinienverstoss und kann das AdMob-Konto sperren — an
-// Josefs Konto haengen auch Anigosha, MyPeak und WELLbooked.
+// die vier Anzeigenbloecke unten unter PROD stehen. Eigene Live-Anzeigen
+// anzusehen oder anzuklicken ist ein Richtlinienverstoss und kann das
+// AdMob-Konto sperren — an Josefs Konto haengen auch Anigosha, MyPeak und
+// WELLbooked.
+//
+// Die beiden AdMob-APPS gibt es seit dem 26.09.2026, und ihre echten App-IDs
+// stehen schon in `Info.plist` und `AndroidManifest.xml`. Das ist kein
+// Widerspruch zu `TEST_ANZEIGEN = true`: eine App-ID (mit Tilde) sagt dem SDK
+// nur, welches Konto die App ist, ausgeliefert wird nach den BLOECKEN (mit
+// Schraegstrich). Solange die Bloecke Googles Testbloecke sind, kommen keine
+// echten Anzeigen und es wird nichts verrechnet.
 //
 // VOR DEM ERSTEN RELEASE-BUILD (Phase 6):
-//  1. In AdMob je eine App „FixTheMix" fuer iOS und Android anlegen. Die beiden
-//     App-IDs gehoeren in ios/App/App/Info.plist (GADApplicationIdentifier) und
-//     android/app/src/main/AndroidManifest.xml.
+//  1. ~~In AdMob je eine App „FixTheMix" fuer iOS und Android anlegen.~~
+//     ERLEDIGT am 26.09.2026; die App-IDs stehen in ios/App/App/Info.plist
+//     (GADApplicationIdentifier) und android/.../AndroidManifest.xml.
 //  2. Je einen Interstitial- und einen Rewarded-Block anlegen, die IDs unten
 //     unter PROD eintragen.
-//  3. `TEST_ANZEIGEN` auf false setzen.
+//  3. `TEST_ANZEIGEN` auf false setzen — zusammen mit Schritt 2, nie einzeln.
 //  4. In AdMob unter „Datenschutz & Mitteilungen" eine DSGVO-Nachricht
 //     erstellen UND veroeffentlichen — ohne sie erscheint gar kein Dialog.
 //  5. Fuer iOS muessen DREI Dinge zusammenstimmen, sonst kommt die Ablehnung:
 //     NSUserTrackingUsageDescription in der Info.plist, die native ATT-Abfrage
-//     im AppDelegate, und in App Store Connect „Tracking: ja" (nur von Hand).
+//     im SceneDelegate (NICHT im AppDelegate — Capacitor 8 legt ein
+//     Scene-Manifest an, damit ruft iOS `applicationDidBecomeActive` nie auf),
+//     und in App Store Connect „Tracking: ja" (nur von Hand).
 //
 // Im Browser passiert bewusst nichts: `fixthemix.vercel.app` zeigt keine
 // Werbung, dort fehlt das Plugin.

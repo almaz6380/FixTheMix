@@ -229,8 +229,12 @@ Code auf seinem Rechner laufen.
       `/nutzungsbedingungen`, `/daten-loeschen`
 - [x] **Fünf Sprachen**, alle 79 Schlüssel vollständig; beim ersten Start entscheidet die
       Gerätesprache
-- [ ] **AdMob-App, RevenueCat-Schlüssel und die Store-Produkte fehlen** — dafür braucht
-      es Konten und Store-Einträge. Kommt mit Phase 6.
+- [x] **Die beiden AdMob-Apps sind angelegt** (Josef, 26.09.2026), und ihre echten
+      App-IDs stehen im Repo: iOS `…8860791993288062~8461231878` in der `Info.plist`,
+      Android `…~4290052573` im Manifest. `TEST_ANZEIGEN` bleibt trotzdem `true` —
+      warum das kein halber Zustand ist, steht unter „Die Beispiel-IDs".
+- [ ] **Die vier Anzeigenblöcke, RevenueCat-Schlüssel und die Store-Produkte fehlen** —
+      dafür braucht es Konten und Store-Einträge. Kommt mit Phase 6.
 - [x] **Die Kontaktadresse steht und existiert:** `63almaz80@gmail.com`
       (Josef, 26.09.2026). Der erste Entwurf trug `fixthemix@wellbooked.at`, dem
       Muster von Anigosha nachgebildet — die hätte aber erst angelegt werden
@@ -265,8 +269,10 @@ Code auf seinem Rechner laufen.
 - [x] **`tools/test-release.mts`** — die Store-Verkabelung als Test, siehe unten
 - [x] **`docs/release-ci.md`** (Secrets, Mac-Runner, die drei Angaben von Hand) und
       **`docs/store-eintrag.md`** (Texte, Altersfreigabe, Datensicherheit, Bilder)
-- [ ] **AdMob-App, RevenueCat-Schlüssel, Store-Produkte, Keystore, Zertifikat** — alles,
-      was ein Konto braucht. `node tools/test-release.mts --release` listet es auf.
+- [ ] **Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte, Keystore, Zertifikat** —
+      alles, was ein Konto braucht. Die beiden AdMob-**Apps** stehen seit dem
+      26.09.2026, ihre App-IDs sind eingetragen.
+      `node tools/test-release.mts --release` listet den Rest auf.
 
 ### M10 Duelle (Version 1.1) — FERTIG gegen Bots (26.09.2026)
 - [x] **`src/engine/duell.ts`**: `duellLevel(nummer)` als der **eine** Weg zum Brett,
@@ -605,7 +611,9 @@ Function ist nur Verkabelung.
 ### Werbung, Kauf und Extra-Glas
 
 **Alle Anzeigen sind Test-Anzeigen** (`TEST_ANZEIGEN = true` in `src/lib/werbung.ts`).
-Das bleibt so, bis es in AdMob eine App „FixTheMix" gibt. Eigene Live-Anzeigen anzusehen
+Das bleibt so, bis die vier Anzeigenblöcke unter `PROD` stehen — die beiden AdMob-**Apps**
+gibt es seit dem 26.09.2026, und ihre App-IDs stehen schon in den nativen Projekten.
+Eigene Live-Anzeigen anzusehen
 oder anzuklicken ist ein Richtlinienverstoß — an Josefs AdMob-Konto hängen auch Anigosha,
 MyPeak und WELLbooked. Die fünf Schritte vor dem ersten Release-Build stehen im Kopf der
 Datei.
@@ -789,14 +797,28 @@ App Store Connect „Tracking: ja" (nur von Hand, Rolle Admin/Account Holder).
 
 #### Die Beispiel-IDs, und warum sie gefährlicher sind als keine
 
-`Info.plist` und `AndroidManifest.xml` tragen **Googles öffentliche
-Beispiel-App-IDs** (`ca-app-pub-3940256099942544~…`). Weglassen geht nicht: fehlt
-die ID, stürzt das AdMob-SDK beim Start ab, mit einer Meldung, die nicht nach
-AdMob klingt.
+**Seit dem 26.09.2026 sind die App-IDs echt** — die beiden AdMob-Apps „FixTheMix"
+sind angelegt:
+
+| Plattform | App-ID | steht in |
+|---|---|---|
+| iOS | `ca-app-pub-8860791993288062~8461231878` | `ios/App/App/Info.plist` |
+| Android | `ca-app-pub-8860791993288062~4290052573` | `android/app/src/main/AndroidManifest.xml` |
+
+Die **Anzeigenblöcke** in `src/lib/werbung.ts` sind weiter Googles Test-Blöcke, und
+`TEST_ANZEIGEN` bleibt `true`. Das ist kein halber Zustand: eine **App-ID** (mit
+Tilde) sagt dem SDK nur, welches Konto die App ist, ausgeliefert wird nach den
+**Blöcken** (mit Schrägstrich). Die vier echten Block-IDs und `TEST_ANZEIGEN = false`
+gehören dagegen **zusammen** und kommen unmittelbar vor dem ersten Release-Build.
+
+Weglassen ging in keinem Zustand: fehlt die App-ID, stürzt das AdMob-SDK beim Start
+ab, mit einer Meldung, die nicht nach AdMob klingt. Deshalb standen dort bis heute
+**Googles öffentliche Beispiel-App-IDs** (`ca-app-pub-3940256099942544~…`).
 
 Der gefährliche Zustand ist **echte Anzeigen mit einer Beispiel-App-ID**: das SDK
 startet gegen eine fremde Kennung und liefert gar nichts aus. `test-release.mts` prüft
-deshalb nicht „ist es echt", sondern „passt es zusammen".
+deshalb nicht „ist es echt", sondern „passt es zusammen" — und läuft damit in beiden
+Zuständen grün.
 
 *Hier stand bis zum 26.09.2026 eine zu strenge Regel, und Josefs Frage hat sie
 aufgedeckt* („Kann ich AdMob schon anlegen, obwohl nichts eingereicht ist?"). Verlangt
@@ -930,13 +952,14 @@ ist das einspeisbare `jetzt` im Löserbudget.
 5. **Werbung, Kauf, Rechtstexte, Sprachen.** **FERTIG (26.09.2026)**, soweit es ohne
    Store-Konten geht: Werbung läuft mit Test-IDs, der Kauf bleibt ohne Schlüssel stumm,
    die vier Rechtstexte stehen, fünf Sprachen sind vollständig. Was fehlt, braucht Konten
-   — AdMob-App, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
+   — AdMob-Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
 6. **Stores:** **FERTIG (26.09.2026)**, soweit es ohne Konten geht. Die nativen
    Projekte für iOS und Android liegen im Repo, beide Release-Workflows stehen samt
    der Eingabe `laeufer`, die App-Symbole kommen aus `favicon.svg` statt vom
    Capacitor-Logo, und `tools/test-release.mts` bewacht die Verkabelung.
    Was fehlt, braucht **Konten und einen Mac**, und steht in `docs/release-ci.md`:
-   AdMob-App plus `TEST_ANZEIGEN = false`, RevenueCat-Schlüssel, Produkt
+   die vier AdMob-Anzeigenblöcke plus `TEST_ANZEIGEN = false` (die beiden AdMob-Apps
+   stehen seit dem 26.09.2026), RevenueCat-Schlüssel, Produkt
    `fixthemix_no_ads` in beiden Stores, Upload-Keystore, Distributions-Zertifikat und
    Provisioning-Profil `FixTheMix AppStore`, der Self-hosted Runner auf Josefs Mac,
    und die Store-Einträge nach `docs/store-eintrag.md`.
@@ -1022,8 +1045,9 @@ ist das einspeisbare `jetzt` im Löserbudget.
     dass `klangregeln.ts` ohne Browser-Globale auskommt.
   - `test-release.mts` (69) — die Verkabelung zu den Stores. Prüft nichts am Spiel,
     sondern das, was keinen Test hat und trotzdem ein Release kippt: die Bundle-ID an
-    sieben Stellen, gleiche Versionen auf beiden Plattformen, dass Test-Anzeigen und
-    Beispiel-App-IDs **zusammen** auftreten, dass die ATT-Abfrage an der Stelle steht,
+    sieben Stellen, gleiche Versionen auf beiden Plattformen, dass bei
+    `TEST_ANZEIGEN = true` **alle vier Anzeigenblöcke** Googles Test-Blöcke sind (die
+    App-IDs dürfen echt sein, siehe „Die Beispiel-IDs"), dass die ATT-Abfrage an der Stelle steht,
     an der iOS sie auch aufruft, dass das iOS-Symbol 1024 groß und **ohne Alphakanal**
     ist, dass `*.jks` im `.gitignore` steht, und dass jedes `secrets.X` aus den
     Workflows in `docs/release-ci.md` erklärt ist. Mit `--release` verlangt es

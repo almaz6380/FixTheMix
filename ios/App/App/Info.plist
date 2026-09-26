@@ -22,11 +22,16 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<!-- PLATZHALTER: Googles oeffentliche BEISPIEL-App-ID. Sie muss vor dem
-	     ersten Release durch die echte ID aus AdMob ersetzt werden; der
-	     Release-Workflow bricht ab, solange sie hier steht. -->
+	<!-- Die ECHTE App-ID der AdMob-App „FixTheMix" (iOS), angelegt am
+	     26.09.2026. Das ist die App-ID, nicht ein Anzeigenblock — sie trennt
+	     sich durch die Tilde. Die Anzeigenbloecke (mit Schraegstrich) stehen
+	     in `src/lib/werbung.ts` und sind dort noch die TEST-Bloecke von
+	     Google; `TEST_ANZEIGEN` bleibt deshalb `true`.
+	     Zusammen mit `TEST_ANZEIGEN = false` kommen die echten Bloecke rein,
+	     und erst dann laesst `tools/test-release.mts --release` einen
+	     Release-Build durch. -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-8860791993288062~8461231878</string>
 	<!-- Keine eigene Verschluesselung, nur HTTPS. Ohne diesen Schluessel fragt
 	     App Store Connect bei JEDEM Upload nach der Exportbestimmung. -->
 	<key>ITSAppUsesNonExemptEncryption</key>

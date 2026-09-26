@@ -24,24 +24,35 @@ node tools/test-release.mts --release  # Bereitschaft — zeigt, was fehlt
 
 ## Was es für FixTheMix noch gar nicht gibt
 
-1. **AdMob-App** für iOS und Android anlegen, je einen Interstitial- und einen
-   Rewarded-Block dazu. Die vier Block-IDs kommen in `src/lib/werbung.ts` unter
-   `PROD`, die beiden App-IDs in `ios/App/App/Info.plist`
-   (`GADApplicationIdentifier`) und `android/app/src/main/AndroidManifest.xml`.
-   Dort stehen bis dahin **Googles öffentliche Beispiel-IDs**.
+1. **AdMob-Anzeigenblöcke.** Die beiden **Apps** gibt es seit dem 26.09.2026,
+   und ihre echten App-IDs stehen schon im Repo:
+
+   | Plattform | App-ID | steht in |
+   |---|---|---|
+   | iOS | `ca-app-pub-8860791993288062~8461231878` | `ios/App/App/Info.plist` (`GADApplicationIdentifier`) |
+   | Android | `ca-app-pub-8860791993288062~4290052573` | `android/app/src/main/AndroidManifest.xml` |
+
+   **Was noch fehlt, sind je ein Interstitial- und ein Rewarded-Block** pro
+   Plattform — vier Block-IDs, sie kommen in `src/lib/werbung.ts` unter `PROD`.
+   Dort stehen bis dahin **Googles öffentliche Test-Blöcke**.
+
+   Das ist kein halber Zustand, sondern der richtige: eine **App-ID** (mit
+   Tilde) sagt dem SDK nur, welches Konto die App ist; ausgeliefert wird nach
+   den **Blöcken** (mit Schrägstrich), und die gehören solange Google. Deshalb
+   bleibt `TEST_ANZEIGEN` auf `true`, und es wird nichts verrechnet. Die vier
+   Block-IDs und `TEST_ANZEIGEN = false` gehören dagegen **zusammen** und
+   kommen unmittelbar vor dem ersten Release-Build — eine echte App-ID mit
+   Test-Blöcken ist harmlos, eine Beispiel-App-ID mit echten Blöcken liefert
+   nichts aus.
 
    **Die AdMob-App lässt sich anlegen, bevor die App in einem Store ist** — bei
    „Ist die App in einem unterstützten App Store veröffentlicht?" wählt man *nein*
-   und gibt Name und Plattform an. App-ID und Anzeigenblöcke gibt es sofort. Später,
-   wenn die App live ist, wird der Store-Eintrag verknüpft; solange das nicht
-   geschehen ist, kann Google die Auslieferung begrenzen.
+   und gibt Name und Plattform an. App-ID und Anzeigenblöcke gibt es sofort. Genau
+   so ist es hier geschehen; beide Apps stehen daher auf „Genehmigungsstatus:
+   Überprüfung nötig" und ohne Store-Eintrag. Später, wenn die App live ist, wird
+   der Store-Eintrag verknüpft; solange das nicht geschehen ist, kann Google die
+   Auslieferung begrenzen.
 
-   Die echten **App-IDs** dürfen schon jetzt in `Info.plist` und
-   `AndroidManifest.xml` — `TEST_ANZEIGEN` bleibt davon unberührt auf `true`.
-   Googles Test-Anzeigenblöcke gehören Google; Abrufe darauf erreichen das eigene
-   Konto nicht. Die vier **Block-IDs** und `TEST_ANZEIGEN = false` gehören dagegen
-   zusammen und kommen erst unmittelbar vor dem ersten Release-Build.
-   Danach `TEST_ANZEIGEN` in `src/lib/werbung.ts` auf `false`.
    **Niemals die eigenen Live-Anzeigen antippen** — an dem AdMob-Konto hängen
    auch Anigosha, MyPeak und WELLbooked.
 2. **DSGVO-Einwilligungsnachricht** in AdMob erstellen **und veröffentlichen**.

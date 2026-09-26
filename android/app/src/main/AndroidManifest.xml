@@ -35,16 +35,17 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- PLATZHALTER: Googles oeffentliche BEISPIEL-App-ID. Sie muss vor dem
-             ersten Release durch die echte ID aus AdMob ersetzt werden; der
-             Release-Workflow bricht ab, solange sie hier steht.
-
-             Sie darf auch nicht einfach weggelassen werden: fehlt sie, stuerzt
+        <!-- Die ECHTE App-ID der AdMob-App „FixTheMix" (Android), angelegt am
+             26.09.2026. Sie darf nicht weggelassen werden: fehlt sie, stuerzt
              das AdMob-SDK beim Start ab, und zwar mit einer Meldung, die nicht
-             nach AdMob klingt. -->
+             nach AdMob klingt.
+
+             Die Anzeigenbloecke (mit Schraegstrich statt Tilde) stehen in
+             `src/lib/werbung.ts` und sind dort noch die TEST-Bloecke von
+             Google; `TEST_ANZEIGEN` bleibt deshalb `true`. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-8860791993288062~4290052573" />
     </application>
 
     <!-- Permissions -->

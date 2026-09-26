@@ -1,4 +1,4 @@
-// Prueft den Spielbildschirm im echten Browser: spielt ein Shaker-Level mit
+// Prueft den Spielbildschirm im echten Browser: spielt ein Level mit
 // der Loesung des Loesers durch und schaut nach, ob die Oberflaeche dasselbe
 // erzaehlt wie die Engine.
 //
@@ -54,7 +54,7 @@ const konsole = [];
 seite.on('pageerror', (e) => konsole.push(String(e)));
 seite.on('console', (m) => { if (m.type() === 'error') konsole.push(m.text()); });
 
-const NR = 5; // erstes Shaker-Level der Folge
+const NR = 10; // ein groesseres Brett aus der Mitte der Folge
 const level = folge[NR];
 const loesung = solve(standAusLevel(level));
 
@@ -64,7 +64,7 @@ await seite.evaluate(() => localStorage.clear());
 await seite.reload({ waitUntil: 'networkidle' });
 await seite.waitForTimeout(300);
 ok(konsole.length === 0, `kein Konsolenfehler beim Start${konsole.length ? `: ${konsole[0]}` : ''}`);
-ok((await seite.locator('header').innerText()).includes('Level 1/'), 'startet bei Level 1');
+ok((await seite.locator('header').innerText()).includes('Level 1'), 'startet bei Level 1');
 await seite.screenshot({ path: join(bilder, '01-start.png') });
 
 console.log('\n--- Ein Zug, dann zurueck ---');
@@ -74,23 +74,26 @@ console.log('\n--- Ein Zug, dann zurueck ---');
   ok(n === folge[0].glaeser, `so viele Glaeser wie im Level (${n})`);
   await glaeser.nth(0).click();
   await seite.waitForTimeout(200);
+  // Der Zaehler hat eine eigene Kennung. Am Text zu erkennen ging schief:
+  // die Kopfzeile enthaelt auch „Level 1".
+  const zaehler = seite.locator('[data-zuege]');
   let gezogen = false;
   for (let i = 1; i < n && !gezogen; i++) {
     await glaeser.nth(i).click();
     await seite.waitForTimeout(120);
-    gezogen = /1 Züge/.test(await seite.locator('header').innerText());
+    gezogen = (await zaehler.getAttribute('data-zuege')) === '1';
   }
   ok(gezogen, 'ein Giessvorgang laesst sich per Antippen ausloesen');
-  await seite.getByRole('button', { name: 'Zurück', exact: true }).click();
+  await seite.getByRole('button', { name: 'Zug zurücknehmen' }).click();
   await seite.waitForTimeout(150);
-  ok(/0 Züge/.test(await seite.locator('header').innerText()), 'Zurück setzt den Zugzaehler auf 0');
+  ok((await zaehler.getAttribute('data-zuege')) === '0', 'Zurück setzt den Zugzaehler auf 0');
 }
 
 console.log('\n--- Farbenblind-Modus ---');
 {
-  await seite.getByRole('button', { name: 'Symbole', exact: true }).click();
+  await seite.getByRole('button', { name: /Symbole|symbols/i }).click();
   await seite.waitForTimeout(250);
-  const symbole = await seite.locator('main svg text').count();
+  const symbole = await seite.locator('.brett svg').count();
   ok(symbole > 0, `im Symbolmodus tragen die Schichten ein Zeichen (${symbole} gefunden)`);
   await seite.screenshot({ path: join(bilder, '02-symbole.png') });
   // Graustufen: so sieht es jemand, der Rot und Gruen nicht trennen kann.
@@ -102,38 +105,26 @@ console.log('\n--- Farbenblind-Modus ---');
   }));
 }
 
-console.log(`\n--- Level ${NR + 1} (Shaker) durchspielen ---`);
+console.log(`\n--- Level ${NR + 1} durchspielen ---`);
 {
   await seite.locator('header button').first().click();
   await seite.waitForTimeout(250);
-  await seite.locator(`button:has-text("${NR + 1}")`).first().click();
+  await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 1},`) }).click();
   await seite.waitForTimeout(350);
-  ok((await seite.locator('header').innerText()).includes(`Level ${NR + 1}/`), `Levelwahl springt auf Level ${NR + 1}`);
-  ok(await seite.getByRole('button', { name: 'Shaker 1' }).count() === 1, 'das Shaker-Level zeigt einen Shaker');
+  ok((await seite.locator('header').innerText()).includes(`Level ${NR + 1}`), `Levelwahl springt auf Level ${NR + 1}`);
   ok(loesung.status === 'optimal' && loesung.laenge === level.optimalZuege,
      `der Loeser bestaetigt das gespeicherte Optimum (${level.optimalZuege})`);
 
-  const tippe = async (b) => {
-    const name = b < level.glaeser ? `Glas ${b + 1}` : `Shaker ${b - level.glaeser + 1}`;
-    await seite.getByRole('button', { name, exact: true }).click();
-    await seite.waitForTimeout(70);
-  };
-  let geschuettelt = 0;
+  const glaeser = seite.locator('button[aria-label^="Glas"]');
   for (const zug of loesung.zuege) {
-    if (zug.art === 'schuetteln') {
-      await seite.getByRole('button', { name: 'Schütteln', exact: true }).click();
-      geschuettelt++;
-    } else {
-      await tippe(zug.von);
-      await tippe(zug.nach);
-    }
+    await glaeser.nth(zug.von).click();
+    await seite.waitForTimeout(60);
+    await glaeser.nth(zug.nach).click();
     await seite.waitForTimeout(60);
   }
   await seite.waitForTimeout(500);
-  ok(geschuettelt >= 1, `die Loesung brauchte den Shaker (${geschuettelt}x geschuettelt)`);
-  ok(await seite.locator('text=Geschafft!').count() === 1, 'das Siegfenster erscheint');
+  ok(await seite.locator('text=Perfekt sortiert').count() === 1, 'das Siegfenster erscheint');
   const karte = await seite.locator('.max-w-xs').innerText();
-  ok(karte.includes('★★★'), 'die optimale Loesung gibt drei Sterne');
   ok(karte.includes(`${level.optimalZuege} Züge`), 'die Zugzahl im Siegfenster stimmt');
   await seite.screenshot({ path: join(bilder, '04-sieg.png') });
 }
@@ -142,15 +133,15 @@ console.log('\n--- Weiter und Fortschritt ---');
 {
   await seite.getByRole('button', { name: 'Weiter', exact: true }).click();
   await seite.waitForTimeout(350);
-  ok((await seite.locator('header').innerText()).includes(`Level ${NR + 2}/`), '"Weiter" geht ins naechste Level');
+  ok((await seite.locator('header').innerText()).includes(`Level ${NR + 2}`), '"Weiter" geht ins naechste Level');
   await seite.locator('header button').first().click();
   await seite.waitForTimeout(250);
-  const sterne = await seite.locator(`button:has-text("${NR + 1}")`).first().innerText();
-  ok(sterne.includes('★★★'), 'die Levelliste merkt sich die drei Sterne');
+  const gemerkt = await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 1},`) }).getAttribute('aria-label');
+  ok(gemerkt?.includes('3 von 3'), `die Levelliste merkt sich die drei Sterne (${gemerkt})`);
   await seite.screenshot({ path: join(bilder, '05-levelwahl.png') });
   await seite.reload({ waitUntil: 'networkidle' });
   await seite.waitForTimeout(400);
-  ok((await seite.locator('header').innerText()).includes(`Level ${NR + 2}/`),
+  ok((await seite.locator('header').innerText()).includes(`Level ${NR + 2}`),
      'nach dem Neuladen steht man wieder im richtigen Level');
 }
 

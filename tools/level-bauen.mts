@@ -1,31 +1,26 @@
 // Baut die Levelfolge einmal vor und schreibt sie nach src/levels/folge.json.
 //
 // Warum vorgebaut und nicht im Browser erzeugt: `generate` laesst den Loeser
-// laufen, und der braucht fuer die Shaker-Stufen bis zu zwei Sekunden. Beim
-// Start der App darauf zu warten waere der schlechteste erste Eindruck. Die
-// Erzeugung gehoert ohnehin nicht aufs Geraet — auf dem Geraet sucht nie
-// jemand, das Optimum steht im Level.
+// laufen, und der braucht fuer die grossen Stufen Sekunden. Beim Start der
+// App darauf zu warten waere der schlechteste erste Eindruck. Die Erzeugung
+// gehoert ohnehin nicht aufs Geraet — dort sucht nie jemand, das Optimum
+// steht im Level.
 //
 // Aufruf: node tools/level-bauen.mts
 import { writeFileSync } from 'node:fs';
 import { generate, STUFEN } from '../src/engine/generator.ts';
 import type { Level } from '../src/engine/typen.ts';
 
-// Erst reine Fix-Level, dann der Shaker — so steht es im Bauplan. Fuer den
-// Testaufbau kommt der Shaker frueher als Level 15, damit die Mix-Mechanik
-// nicht erst nach einer Viertelstunde auftaucht.
+// Ruhig ansteigend: erst kleine Bretter mit wenigen Farben, dann mehr von
+// beidem. Die teuren Stufen kommen hinten und bleiben selten.
 const FOLGE: readonly number[] = [
-  0, 0, 0,        // Start
-  1, 1,           // Leicht
-  5,              // erster Shaker
-  2, 2,           // Mittel
-  5,              // Shaker
-  3,              // Gross
-  5, 6,           // Shaker, Shaker+
-  2, 3,           // Mittel, Gross
-  6,              // Shaker+
-  4,              // Weit
-  5, 3, 6, 4,     // gemischt
+  0, 0, 0,
+  1, 1, 1,
+  2, 2,
+  1, 2, 3,
+  2, 3, 3,
+  4, 3, 4,
+  5, 4, 5,
 ];
 
 const level: Level[] = [];
@@ -36,9 +31,8 @@ for (let i = 0; i < FOLGE.length; i++) {
   const l = generate(9_000_000 + i * 7919, stufe);
   level.push(l);
   console.log(
-    `  ${String(i + 1).padStart(2)}. ${STUFEN[stufe]!.name.padEnd(8)} ` +
-    `Optimum ${String(l.optimalZuege).padStart(2)}  ` +
-    `${l.schuettelZuege > 0 ? `${l.schuettelZuege}x schuetteln  ` : '              '}` +
+    `  ${String(i + 1).padStart(2)}. ${STUFEN[stufe]!.name.padEnd(7)} ` +
+    `${String(l.glaeser).padStart(2)} Glaeser  Optimum ${String(l.optimalZuege).padStart(2)}  ` +
     `${Date.now() - t1} ms`,
   );
 }

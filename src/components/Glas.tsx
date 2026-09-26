@@ -1,27 +1,36 @@
-// Ein Glas oder ein Shaker als SVG.
+// Ein Glas.
 //
-// Warum je Behaelter ein eigenes SVG statt eines grossen Spielfeld-SVG: die
-// Glaeser sollen auf einem schmalen Handy umbrechen duerfen. Mit einem
-// Flex-Container aus kleinen SVGs macht das der Browser; in einem einzigen
-// SVG muesste man das Layout von Hand rechnen.
+// Vier Lagen machen daraus ein Gefaess statt eines Rechtecks:
 //
-// Die Schichten liegen alle auf y = 0 und werden per CSS-`transform`
-// verschoben. Nur so laesst sich die Bewegung ueberhaupt weich animieren —
-// das SVG-Attribut `y` kennt keine CSS-Transition.
+//  1. WANDUNG mit rundem Boden. Die Radien sind in Prozent angegeben, damit
+//     das Glas bei jeder Breite dieselbe Form behaelt.
+//  2. SCHICHTEN, jede mit einer hellen Kuppe an der Oberkante. Die Kuppe ist
+//     ein radial-gradient IM Hintergrund der Schicht — dadurch kostet die
+//     gewoelbte Oberflaeche kein einziges zusaetzliches Element. Sie ist das,
+//     was aus einem Farbstreifen Fluessigkeit macht.
+//  3. ZYLINDERLICHT: ein Verlauf quer ueber die Wandung, dunkle Kante,
+//     Spitzlicht bei 25 %, Gegenlicht von rechts. Auf allen Glaesern gleich,
+//     damit die Bar eine Lichtquelle hat und nicht sechs.
+//  4. RAND als Ellipse und ein STANDSCHATTEN darunter. Ohne den Schatten
+//     schwebt jedes Glas, egal wie gut der Rest gezeichnet ist.
+//
+// Die Blaeschen sind aus dem Glasindex gerechnet, nicht zufaellig: sie sollen
+// beim Neuzeichnen an derselben Stelle bleiben.
 
-import { LEER, farbeVon } from '../engine/farben.ts';
+import { farbeVon, idVon, LEER } from '../engine/farben.ts';
 import type { Spielstand } from '../engine/typen.ts';
+import Symbol from './Symbole.tsx';
 
-const BREITE = 46;
-const SCHICHT = 26;
-const RAND = 3;
+/** Anteil der Hoehe, der oben frei bleibt — ein Glas ist nie randvoll. */
+const KOPFRAUM = 0.15;
+const FORM = '13% 13% 50% 50% / 4% 4% 23% 23%';
 
 interface Eigenschaften {
   stand: Spielstand;
-  behaelter: number;
-  istShaker: boolean;
+  glas: number;
   gewaehlt: boolean;
   kippt: boolean;
+  /** Vom Tipp hervorgehoben. */
   tipp: boolean;
   symbole: boolean;
   onTap: () => void;
@@ -29,41 +38,62 @@ interface Eigenschaften {
 }
 
 export default function Glas({
-  stand, behaelter, istShaker, gewaehlt, kippt, tipp, symbole, onTap, beschriftung,
+  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung,
 }: Eigenschaften) {
   const hoehe = stand.hoehe;
-  const innen = hoehe * SCHICHT;
-  const gesamt = innen + RAND * 2;
-  const fuell = stand.fuell[behaelter]!;
-  const oberste = fuell > 0 ? stand.zellen[behaelter * hoehe + fuell - 1] : LEER;
+  const fuell = stand.fuell[glas]!;
+  const schichtHoehe = `${((1 - KOPFRAUM) / hoehe) * 100}%`;
+  const hervor = gewaehlt || tipp;
+
+  // Der oberste zusammenhaengende Lauf hebt sich mit, wenn das Glas gewaehlt
+  // ist — so sieht man vor dem Giessen, WAS fliessen wuerde.
+  const obersteFarbe = fuell > 0 ? stand.zellen[glas * hoehe + fuell - 1]! : LEER;
+  let laufAb = fuell;
+  while (laufAb > 0 && stand.zellen[glas * hoehe + laufAb - 1] === obersteFarbe) laufAb--;
 
   const schichten = [];
   for (let i = 0; i < fuell; i++) {
-    const code = stand.zellen[behaelter * hoehe + i]!;
+    const code = stand.zellen[glas * hoehe + i]!;
     const f = farbeVon(code);
-    // Der oberste Lauf hebt sich an, wenn das Glas gewaehlt ist — so sieht
-    // man vor dem Giessen, WAS fliessen wuerde.
-    const gehoben = gewaehlt && code === oberste && istImOberenLauf(stand, behaelter, i);
-    const y = RAND + innen - (i + 1) * SCHICHT - (gehoben ? 6 : 0);
+    const gehoben = gewaehlt && i >= laufAb;
     schichten.push(
-      <g
+      <div
         key={i}
-        style={{ transform: `translateY(${y}px)`, transition: 'transform 180ms ease-out' }}
+        style={{
+          height: schichtHoehe,
+          background: `radial-gradient(50% 9px at 50% 0, ${f.hell} 0%, ${f.hell} 66%, ${ohneDeckkraft(f.hell)} 100%), ${f.ton}`,
+          transform: gehoben ? 'translateY(-6px)' : undefined,
+          transition: 'transform 160ms ease-out',
+          display: symbole ? 'flex' : undefined,
+          alignItems: symbole ? 'center' : undefined,
+          justifyContent: symbole ? 'center' : undefined,
+        }}
       >
-        <rect x={RAND} y={0} width={BREITE - RAND * 2} height={SCHICHT} fill={f.ton} />
-        {symbole && (
-          <text
-            x={BREITE / 2}
-            y={SCHICHT / 2 + 6}
-            textAnchor="middle"
-            fontSize="15"
-            aria-hidden="true"
-          >
-            {f.emoji}
-          </text>
-        )}
-      </g>,
+        {symbole && <Symbol id={idVon(code)} groesse={16} />}
+      </div>,
     );
+  }
+
+  const blasen = [];
+  if (fuell > 0) {
+    for (let k = 0; k < 3; k++) {
+      const h = (glas * 37 + k * 53) % 100;
+      const hoch = 6 + ((glas * 29 + k * 41) % Math.max(1, Math.round(fuell * 12)));
+      blasen.push(
+        <div
+          key={`b${k}`}
+          style={{
+            position: 'absolute',
+            left: `${14 + (h % 60)}%`,
+            bottom: `${hoch}%`,
+            width: `${4 + (k % 3)}px`,
+            height: `${4 + (k % 3)}px`,
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.45)',
+          }}
+        />,
+      );
+    }
   }
 
   return (
@@ -71,74 +101,60 @@ export default function Glas({
       type="button"
       onClick={onTap}
       aria-label={beschriftung}
-      className={`w-full touch-manipulation appearance-none border-0 bg-transparent p-0 transition-transform duration-150 ${
-        gewaehlt ? '-translate-y-2' : ''
-      } ${kippt ? 'rotate-[-8deg]' : ''}`}
+      className={`glas ${gewaehlt ? 'glas-gewaehlt' : ''} ${kippt ? 'glas-kippt' : ''}`}
     >
-      <svg
-        viewBox={`0 0 ${BREITE} ${gesamt}`}
-        role="img"
-        className="h-auto w-full"
-        style={{ maxHeight: `${gesamt * 1.9}px` }}
-      >
-        <defs>
-          <clipPath id={`innen-${behaelter}`}>
-            <rect
-              x={RAND}
-              y={RAND}
-              width={BREITE - RAND * 2}
-              height={innen}
-              rx={istShaker ? 3 : 7}
-            />
-          </clipPath>
-        </defs>
-        <rect
-          x={RAND}
-          y={RAND}
-          width={BREITE - RAND * 2}
-          height={innen}
-          rx={istShaker ? 3 : 7}
-          fill="#0d0a08"
+      <div style={{ position: 'relative', width: '100%', aspectRatio: '60 / 156' }}>
+        <div className="glas-schatten" />
+        {hervor && <div className="glas-schein" />}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: FORM,
+            background: 'rgba(8,14,26,0.86)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column-reverse',
+          }}
+        >
+          {schichten}
+          {blasen}
+        </div>
+        <div className="glas-licht" style={{ borderRadius: FORM }} />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: FORM,
+            border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand)'}`,
+            borderTopColor: 'transparent',
+            transition: 'border-color 140ms',
+          }}
         />
-        <g clipPath={`url(#innen-${behaelter})`}>{schichten}</g>
-        {istShaker && (
-          // Die Haelfte-Markierung. Sie ist nicht Zierde: je Farbe passt nur
-          // die Haelfte in den Shaker, und genau das muss man sehen.
-          <line
-            x1={RAND}
-            x2={BREITE - RAND}
-            y1={RAND + innen / 2}
-            y2={RAND + innen / 2}
-            stroke="#fbbf24"
-            strokeWidth="1.5"
-            strokeDasharray="3 3"
-            opacity="0.7"
-          />
-        )}
-        <rect
-          x={RAND}
-          y={RAND}
-          width={BREITE - RAND * 2}
-          height={innen}
-          rx={istShaker ? 3 : 7}
-          fill="none"
-          stroke={gewaehlt || tipp ? '#fbbf24' : istShaker ? '#8a6a44' : '#6b5540'}
-          strokeWidth={gewaehlt || tipp ? 2.5 : 2}
-          strokeDasharray={tipp && !gewaehlt ? '5 4' : undefined}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: '-2px',
+            height: '10%',
+            borderRadius: '50%',
+            border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand-hell)'}`,
+            transition: 'border-color 140ms',
+          }}
         />
-      </svg>
+      </div>
     </button>
   );
 }
 
-/** Gehoert Schicht i zum obersten zusammenhaengenden Lauf? */
-function istImOberenLauf(stand: Spielstand, behaelter: number, i: number): boolean {
-  const fuell = stand.fuell[behaelter]!;
-  const basis = behaelter * stand.hoehe;
-  const farbe = stand.zellen[basis + fuell - 1];
-  for (let k = fuell - 1; k >= 0; k--) {
-    if (stand.zellen[basis + k] !== farbe) return false;
-    if (k === i) return true;
-  }
-  return false;
+/**
+ * Dieselbe Farbe mit Deckkraft 0. Nicht `transparent` verwenden: das ist
+ * rgba(0,0,0,0) und kann im Verlauf einen dunklen Saum erzeugen.
+ */
+function ohneDeckkraft(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},0)`;
 }

@@ -1,0 +1,240 @@
+# Store-Einträge: Texte, Angaben, Bilder
+
+Alles, was in die Formulare von App Store Connect und der Play Console gehört.
+Hier gesammelt, weil beide Formulare Zeichengrenzen haben und man sie sonst
+dreimal neu schreibt.
+
+**Eine Regel vorweg:** Nichts davon darf etwas versprechen, was die App nicht
+tut. Die Datenschutzerklärung und die Store-Angaben müssen zueinander passen —
+Google gleicht die „Datensicherheit"-Angaben stichprobenartig mit dem
+tatsächlichen Netzverkehr ab, und eine Abweichung ist ein Grund, die App aus dem
+Store zu nehmen.
+
+## Grunddaten
+
+| Feld | Wert |
+|---|---|
+| Name | FixTheMix |
+| Paket / Bundle | `at.gallab.fixthemix` |
+| Kategorie | Spiele → Puzzle (Play: Puzzle; Apple: Games / Puzzle, Zweitkategorie Casual) |
+| Preis | kostenlos, mit Werbung; Einmalkauf `fixthemix_no_ads` |
+| Datenschutz-URL | `https://fixthemix.vercel.app/datenschutz` |
+| Datenlöschung (nur Play) | `https://fixthemix.vercel.app/daten-loeschen` |
+| Support / Kontakt | `fixthemix@wellbooked.at` |
+| Sprachen der App | Deutsch, Englisch, Spanisch, Französisch, Portugiesisch |
+
+Die Store-Texte stehen hier auf Deutsch und Englisch. Die drei anderen Sprachen
+haben in der App vollständige Übersetzungen, aber eine Store-Beschreibung will
+gegengelesen werden — bis dahin sieht ein spanischer Nutzer die englische Seite,
+und das ist besser als eine schiefe Übersetzung.
+
+## Apple: App Store Connect
+
+**Name** (max. 30)
+
+```
+FixTheMix
+```
+
+**Untertitel** (max. 30)
+
+```
+Sortierpuzzle an der Saftbar
+```
+```
+Sort the juice bar puzzle
+```
+
+**Werbetext / Promotional Text** (max. 170, jederzeit änderbar ohne neue Version)
+
+```
+999 Level mit bewiesen kürzester Lösung — drei Sterne gibt es nur für das echte
+Optimum. Dazu jeden Tag ein neues Rätsel für alle.
+```
+```
+999 levels, every one with a proven shortest solution — three stars only for the
+true optimum. Plus a new puzzle every day, the same for everyone.
+```
+
+**Keywords** (max. 100 Zeichen, durch Komma getrennt, keine Leerzeichen)
+
+```
+sortieren,puzzle,wasser,glas,farben,knobeln,logik,entspannt,offline,saft,bar,denkspiel
+```
+```
+sort,puzzle,water,glass,color,logic,brain,relax,offline,juice,bar,tubes,daily
+```
+
+**Beschreibung** (max. 4000) — siehe unten, identisch mit der Play-Langfassung.
+
+## Google Play
+
+**Titel** (max. 30)
+
+```
+FixTheMix — Sortierpuzzle
+```
+
+**Kurzbeschreibung** (max. 80)
+
+```
+Gieße Schicht für Schicht, bis jedes Glas sortenrein ist. 999 Level, ein Rätsel pro Tag.
+```
+```
+Pour layer by layer until every glass is pure. 999 levels, one puzzle a day.
+```
+
+## Beschreibung (beide Stores)
+
+### Deutsch
+
+```
+Eine Saftbar, ein Tresen voller Gläser, und in jedem liegen die Schichten
+durcheinander. Deine Aufgabe: gießen, bis jedes Glas eine einzige Farbe trägt.
+
+Eine Regel, mehr nicht. Der oberste zusammenhängende Block wandert in ein leeres
+Glas oder auf dieselbe Farbe. Kein Tutorial, keine Sonderregeln, keine
+Zwischenwährung, die man erst verstehen muss.
+
+DREI STERNE HEISSEN WIRKLICH DREI STERNE
+Für jedes der 999 Level ist die kürzeste Lösung bewiesen — nicht geschätzt.
+Drei Sterne gibt es nur, wenn du genau so viele Züge brauchst wie das Optimum.
+Wer das schafft, hat es verdient.
+
+EIN RÄTSEL PRO TAG, FÜR ALLE GLEICH
+Jeden Tag ein neues Brett, weltweit dasselbe. Montags klein, sonntags groß.
+Dein Ergebnis lässt sich teilen, ohne die Lösung zu verraten — es stehen nur
+Sterne, Züge und ein Balken darin, keine Farben. Und eine Serie, die nur mitzählt,
+wenn du wirklich jeden Tag spielst.
+
+FARBENBLIND-MODUS AB TAG EINS
+Jede der neun Farben trägt ein eigenes gezeichnetes Zeichen: Erdbeere, Zitrone,
+Blaubeere, Orange, Apfel, Traube, Minze, Kokos, Kaffee. Unterschiedliche Umrisse,
+nicht nur unterschiedliche Töne — auch in Graustufen auseinanderzuhalten.
+
+WENN NICHTS MEHR GEHT
+Man kann sich festfahren, und das Spiel sagt es dir, statt dich raten zu lassen.
+Dann hast du die Wahl: einen Zug zurückkaufen, ein zusätzliches Glas holen, oder
+neu anfangen. Der Neustart ist immer kostenlos — auch mit leerem Guthaben bleibt
+jedes Level spielbar.
+
+FAIR, UND ZWAR AUCH BEI DER WERBUNG
+Nie Werbung mitten im Level. Höchstens eine Anzeige zwischen zwei Leveln, und
+auch die gebremst. Videos nur, wenn du sie selbst startest. Und „Werbung
+entfernen" ist ein einmaliger Kauf, kein Abo.
+
+ALKOHOLFREI
+Säfte, Smoothies, Sirupe. Keine Bar-Romantik mit Alkohol, damit die App auch für
+jüngere Spieler freigegeben bleibt.
+
+Funktioniert offline. Kein Konto, keine Anmeldung, keine E-Mail-Adresse.
+```
+
+### Englisch
+
+```
+A juice bar, a counter full of glasses, and the layers in every one of them are
+a mess. Your job: pour until each glass holds a single colour.
+
+One rule, that's it. The top run of matching layers moves into an empty glass or
+onto the same colour. No tutorial, no special rules, no second currency you have
+to figure out first.
+
+THREE STARS REALLY MEANS THREE STARS
+For every one of the 999 levels the shortest solution is proven — not estimated.
+Three stars only if you match the optimum move for move. Earn it.
+
+ONE PUZZLE A DAY, THE SAME FOR EVERYONE
+A new board every day, identical worldwide. Small on Monday, big on Sunday.
+Share your result without spoiling it — stars, moves and a bar, never the
+colours. And a streak that only counts if you really play every day.
+
+COLOURBLIND MODE FROM DAY ONE
+Each of the nine colours carries its own drawn symbol: strawberry, lemon,
+blueberry, orange, apple, grape, mint, coconut, coffee. Different outlines, not
+just different shades — you can tell them apart in greyscale.
+
+WHEN YOU GET STUCK
+You can paint yourself into a corner, and the game tells you instead of letting
+you guess. Then it's your call: buy back a move, fetch an extra glass, or start
+over. Restarting is always free — every level stays playable with an empty
+wallet.
+
+FAIR, INCLUDING THE ADS
+Never an ad in the middle of a level. At most one between levels, and even that
+is throttled. Videos only when you start them yourself. And "remove ads" is a
+one-time purchase, not a subscription.
+
+ALCOHOL-FREE
+Juices, smoothies, syrups. No cocktail romance, so the app stays open to younger
+players.
+
+Works offline. No account, no sign-up, no email address.
+```
+
+## Altersfreigabe
+
+Beide Fragebögen lassen sich mit „nein" durchklicken. Die Punkte, bei denen man
+aufpassen muss:
+
+| Frage | Antwort | Warum |
+|---|---|---|
+| Alkohol, Tabak, Drogen | nein | Die Bar ist alkoholfrei — genau dafür. |
+| Glücksspiel / simuliertes Glücksspiel | nein | Münzen sind eine Spielwährung ohne Zufallsziehung, keine Lootbox. |
+| Gewalt, Schrecken, Sexualität | nein | — |
+| Nutzergenerierte Inhalte | nein | Es gibt keine Texteingabe und keinen Chat. |
+| Nutzer können interagieren | **ja, sobald die Bestenliste live ist** | Eine Tagesbestenliste zeigt fremde Ergebnisse. Ohne Supabase noch „nein". |
+| Standort wird geteilt | nein | — |
+| Digitale Käufe | ja | `fixthemix_no_ads` |
+| Werbung enthalten | ja | — |
+
+Erwartetes Ergebnis: Apple 4+, Play USK 0 / PEGI 3.
+
+## Datensicherheit (Play) und Datenschutzangaben (Apple)
+
+**Stand heute, ohne Supabase.** Ändert sich mit Phase 4 — siehe unten.
+
+| Datenart | Erhoben? | Wofür | Wohin |
+|---|---|---|---|
+| Werbe-ID (IDFA / AAID) | ja | Werbung, mit Einwilligung | Google AdMob |
+| Kaufinformationen | ja | Kaufwiederherstellung | RevenueCat, Apple, Google |
+| Geräteeigene Kennung (`fixthemix.kennung.v1`) | erzeugt, **verlässt das Gerät nicht** | Zuordnung für Auskunfts- und Löschbegehren | — |
+| Spielfortschritt, Sterne, Münzen, Serie | ja | Spielstand | **nur lokal** (`localStorage`) |
+| Name, E-Mail, Telefon, Standort, Kontakte, Fotos | **nein** | — | — |
+
+Daraus für die Formulare:
+
+- **Apple:** „Wird zum Tracking deiner Person verwendet" → **ja** (Identifikatoren:
+  Geräte-ID; Kategorie Werbung). „Mit dir verknüpfte Daten" → Käufe. Diese Angabe
+  gehört zwingend zur ATT-Abfrage; fehlt sie, ist es Richtlinie 2.1.
+- **Play:** Datentyp „Geräte- oder andere IDs" → erhoben, geteilt, für Werbung;
+  „App-Aktivität → In-App-Käufe" → erhoben. Verschlüsselung bei der Übertragung:
+  ja. Löschanfrage möglich: ja, über die Adresse oben.
+
+**Sobald die Bestenliste live ist**, kommt dazu: die Kennung und das Tagesergebnis
+(Züge, Sterne, Datum) gehen an Supabase. Dann muss diese Tabelle ergänzt und in
+beiden Formularen nachgezogen werden — und erst dann stimmt auch der Abschnitt
+„Bestenliste und Tagesrätsel" in der Datenschutzerklärung. Geht die App **ohne**
+Bestenliste in den Store, gehört dieser Abschnitt gelöscht.
+
+## Bilder
+
+| Was | Apple | Play |
+|---|---|---|
+| App-Symbol | 1024×1024, **ohne Alphakanal** (liegt im Repo) | 512×512 PNG |
+| Feature-Grafik | — | 1024×500, Pflicht |
+| Screenshots Telefon | 6,7″ (1290×2796) und 6,5″, je 3–10 | 2–8, mindestens 320 px Kante |
+| Screenshots Tablet | nur wenn iPad unterstützt wird | optional |
+
+`node tools/test-oberflaeche.mjs` legt bei jedem Lauf Screenshots in
+`.screenshots/` ab — brauchbar als Vorlage, aber nicht als Store-Material: sie
+sind 390×844 und damit zu klein. Für echte Screenshots den Oberflächentest mit
+einem größeren Viewport laufen lassen oder am Gerät aufnehmen.
+
+Vorschlag für die Reihenfolge, weil die ersten beiden das meiste entscheiden:
+
+1. Ein mittleres Level mit gewähltem Lauf — man sieht sofort, worum es geht
+2. Das Tagesrätsel mit Serie
+3. Die Levelwahl mit Sternen
+4. Der Farbenblind-Modus
+5. Das Fenster „Festgefahren" mit den drei Auswegen

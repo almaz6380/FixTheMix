@@ -223,6 +223,38 @@ Code auf seinem Rechner laufen.
 - [ ] Die E-Mail-Adresse `fixthemix@wellbooked.at` aus den Rechtstexten **muss es
       wirklich geben** — daran hängen Auskunfts- und Löschbegehren.
 
+### M9 Stores — FERTIG bis auf die Konten (26.09.2026)
+- [x] **Native Projekte** für iOS und Android (`npx cap add`), beide im Repo:
+      Bundle-ID `at.gallab.fixthemix`, Version 1.0.0, `versionCode`/Build-Nummer 1
+- [x] **Nur Hochformat**, auf beiden Plattformen. Das Brett ist eine Spalte aus
+      höchstens fünf Gläsern je Reihe; quer stünden sie winzig oder halb außerhalb.
+- [x] **ATT nativ** — und zwar im **`SceneDelegate`**, nicht im AppDelegate. Siehe
+      „Die ATT-Falle, die Anigosha nicht hatte" unten. Dazu
+      `NSUserTrackingUsageDescription`, 59 SKAdNetwork-Kennungen,
+      `ITSAppUsesNonExemptEncryption`.
+- [x] **Signierung im Projekt**, nicht auf der Kommandozeile: `CODE_SIGN_STYLE = Manual`
+      nur in der Release-Konfiguration des App-Targets. Debug bleibt automatisch, damit
+      lokales Bauen in Xcode bequem bleibt.
+- [x] **Android:** `keystore.properties`-Signierung, AdMob-App-ID im Manifest,
+      `AD_ID`-Berechtigung (ohne sie liefert das SDK ab Android 13 nur
+      nicht-personalisierte Anzeigen — und nichts protokolliert es)
+- [x] **App-Symbole und Startbilder** aus `public/favicon.svg`
+      (`tools/app-icons-bauen.mjs`): iOS 1024 ohne Alphakanal, Android fünf Dichten
+      als Quadrat, rund und adaptiv. Ohne das lädt man eine App mit dem
+      **Capacitor-Logo** in den Store.
+- [x] **Das Symbol neu gezeichnet.** Es war noch aus der Zeit vor M4: brauner Grund
+      `#1b1410`, ein Cocktailglas, Tailwind-Standardfarben. Jetzt Nachtblau,
+      Reagenzglas-Form und die echten Töne aus `farben.ts`. Derselbe Fehler steckte in
+      `capacitor.config.ts` — der native Hintergrund war braun, die App ist nachtblau,
+      also hätte es beim Start gefarbblitzt.
+- [x] **Release-Workflows** `ios-release.yml` und `android-release.yml` mit der Eingabe
+      `laeufer` (`github` oder Josefs Mac), Upload-Schalter standardmäßig **aus**
+- [x] **`tools/test-release.mts`** — die Store-Verkabelung als Test, siehe unten
+- [x] **`docs/release-ci.md`** (Secrets, Mac-Runner, die drei Angaben von Hand) und
+      **`docs/store-eintrag.md`** (Texte, Altersfreigabe, Datensicherheit, Bilder)
+- [ ] **AdMob-App, RevenueCat-Schlüssel, Store-Produkte, Keystore, Zertifikat** — alles,
+      was ein Konto braucht. `node tools/test-release.mts --release` listet es auf.
+
 ## Was FixTheMix einzigartig macht
 
 1. **Eine Regel, sechs Schichten, kein Tutorial.** Gegossen wird nur auf dieselbe Farbe
@@ -577,6 +609,68 @@ Drei Folgen, die zusammenhängen:
 - **Der Neustart behält das Extra-Glas.** Wer dafür ein Werbevideo gesehen hat, soll es
   nicht durch einen Neustart verlieren — sonst wird aus der Hilfe eine Falle.
 
+### Die nativen Projekte — `ios/` und `android/`
+
+Beide liegen **im Repo** und werden getrackt; nur die Build-Artefakte sind
+gitignored (`.gitignore` deckt jetzt auch `*.jks` und `android/keystore.properties`
+ab — der Release-Workflow schreibt beide in den Arbeitsordner, und der
+Upload-Schlüssel ist unersetzlich).
+
+Nach jeder Änderung am Web-Teil: `npm run build && npx cap sync`. Nach einer
+Änderung an `public/favicon.svg`: `node tools/app-icons-bauen.mjs`.
+
+#### Die ATT-Falle, die Anigosha nicht hatte
+
+Die ATT-Abfrage ist wortgetreich aus `anigosha/ios/App/App/AppDelegate.swift`
+übernommen — **außer der Stelle, an der sie steht**, und das ist der ganze Punkt.
+
+Capacitor 8 legt für neue Projekte einen `SceneDelegate` an und trägt ein
+`UIApplicationSceneManifest` in die `Info.plist` ein. Ab da ruft iOS
+`applicationDidBecomeActive` auf dem AppDelegate **nicht mehr auf**. Genau dort
+steht die Abfrage in Anigosha (dessen Projekt mit einer älteren Capacitor-Fassung
+angelegt wurde und kein Scene-Manifest hat). Eine wörtliche Übernahme wäre hier
+also toter Code gewesen: kein Dialog, kein Fehler, keine Zeile in der Konsole —
+und die Rückmeldung wäre Apples Ablehnung nach Richtlinie 2.1 gekommen, dieselbe,
+die Anigosha 1.0 zehn Builds gekostet hat. Sie hängt jetzt an
+`sceneDidBecomeActive`, und `test-release.mts` prüft beides: dass sie dort steht,
+und dass sie **nicht** im AppDelegate steht.
+
+Die drei Dinge, die für iOS zusammenstimmen müssen, bleiben dieselben:
+`NSUserTrackingUsageDescription` in der `Info.plist`, die native Abfrage, und in
+App Store Connect „Tracking: ja" (nur von Hand, Rolle Admin/Account Holder).
+
+#### Die Beispiel-IDs, und warum sie gefährlicher sind als keine
+
+`Info.plist` und `AndroidManifest.xml` tragen **Googles öffentliche
+Beispiel-App-IDs** (`ca-app-pub-3940256099942544~…`). Weglassen geht nicht: fehlt
+die ID, stürzt das AdMob-SDK beim Start ab, mit einer Meldung, die nicht nach
+AdMob klingt.
+
+Der gefährliche Zustand ist nicht „alles Test" und auch nicht „alles echt",
+sondern die **Mischung**: eine echte App-ID mit Test-Anzeigen füllt die
+AdMob-Statistik mit Scheinabrufen, eine Beispiel-App-ID mit echten Anzeigen
+liefert gar nichts aus. `test-release.mts` prüft deshalb nicht „ist es echt",
+sondern „passt es zusammen" — und läuft damit in beiden Zuständen grün.
+
+#### `tools/test-release.mts` — zwei Betriebsarten
+
+| Aufruf | Prüft | Heute |
+|---|---|---|
+| `node tools/test-release.mts` | **Stimmigkeit**: Bundle-ID an sieben Stellen, Versionen gleich, Test/Produktion passen zusammen, ATT an der richtigen Stelle, Symbolgrößen, Schlüssel im `.gitignore`, jedes Secret der Workflows in der Anleitung | grün |
+| `node tools/test-release.mts --release` | zusätzlich die **Bereitschaft**: `TEST_ANZEIGEN = false`, echte App-IDs, vier gefüllte Anzeigenblöcke | schlägt fehl — und die Ausgabe ist die Liste dessen, was noch fehlt |
+
+Die zweite Fassung ruft `npm run test:release` auf, und das ist der erste Schritt
+beider Release-Workflows. Ein Build mit Test-Anzeigen kommt damit gar nicht erst
+bis zum Signieren. Der 1.000er-Lauf des Generators bleibt aus `test:release`
+bewusst draußen: 148 s, und er hängt an nichts, was ein Release-Build ändert.
+
+Zwei Prüfungen darin sind Selbstkontrollen der Werkzeuge, und die sind mehr wert,
+als sie aussehen: die Workflows lesen `versionCode` und `CURRENT_PROJECT_VERSION`
+mit `grep` aus den Projektdateien — ändert sich dort die Schreibweise, lesen sie
+still eine leere Zeichenkette. Und jedes `secrets.X` aus beiden Workflows muss in
+`docs/release-ci.md` stehen, sonst legt niemand es an und der Lauf scheitert
+später mit „leer".
+
 ### Routen — und warum es sie überhaupt gibt
 
 Seit Phase 5 hat die App einen Router, und zwar nicht aus Schönheit: **Apple und Google
@@ -658,17 +752,24 @@ ist das einspeisbare `jetzt` im Löserbudget.
    Store-Konten geht: Werbung läuft mit Test-IDs, der Kauf bleibt ohne Schlüssel stumm,
    die vier Rechtstexte stehen, fünf Sprachen sind vollständig. Was fehlt, braucht Konten
    — AdMob-App, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
-6. **Stores:** Capacitor für iOS und Android, Release-Workflows mit `laeufer`, ein
-   Runner auf Josefs Mac, die Store-Einträge.
-   ← **hier geht es weiter.** Vorher: AdMob-App anlegen und `TEST_ANZEIGEN` auf false,
-   RevenueCat-Schlüssel als `VITE_REVENUECAT_*`, Produkt `fixthemix_no_ads` in beiden
-   Stores, und die E-Mail-Adresse aus den Rechtstexten anlegen.
+6. **Stores:** **FERTIG (26.09.2026)**, soweit es ohne Konten geht. Die nativen
+   Projekte für iOS und Android liegen im Repo, beide Release-Workflows stehen samt
+   der Eingabe `laeufer`, die App-Symbole kommen aus `favicon.svg` statt vom
+   Capacitor-Logo, und `tools/test-release.mts` bewacht die Verkabelung.
+   Was fehlt, braucht **Konten und einen Mac**, und steht in `docs/release-ci.md`:
+   AdMob-App plus `TEST_ANZEIGEN = false`, RevenueCat-Schlüssel, Produkt
+   `fixthemix_no_ads` in beiden Stores, Upload-Keystore, Distributions-Zertifikat und
+   Provisioning-Profil `FixTheMix AppStore`, der Self-hosted Runner auf Josefs Mac,
+   die Store-Einträge nach `docs/store-eintrag.md` — und die E-Mail-Adresse
+   `fixthemix@wellbooked.at`.
+   `node tools/test-release.mts --release` sagt jederzeit, was davon noch offen ist.
 7. **Version 1.1: Duelle.**
 
 ## Prüfung
 
-- **Testskripte** (alle grün zu halten). `npm test` fährt alle neun nacheinander,
-  Gesamtlaufzeit rund 5 Minuten — davon entfallen 148 s auf den 1.000er-Lauf des
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle **zehn** nacheinander,
+  **401 Zusicherungen**, Gesamtlaufzeit rund 5 Minuten — davon entfallen 148 s auf den
+  1.000er-Lauf des
   Generators und 21 s auf die Prüfung der ausgelieferten Folge. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
   `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
   spürbar schneller.
@@ -726,7 +827,16 @@ ist das einspeisbare `jetzt` im Löserbudget.
     **Unterschied** (von, nach, Menge), nicht den ganzen Stand — bei 14 Gläsern und
     60 Zügen ist das der Unterschied zwischen ein paar hundert Bytes und ein paar
     Kilobyte je Partie.
-  - `test-oberflaeche.mjs` (45, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-release.mts` (69) — die Verkabelung zu den Stores. Prüft nichts am Spiel,
+    sondern das, was keinen Test hat und trotzdem ein Release kippt: die Bundle-ID an
+    sieben Stellen, gleiche Versionen auf beiden Plattformen, dass Test-Anzeigen und
+    Beispiel-App-IDs **zusammen** auftreten, dass die ATT-Abfrage an der Stelle steht,
+    an der iOS sie auch aufruft, dass das iOS-Symbol 1024 groß und **ohne Alphakanal**
+    ist, dass `*.jks` im `.gitignore` steht, und dass jedes `secrets.X` aus den
+    Workflows in `docs/release-ci.md` erklärt ist. Mit `--release` verlangt es
+    zusätzlich die Bereitschaft (echte Anzeigen, echte IDs) — diese Fassung schlägt
+    heute absichtlich fehl und ist damit die Liste dessen, was noch fehlt.
+  - `test-oberflaeche.mjs` (47, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
     Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein
@@ -776,10 +886,15 @@ ist das einspeisbare `jetzt` im Löserbudget.
   innerhalb des Rahmens 0.
 - **Am Gerät:** Werbung nur mit Test-IDs. **Nie echte eigene Anzeigen antippen** — am
   AdMob-Konto hängen alle Apps.
-- **`npm audit` meldet drei mittlere Funde** in `@capacitor/cli` → `xcode` → `uuid`. Das
-  ist eine reine Baukette (kein Code, der im Bundle landet), und der Fund bestand schon
-  vor Phase 5. `npm audit fix` würde die Capacitor-CLI anheben; das gehört in Phase 6,
-  wenn die nativen Projekte ohnehin angefasst werden.
+- **`npm audit` meldet drei mittlere Funde** in `@capacitor/cli` → `xcode` →
+  `uuid@7.0.3`. *In Phase 6 nachgesehen, und die frühere Notiz hier war falsch:*
+  `npm audit fix` ändert daran **nichts**. In der 8er-Reihe gibt es keine Fassung ohne
+  diese Kette, und `xcode@3.0.1` pinnt `uuid` fest; erst eine Capacitor-9-Alpha käme
+  ohne aus. Der Fund betrifft nur die Baukette — `xcode` schreibt die
+  `project.pbxproj` und landet nie im Bundle, und die verwundbare Stelle
+  (`uuid.v3`/`v5` mit eigenem Puffer) wird dort nicht benutzt. Ein
+  `overrides`-Eintrag wäre möglich, hebelte aber ausgerechnet das Werkzeug aus, das
+  die Xcode-Projektdatei erzeugt. Bleibt also stehen, bewusst.
 
 ## Auslieferung auf Vercel
 

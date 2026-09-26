@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appId: 'at.gallab.fixthemix',
   appName: 'FixTheMix',
   webDir: 'dist',
-  backgroundColor: '#1b1410',
+  backgroundColor: '#0E1A2E',
 };
 
 export default config;

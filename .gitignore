@@ -37,6 +37,12 @@ android/build/
 android/app/build/
 android/local.properties
 *.keystore
+# Android-Signierung: der Release-Workflow schreibt beide Dateien in den
+# Arbeitsordner und loescht sie danach. Wer lokal einmal ein Release baut,
+# haette sie sonst im naechsten Commit — und der Upload-Schluessel ist
+# unersetzlich: geht er verloren, laesst sich die App nie wieder aktualisieren.
+*.jks
+android/keystore.properties
 .vercel
 
 # Claude Code: persoenliche Einstellungen (nicht teilen)

@@ -92,6 +92,32 @@ export function istFrei(f: Fortschritt, level: number): boolean {
   return level <= f.hoechstes;
 }
 
+/**
+ * Alles loeschen, was diese App im Browser abgelegt hat.
+ *
+ * Google Play verlangt einen Weg zur Datenloeschung, der OHNE Anfrage bei uns
+ * funktioniert — hier ist er. Geloescht wird ueber das Namensmuster und nicht
+ * ueber eine Liste von Schluesseln: eine Liste vergisst man beim naechsten
+ * neuen Speicherort, und dann bleibt etwas liegen, obwohl die App das Gegenteil
+ * behauptet.
+ *
+ * `localStorage.clear()` waere zu grob — auf `fixthemix.vercel.app` koennte
+ * theoretisch etwas anderes liegen. Der Sprachschluessel `language` gehoert
+ * ebenfalls dazu, hat aber historisch kein Praefix.
+ */
+export function loescheAlles(): void {
+  try {
+    const weg: string[] = ['language'];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('fixthemix.')) weg.push(k);
+    }
+    for (const k of weg) localStorage.removeItem(k);
+  } catch {
+    // Kein Speicher — dann gibt es auch nichts zu loeschen.
+  }
+}
+
 export function ladeEinstellung(name: string, vorgabe: boolean): boolean {
   try {
     const roh = localStorage.getItem(`fixthemix.${name}`);

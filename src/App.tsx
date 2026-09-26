@@ -15,7 +15,8 @@
 // nirgends `useCallback` — alle Handler haengen an genau diesem
 // veraenderlichen Objekt, eine Merkung waere bestenfalls wirkungslos.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Brett from './components/Brett.tsx';
 import Levelwahl from './components/Levelwahl.tsx';
@@ -34,6 +35,11 @@ import {
   heute, ladeTaeglich, merkeTag, serieLaeuft, speichereTaeglich,
 } from './lib/serie.ts';
 import { teilText } from './lib/teilen.ts';
+import { BELOHNUNG_VIDEO } from './lib/muenzen.ts';
+import { werbefreiPruefen } from './lib/kauf.ts';
+import {
+  belohnungMoeglich, starteWerbung, vielleichtInterstitial, zeigeBelohnungsVideo,
+} from './lib/werbung.ts';
 import roheFolge from './levels/folge.json';
 
 // Der JSON-Import kommt als weit gefasster Typ herein (`version: number`
@@ -60,12 +66,15 @@ const HEUTE = heute();
 
 export default function App() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [index, setIndex] = useState(STARTLEVEL);
   const [modus, setModus] = useState<'folge' | 'tag'>('folge');
   const [tagBrett, setTagBrett] = useState<Level | null>(null);
   const [taeglich, setTaeglich] = useState(() => ladeTaeglich());
   const [tagLaedt, setTagLaedt] = useState(false);
   const [kopiert, setKopiert] = useState(false);
+  const [videoLaeuft, setVideoLaeuft] = useState(false);
+  const [videoLeer, setVideoLeer] = useState(false);
   const [partie, setPartie] = useState(() => new Partie(FOLGE[STARTLEVEL]!));
   const [fortschritt, setFortschritt] = useState(start);
   const [symbole, setSymbole] = useState(() => ladeEinstellung('symbole', false));
@@ -82,6 +91,15 @@ export default function App() {
   const [gewinn, setGewinn] = useState(0);
   const [takt, setTakt] = useState(0);
   const neuZeichnen = () => setTakt((x) => x + 1);
+
+  // Werbung und Kaufstatus einmal beim Start. Im Browser tut beides nichts —
+  // die Funktionen pruefen das selbst und kehren still zurueck.
+  useEffect(() => {
+    void (async () => {
+      await starteWerbung();
+      await werbefreiPruefen();
+    })();
+  }, []);
 
   /** Nach jedem Zug: ist von hier aus ueberhaupt noch etwas zu holen? */
   const pruefeSackgasse = () => {
@@ -219,6 +237,11 @@ export default function App() {
             return neu;
           });
         }
+        // Die Bremse entscheidet, ob wirklich eine Anzeige kommt: jedes dritte
+        // Level und nie oefter als alle zwei Minuten. Das Tagesraetsel zaehlt
+        // MIT, bekommt aber keine eigene Gelegenheit — nach dem einen Raetsel
+        // am Tag zuverlaessig Werbung waere die unangenehmste Stelle im Spiel.
+        if (!imTag) void vielleichtInterstitial();
         if (imTag) {
           setTaeglich((alt) => {
             const neu = merkeTag(alt, HEUTE, partie.zugzahl, partie.sterne());
@@ -293,6 +316,56 @@ export default function App() {
     setSteckt(festgefahren(partie.zustand));
   };
 
+  /**
+   * Ein leeres Glas gegen ein freiwilliges Werbevideo.
+   *
+   * Hoechstens eines je Partie, und es kostet die dritte Sterne: das Optimum
+   * ist fuer das Brett OHNE dieses Glas bewiesen (`Partie.sterne()` deckelt auf
+   * zwei). Ohne diesen Deckel waere die Zusicherung „drei Sterne nur fuer die
+   * kuerzeste Loesung" hinfaellig, und die ist der Kern der ganzen Wertung.
+   */
+  const holeExtraGlas = () => {
+    setVideoLaeuft(true);
+    window.setTimeout(() => {
+      void (async () => {
+        const gesehen = await zeigeBelohnungsVideo();
+        setVideoLaeuft(false);
+        if (!gesehen) {
+          setVideoLeer(true);
+          window.setTimeout(() => setVideoLeer(false), 2500);
+          return;
+        }
+        if (!partie.extraGlas()) return;
+        setGewaehlt(null);
+        setTippZiel(null);
+        neuZeichnen();
+        // Mit einem Glas mehr ist das Brett fast immer wieder loesbar — aber
+        // eben nur fast. Also nachrechnen statt hoffen.
+        setSteckt(festgefahren(partie.zustand));
+      })();
+    }, 30);
+  };
+
+  const holeMuenzen = () => {
+    setVideoLaeuft(true);
+    window.setTimeout(() => {
+      void (async () => {
+        const gesehen = await zeigeBelohnungsVideo();
+        setVideoLaeuft(false);
+        if (!gesehen) {
+          setVideoLeer(true);
+          window.setTimeout(() => setVideoLeer(false), 2500);
+          return;
+        }
+        setMuenzen((m) => {
+          const neu = m + BELOHNUNG_VIDEO;
+          speichereMuenzen(neu);
+          return neu;
+        });
+      })();
+    }, 30);
+  };
+
   const neustart = () => {
     partie.neustart();
     setGewaehlt(null);
@@ -334,7 +407,7 @@ export default function App() {
         <div className="flex flex-col items-center">
           <div data-zuege={zuege} className={`font-anzeige text-3xl leading-none font-semibold tabular-nums ${zugFarbe}`}>{zuege}</div>
           <div className="text-[10.5px] font-bold tracking-[0.1em] text-rauch uppercase">
-            {t('spiel.vonZuegen', { n: level.optimalZuege })}
+            {partie.hatExtraGlas ? t('spiel.extraGlas') : t('spiel.vonZuegen', { n: level.optimalZuege })}
           </div>
         </div>
 
@@ -408,6 +481,14 @@ export default function App() {
         </div>
       )}
 
+      {videoLeer && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-28 z-20 flex justify-center px-6">
+          <p className="rounded-full border border-kante bg-theke px-4 py-2 text-xs font-bold text-rauch">
+            {t('spiel.videoNichts')}
+          </p>
+        </div>
+      )}
+
       {tippLeer && (
         <div className="pointer-events-none fixed inset-x-0 bottom-28 z-10 flex justify-center px-6">
           <p className="rounded-full border border-kante bg-theke px-4 py-2 text-xs font-bold text-rauch">
@@ -441,6 +522,21 @@ export default function App() {
               >
                 {t('spiel.zurueckkaufen', { n: KOSTEN_RUECKKAUF })}
               </button>
+              {/* Das Extra-Glas ist die zweite Rettung, und es gibt sie GENAU
+                  HIER: ein leeres Glas macht aus einer Sackgasse fast immer
+                  wieder ein loesbares Brett. Nicht im Tagesraetsel — der Server
+                  baut das Brett ohne dieses Glas nach, eine Zugfolge damit waere
+                  nicht pruefbar und in einer Bestenliste nicht vergleichbar. */}
+              {!imTag && !partie.hatExtraGlas && belohnungMoeglich() && (
+                <button type="button" className="knopf" disabled={videoLaeuft} onClick={holeExtraGlas}>
+                  {t('spiel.extraGlasHolen')}
+                </button>
+              )}
+              {!reichtFuer(muenzen, KOSTEN_RUECKKAUF) && belohnungMoeglich() && (
+                <button type="button" className="knopf" disabled={videoLaeuft} onClick={holeMuenzen}>
+                  {t('spiel.muenzenVideo', { n: BELOHNUNG_VIDEO })}
+                </button>
+              )}
               <button type="button" className="knopf" onClick={neustart}>
                 {t('spiel.neustart')}
               </button>
@@ -482,7 +578,9 @@ export default function App() {
               </p>
             )}
             {sterne < 3 && (
-              <p className="mt-1 text-xs text-rauch">{t('spiel.dreiSterne', { n: level.optimalZuege })}</p>
+              <p className="mt-1 text-xs text-rauch">
+                {partie.hatExtraGlas ? t('spiel.extraGlasZwei') : t('spiel.dreiSterne', { n: level.optimalZuege })}
+              </p>
             )}
             <div className="mt-6 flex flex-col gap-2.5">
               {/* Beim letzten Level fuehrt der Hauptknopf in die Levelwahl.
@@ -550,6 +648,8 @@ export default function App() {
           }
           tagSterne={taeglich.tage[HEUTE]?.sterne ?? 0}
           onTag={starteTag}
+          einstellungen={t('spiel.einstellungen')}
+          onEinstellungen={() => navigate('/einstellungen')}
         />
       )}
     </main>

@@ -8,9 +8,12 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node tools/test-engine.mts && node tools/test-loeser.mts && node tools/test-generator.mts && node tools/test-wiedergabe.mts && node tools/test-folge.mts && node tools/test-muenzen.mts && node tools/test-tagesraetsel.mts"
+    "test": "node tools/test-engine.mts && node tools/test-loeser.mts && node tools/test-generator.mts && node tools/test-wiedergabe.mts && node tools/test-folge.mts && node tools/test-muenzen.mts && node tools/test-tagesraetsel.mts && node tools/test-werbung.mts && node tools/test-recht.mts"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.1.0",
+    "@capacitor/core": "^8.5.2",
+    "@revenuecat/purchases-capacitor": "^13.6.1",
     "@tailwindcss/vite": "^4.3.3",
     "i18next": "^26.3.6",
     "lucide-react": "^1.27.0",

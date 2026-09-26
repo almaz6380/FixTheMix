@@ -58,6 +58,12 @@ const browser = await chromium.launch(
 const seite = await browser.newPage({
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 2,
+  // DEUTSCH festnageln. Seit Phase 5 waehlt die App beim ersten Start die
+  // GERAETESPRACHE, und Chromium meldet standardmaessig en-US — damit lief der
+  // Test ploetzlich gegen die englische Oberflaeche und suchte „Zug
+  // zuruecknehmen" vergeblich. Geprueft werden hier die deutschen Texte; fuer
+  // die anderen vier Sprachen sorgt tools/test-recht.mts.
+  locale: 'de-DE',
   // Fuer das Teilen des Tagesergebnisses: ohne diese Rechte lehnt Chromium
   // `navigator.clipboard.writeText` still ab, und der Test saehe nur, dass
   // nichts passiert.
@@ -307,6 +313,69 @@ console.log('\n--- Tagesraetsel ---');
   ok(text.includes('🟩') || text.includes('⬜'), '... und den Balken');
   ok(!/[🍓🍋🫐🍊🍏🍇🌿🥥☕]/u.test(text),
      '... aber KEINE Farben — der Teiltext verraet das Raetsel nicht');
+}
+
+console.log('\n--- Einstellungen und Rechtstexte ---');
+{
+  // Erst das Siegfenster des Tagesraetsels verlassen — es liegt als Overlay
+  // ueber allem und faengt sonst jeden Klick ab.
+  await seite.getByRole('button', { name: 'Zur Levelfolge' }).click();
+  await seite.waitForTimeout(400);
+
+  // Der Weg dorthin fuehrt ueber die Levelwahl, nicht ueber die Kopfzeile: die
+  // ist voll, und der Burger muss das erste Button im header bleiben.
+  await seite.locator('header button').first().click();
+  await seite.waitForTimeout(250);
+  await seite.getByRole('button', { name: 'Einstellungen' }).click();
+  await seite.waitForTimeout(400);
+  ok(seite.url().endsWith('/einstellungen'), `die Einstellungen haben eine Adresse (${new URL(seite.url()).pathname})`);
+  ok(await seite.getByRole('button', { name: 'Deutsch' }).count() === 1, 'die Sprachwahl ist da');
+  const stand = await seite.locator('[data-muenzstand]').getAttribute('data-muenzstand');
+  ok(Number(stand) >= 0, `der Muenzstand steht drin (${stand})`);
+  const kennung = (await seite.locator('[data-kennung]').innerText()).trim();
+  ok(kennung.startsWith('ftm-'), `die Kennung fuer Auskunft und Loeschung steht drin (${kennung.slice(0, 12)}…)`);
+  await seite.screenshot({ path: join(bilder, '08-einstellungen.png') });
+
+  // Die vier Rechtstexte. Sie MUESSEN eigene Adressen haben und ohne Anmeldung
+  // aufrufbar sein — Apple und Google verlangen genau das.
+  for (const [pfad, ueberschrift] of [
+    ['/impressum', 'Impressum'],
+    ['/datenschutz', 'Datenschutzerklärung'],
+    ['/nutzungsbedingungen', 'Nutzungsbedingungen'],
+    ['/daten-loeschen', 'Daten löschen'],
+  ]) {
+    await seite.goto(`http://localhost:4602${pfad}`, { waitUntil: 'networkidle' });
+    await seite.waitForTimeout(250);
+    const h1 = await seite.locator('h1').innerText();
+    ok(h1.trim() === ueberschrift, `${pfad} zeigt „${h1.trim()}"`);
+  }
+  // Und der Datenschutz muss die Empfaenger nennen — eine Seite, die nur eine
+  // Ueberschrift hat, waere im Store wertlos.
+  await seite.goto('http://localhost:4602/datenschutz', { waitUntil: 'networkidle' });
+  const text = await seite.locator('main').innerText();
+  ok(text.includes('AdMob') && text.includes('RevenueCat') && text.includes('DSGVO'),
+     'die Datenschutzseite nennt Empfaenger und Rechtsgrundlagen');
+  await seite.screenshot({ path: join(bilder, '09-datenschutz.png') });
+
+  // Daten loeschen: danach steht der Fortschritt wieder auf Level 1.
+  await seite.goto('http://localhost:4602/einstellungen', { waitUntil: 'networkidle' });
+  await seite.waitForTimeout(300);
+  await seite.getByRole('button', { name: 'Daten löschen' }).click();
+  await seite.waitForTimeout(200);
+  await seite.getByRole('button', { name: 'Daten löschen' }).click();
+  await seite.waitForTimeout(700);
+  const rest = await seite.evaluate(() => Object.keys(localStorage).filter(
+    (k) => k.startsWith('fixthemix.') && !k.startsWith('fixthemix.kennung')).length);
+  ok(rest === 0, `Fortschritt, Muenzen und Serie sind weg (${rest} Schluessel uebrig)`);
+  // Die Kennung ist ebenfalls geloescht — aber die App legt beim naechsten
+  // Start sofort eine NEUE an, weil sie eine braucht. Geprueft wird deshalb,
+  // dass es nicht mehr dieselbe ist: die alte Kennung ist das, worauf sich ein
+  // Loeschbegehren zur Bestenliste bezieht.
+  const neueKennung = await seite.evaluate(() => localStorage.getItem('fixthemix.kennung.v1'));
+  ok(neueKennung !== kennung,
+     `die alte Kennung ist weg (${kennung.slice(0, 10)}… -> ${(neueKennung ?? 'keine').slice(0, 10)}…)`);
+  ok((await seite.locator('header').innerText()).includes('Level 1'),
+     '... und das Spiel startet wieder bei Level 1');
 }
 
 ok(konsole.length === 0, `keine Konsolenfehler im ganzen Durchlauf${konsole.length ? `: ${konsole.join(' | ')}` : ''}`);

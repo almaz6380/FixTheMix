@@ -39,12 +39,14 @@ interface Eigenschaften {
   tagSerie: string;
   tagSterne: number;
   onTag: () => void;
+  einstellungen: string;
+  onEinstellungen: () => void;
 }
 
 export default function Levelwahl({
   level, aktuell, sterne, hoechstes, onWahl, onZu, titel, schliessen, bilanz,
   abschnittTitel, kachelTitel, gesperrtTitel, zurueck, vor,
-  tagTitel, tagZeile, tagSerie, tagSterne, onTag,
+  tagTitel, tagZeile, tagSerie, tagSterne, onTag, einstellungen, onEinstellungen,
 }: Eigenschaften) {
   const bloecke = Math.min(BLOECKE, Math.ceil(level.length / BLOCK));
   const [block, setBlock] = useState(() => Math.min(Math.floor(aktuell / BLOCK), bloecke - 1));
@@ -63,6 +65,21 @@ export default function Levelwahl({
           <h2 className="font-anzeige text-2xl leading-tight font-bold text-creme">{titel}</h2>
           <p className="mt-1 text-xs font-bold text-rauch">{bilanz}</p>
         </div>
+        {/* Der Weg zu Einstellungen und Rechtstexten. Er liegt hier und nicht
+            im Spielbildschirm: dort ist die Kopfzeile voll, und der Burger muss
+            das erste Button im header bleiben (daran haengt der
+            Oberflaechentest). */}
+        <button
+          type="button"
+          onClick={onEinstellungen}
+          aria-label={einstellungen}
+          className="flex h-[46px] w-[46px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl border-[1.5px] border-kante bg-theke/90 text-creme"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.1" />
+            <path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-2.9 1.2V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-2.9-1.2l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004 15H3.9a2 2 0 110-4H4a1.7 1.7 0 001.51-2.9l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 0011 4.6V4a2 2 0 114 0v.1a1.7 1.7 0 002.9 1.2l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0020 11h.1a2 2 0 110 4H20a1.7 1.7 0 00-.6.9z" />
+          </svg>
+        </button>
         <button
           type="button"
           onClick={onZu}

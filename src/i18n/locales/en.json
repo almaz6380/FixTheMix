@@ -36,7 +36,20 @@
     "zurueckkaufen": "Undo · {{n}}",
     "zuWenig": "Not enough coins — restart is free.",
     "kachelExperte": "Level {{n}}, {{sterne}} of 3 stars, expert",
-    "experte": "Expert"
+    "experte": "Expert",
+    "tagesraetsel": "Daily puzzle",
+    "tagNr": "Puzzle #{{n}}",
+    "tagHeute": "Today · puzzle #{{n}}",
+    "tagFertig": "Done today — {{zuege}} moves",
+    "tagLaedt": "Building the puzzle …",
+    "serie": "{{n}} day streak",
+    "serieKeine": "No streak yet",
+    "teilen": "Share result",
+    "kopiert": "Copied to clipboard",
+    "zurFolge": "Back to levels",
+    "wortZuege": "moves",
+    "wortOptimum": "best",
+    "wortSerie": "day streak"
   },
   "farben": {
     "rot": "Strawberry",

@@ -36,7 +36,20 @@
     "zurueckkaufen": "Zug zurück · {{n}}",
     "zuWenig": "Zu wenig Münzen — bleibt der Neustart.",
     "kachelExperte": "Level {{n}}, {{sterne}} von 3 Sternen, Experte",
-    "experte": "Experte"
+    "experte": "Experte",
+    "tagesraetsel": "Tagesrätsel",
+    "tagNr": "Rätsel #{{n}}",
+    "tagHeute": "Heute · Rätsel #{{n}}",
+    "tagFertig": "Heute geschafft — {{zuege}} Züge",
+    "tagLaedt": "Rätsel wird gebaut …",
+    "serie": "{{n}} Tage Serie",
+    "serieKeine": "Noch keine Serie",
+    "teilen": "Ergebnis teilen",
+    "kopiert": "In die Zwischenablage kopiert",
+    "zurFolge": "Zur Levelfolge",
+    "wortZuege": "Züge",
+    "wortOptimum": "Optimum",
+    "wortSerie": "Tage Serie"
   },
   "farben": {
     "rot": "Erdbeere",

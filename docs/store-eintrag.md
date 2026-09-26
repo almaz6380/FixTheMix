@@ -20,7 +20,7 @@ Store zu nehmen.
 | Preis | kostenlos, mit Werbung; Einmalkauf `fixthemix_no_ads` |
 | Datenschutz-URL | `https://fixthemix.vercel.app/datenschutz` |
 | Datenlöschung (nur Play) | `https://fixthemix.vercel.app/daten-loeschen` |
-| Support / Kontakt | `fixthemix@wellbooked.at` |
+| Support / Kontakt | `63almaz80@gmail.com` |
 | Sprachen der App | Deutsch, Englisch, Spanisch, Französisch, Portugiesisch |
 
 Die Store-Texte stehen hier auf Deutsch und Englisch. Die drei anderen Sprachen

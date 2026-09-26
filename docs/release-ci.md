@@ -56,9 +56,13 @@ node tools/test-release.mts --release  # Bereitschaft — zeigt, was fehlt
    **`FixTheMix AppStore`** heißen — so steht es im `PROVISIONING_PROFILE_SPECIFIER`
    des Xcode-Projekts und in den `ExportOptions` des Workflows, und `test-release.mts`
    prüft, dass beide dasselbe sagen.
-7. **Die E-Mail-Adresse `fixthemix@wellbooked.at`** muss es wirklich geben. Sie
-   steht in den veröffentlichten Rechtstexten, und an ihr hängen Auskunfts- und
-   Löschbegehren.
+7. ~~Die E-Mail-Adresse anlegen~~ — **erledigt (Josef, 26.09.2026).** Die
+   Rechtstexte nennen jetzt `63almaz80@gmail.com`, eine Adresse, die es wirklich
+   gibt. Das war der letzte Punkt dieser Liste, der ohne Konto scheiterte: eine
+   Datenschutzerklärung, die auf ein totes Postfach zeigt, ist schlimmer als gar
+   keine — an dieser Adresse hängen Auskunfts- und Löschbegehren **mit Fristen**.
+   Wer später auf eine eigene Domain umzieht, ändert genau eine Zeile:
+   `BETREIBER.email` in `src/pages/legal/legalContent.ts`.
 
 ## Wo die Secrets hinkommen
 

@@ -67,8 +67,17 @@ console.log('\n--- Die Angaben, an denen Pflichten haengen ---');
 {
   ok(/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(BETREIBER.email),
      `die Kontaktadresse ist eine E-Mail-Adresse (${BETREIBER.email})`);
-  ok(BETREIBER.email.includes('fixthemix'),
-     '... und gehoert zu dieser App, nicht zu einer anderen');
+  // Frueher stand hier `includes('fixthemix')`. Das ging, solange die Adresse
+  // dem Muster von Anigosha folgte — seit sie eine private Gmail ist (Josef,
+  // 26.09.2026), waere es falsch. Geprueft wird deshalb, was wirklich schuetzt:
+  // dass hier NICHT versehentlich die Adresse einer der anderen Apps steht.
+  // Genau das waere der wahrscheinliche Fehler bei einer Uebernahme, und er
+  // liefe darauf hinaus, dass Loeschbegehren fuer FixTheMix im falschen
+  // Postfach landen.
+  for (const fremd of ['anigosha', 'mypeak', 'swaply', 'mahjong']) {
+    ok(!BETREIBER.email.includes(fremd),
+       `... und gehoert nicht zu „${fremd}"`);
+  }
   ok(BETREIBER.name.length > 3 && BETREIBER.adresse.length > 3 && BETREIBER.ort.length > 3,
      'Name, Adresse und Ort sind ausgefuellt');
   ok(/^\d{2}\.\d{2}\.\d{4}$/.test(STAND), `der Stand ist ein Datum (${STAND})`);

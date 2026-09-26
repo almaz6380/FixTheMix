@@ -231,8 +231,10 @@ Code auf seinem Rechner laufen.
       Gerätesprache
 - [ ] **AdMob-App, RevenueCat-Schlüssel und die Store-Produkte fehlen** — dafür braucht
       es Konten und Store-Einträge. Kommt mit Phase 6.
-- [ ] Die E-Mail-Adresse `fixthemix@wellbooked.at` aus den Rechtstexten **muss es
-      wirklich geben** — daran hängen Auskunfts- und Löschbegehren.
+- [x] **Die Kontaktadresse steht und existiert:** `63almaz80@gmail.com`
+      (Josef, 26.09.2026). Der erste Entwurf trug `fixthemix@wellbooked.at`, dem
+      Muster von Anigosha nachgebildet — die hätte aber erst angelegt werden
+      müssen.
 
 ### M9 Stores — FERTIG bis auf die Konten (26.09.2026)
 - [x] **Native Projekte** für iOS und Android (`npx cap add`), beide im Repo:
@@ -856,8 +858,17 @@ davon nichts. Die Texte sind darum kürzer, und sie stimmen.
 
 Zwei Dinge sind vor dem Launch zu prüfen, und beide stehen auch im Kopf der Datei:
 
-1. **Die E-Mail-Adresse `fixthemix@wellbooked.at` muss es geben.** Sie ist dem Muster von
-   Anigosha nachgebildet; an ihr hängen Auskunfts- und Löschbegehren nach der DSGVO.
+1. ~~Die E-Mail-Adresse muss es geben.~~ **Erledigt (Josef, 26.09.2026):**
+   `63almaz80@gmail.com`. Der erste Entwurf trug `fixthemix@wellbooked.at` nach dem
+   Muster von Anigosha — eine Adresse, die es noch nicht gab. Eine
+   Datenschutzerklärung, die auf ein totes Postfach zeigt, ist schlimmer als gar
+   keine: an ihr hängen Auskunfts- und Löschbegehren **mit Fristen**.
+   Der Preis ist bewusst bezahlt: die Adresse steht öffentlich im Impressum und wird
+   von Bots abgegriffen. Ein Umzug auf eine eigene Domain ist genau **eine Zeile** —
+   `BETREIBER.email`; alle vier Rechtstexte setzen sie ein, keiner schreibt sie aus.
+   *Im Test stand dafür `includes('fixthemix')` — das ging nur, solange die Adresse
+   dem Anigosha-Muster folgte. Geprüft wird jetzt, was wirklich schützt: dass hier
+   nicht versehentlich die Adresse einer der anderen Apps steht.*
 2. ~~Der Abschnitt „Bestenliste und Tagesrätsel"~~ **ist am 26.09.2026 gelöscht worden**,
    weil Version 1.0 ohne Bestenliste in den Store geht. Mit ihm sind Supabase als
    Empfänger, die 90-Tage-Aufbewahrung und alle Sätze verschwunden, die einen
@@ -918,8 +929,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
    AdMob-App plus `TEST_ANZEIGEN = false`, RevenueCat-Schlüssel, Produkt
    `fixthemix_no_ads` in beiden Stores, Upload-Keystore, Distributions-Zertifikat und
    Provisioning-Profil `FixTheMix AppStore`, der Self-hosted Runner auf Josefs Mac,
-   die Store-Einträge nach `docs/store-eintrag.md` — und die E-Mail-Adresse
-   `fixthemix@wellbooked.at`.
+   und die Store-Einträge nach `docs/store-eintrag.md`.
    `node tools/test-release.mts --release` sagt jederzeit, was davon noch offen ist.
 7. **Version 1.1: Duelle.** **FERTIG gegen Bots (26.09.2026).** Gleiches Brett,
    weniger Züge gewinnt, gleich viele sind ein Remis. Der Gegner spielt das Brett

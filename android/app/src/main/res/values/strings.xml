@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FixTheMix</string>
+    <string name="title_activity_main">FixTheMix</string>
+    <string name="package_name">at.gallab.fixthemix</string>
+    <string name="custom_url_scheme">at.gallab.fixthemix</string>
+</resources>

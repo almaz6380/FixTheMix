@@ -1,0 +1,185 @@
+# Android bauen, signieren und zu Google Play hochladen.
+#
+# Muster aus `anigosha/.github/workflows/android-release.yml`. Damit braucht ein
+# Release keinen Mac und laesst sich aus jeder Claude-Sitzung ausloesen
+# (Actions -> „Android Release" -> Run workflow).
+#
+# Einmalige Einrichtung: siehe docs/release-ci.md (fuenf Android-Secrets).
+# WICHTIG: versionCode in android/app/build.gradle vorher erhoehen — Play lehnt
+# einen bereits benutzten versionCode ab.
+#
+# Laeufer „mac" = Josefs eigener Mac als Self-hosted Runner (docs/release-ci.md):
+# kostet keine GitHub-Minuten, braucht dort aber das Android-SDK (kommt mit
+# Android Studio). Alle Schluessel liegen nur unter $RUNNER_TEMP und werden am
+# Ende geloescht — nichts unter /tmp, das andere Programme sehen koennten.
+name: Android Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Play-Track'
+        type: choice
+        default: 'internal'
+        options: ['internal', 'production']
+      notes:
+        description: 'Was-ist-neu-Text (de-DE)'
+        type: string
+        default: 'Fehlerkorrekturen und Verbesserungen.'
+      upload:
+        description: 'Wirklich zu Play hochladen? (aus = nur bauen und als Artefakt ablegen)'
+        type: boolean
+        default: false
+      laeufer:
+        description: 'Wo bauen? github = GitHub-Rechner (kostet Minuten), mac = eigener Mac (Self-hosted Runner)'
+        type: choice
+        default: 'github'
+        options: ['github', 'mac']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ${{ inputs.laeufer == 'mac' && fromJSON('["self-hosted", "macOS"]') || 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'   # Capacitor 8 / AGP 8.13 brauchen JDK 21
+
+      - name: Android-SDK finden
+        # GitHubs Ubuntu-Rechner setzen ANDROID_HOME selbst. Auf dem eigenen Mac
+        # liegt das SDK dort, wohin Android Studio es installiert.
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [ -z "$SDK" ] && [ -d "$HOME/Library/Android/sdk" ]; then
+            SDK="$HOME/Library/Android/sdk"
+          fi
+          if [ -z "$SDK" ] || [ ! -d "$SDK" ]; then
+            echo "ABBRUCH: Kein Android-SDK gefunden. Auf dem Mac einmal Android Studio"
+            echo "installieren und starten — es legt das SDK unter ~/Library/Android/sdk an."
+            exit 1
+          fi
+          echo "Android-SDK: $SDK"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+
+      - name: Abhaengigkeiten
+        run: npm ci
+
+      - name: Release-Pruefungen
+        # `tools/test-release.mts` prueft genau das, was ein Release kaputt
+        # machen kann und was kein anderer Test sieht: Test-Anzeigen, die
+        # Beispiel-App-IDs von Google, leere Anzeigenbloecke, Bundle-IDs, die
+        # zwischen den drei Projekten auseinanderlaufen. Die drei anderen
+        # Skripte pruefen die ausgelieferte Levelfolge, die Werbebremse und die
+        # Rechtstexte. Der 1.000er-Lauf des Generators bleibt bewusst draussen:
+        # 148 s, und er haengt an nichts, was ein Release-Build aendert.
+        run: |
+          npx oxlint
+          npm run test:release
+
+      - name: RevenueCat-Schluessel plausibel?
+        # Ein iOS-Schluessel im Android-Build fuehrt zu CONFIGURATION_ERROR
+        # (RevenueCat-Code 23) — sichtbar erst am Geraet, als Kaufknopf ohne
+        # Preis. Das Praefix verraet die Plattform, ohne den Wert zu zeigen:
+        # goog_ = Android, appl_ = iOS. Nur die ersten fuenf Zeichen werden
+        # ausgegeben, der Rest bleibt geheim.
+        env:
+          RC_KEY: ${{ secrets.VITE_REVENUECAT_ANDROID_KEY }}
+        run: |
+          if [ -z "$RC_KEY" ]; then
+            echo "ABBRUCH: VITE_REVENUECAT_ANDROID_KEY ist leer — der Kaufbereich"
+            echo "bliebe in der App unsichtbar, ohne jede Fehlermeldung."
+            exit 1
+          fi
+          PRAEFIX="$(printf '%s' "$RC_KEY" | cut -c1-5)"
+          echo "Schluessel beginnt mit: $PRAEFIX"
+          case "$PRAEFIX" in
+            goog_) echo "ok — Android-Schluessel" ;;
+            appl_) echo "ABBRUCH: Das ist ein iOS-Schluessel. Auf Android meldet"
+                   echo "RevenueCat damit CONFIGURATION_ERROR (Code 23)."
+                   exit 1 ;;
+            *)     echo "ABBRUCH: Unbekanntes Praefix. Android-Schluessel beginnen mit goog_."
+                   exit 1 ;;
+          esac
+
+      - name: Versionsnummer anzeigen
+        run: |
+          VC=$(grep -m1 versionCode android/app/build.gradle | tr -dc '0-9')
+          VN=$(grep -m1 versionName android/app/build.gradle | cut -d'"' -f2)
+          echo "versionCode $VC · versionName $VN"
+          echo "VC=$VC" >> "$GITHUB_ENV"
+          echo "VN=$VN" >> "$GITHUB_ENV"
+
+      - name: Web-Bundle + Capacitor-Sync
+        # Alle VITE_-Werte landen im ausgelieferten Bundle und sind damit ohnehin
+        # oeffentlich; sie liegen trotzdem als Secrets, damit sie an einer Stelle
+        # gepflegt werden. Fehlt VITE_REVENUECAT_ANDROID_KEY, bleibt „Werbung
+        # entfernen" in der App unsichtbar — ohne jede Fehlermeldung.
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_REVENUECAT_ANDROID_KEY: ${{ secrets.VITE_REVENUECAT_ANDROID_KEY }}
+        run: |
+          npm run build
+          npx cap sync android
+
+      - name: Signaturschluessel bereitstellen
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$KEYSTORE_B64" | tr -cd 'A-Za-z0-9+/=' | base64 -d > android/upload-keystore.jks
+          # storeFile laeuft ueber rootProject.file(), also relativ zu android/.
+          cat > android/keystore.properties <<EOF
+          storeFile=upload-keystore.jks
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: AAB bauen
+        run: cd android && ./gradlew --no-daemon bundleRelease
+
+      - name: AAB als Artefakt ablegen
+        uses: actions/upload-artifact@v4
+        # Nur Bequemlichkeit: Ist GitHubs Artefakt-Speicher voll, darf das den
+        # Store-Upload danach nicht verhindern.
+        continue-on-error: true
+        with:
+          name: FixTheMix-${{ env.VN }}-vc${{ env.VC }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Zu Google Play hochladen
+        if: ${{ inputs.upload }}
+        env:
+          PLAY_KEY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          TRACK: ${{ inputs.track }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          # Eigene venv: Ubuntu-Runner erlauben kein pip3 install ins System-Python.
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet pyjwt cryptography
+          printf '%s' "$PLAY_KEY_JSON" > "$RUNNER_TEMP/play-key.json"
+          PLAY_KEY="$RUNNER_TEMP/play-key.json" "$RUNNER_TEMP/venv/bin/python" scripts/play-upload.py \
+            --aab android/app/build/outputs/bundle/release/app-release.aab \
+            --track "$TRACK" --complete --notes "$NOTES"
+          rm -f "$RUNNER_TEMP/play-key.json"
+
+      - name: Schluessel aufraeumen
+        if: always()
+        run: |
+          rm -f android/upload-keystore.jks android/keystore.properties "$RUNNER_TEMP/play-key.json"
+          rm -rf "$RUNNER_TEMP/venv"

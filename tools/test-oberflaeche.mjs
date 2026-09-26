@@ -20,6 +20,7 @@ import { istGeloest, klone, standAusLevel } from '../src/engine/zustand.ts';
 import { anwenden, legaleZuege } from '../src/engine/zuege.ts';
 import { zufall } from '../src/engine/zufall.ts';
 import { tagLevel, tagesNummer } from '../src/engine/tagesraetsel.ts';
+import { botSpielt, duellLevel } from '../src/engine/duell.ts';
 import { FOLGE_VERSION } from '../src/lib/fortschritt.ts';
 import { KOSTEN_RUECKKAUF, KOSTEN_TIPP } from '../src/lib/muenzen.ts';
 import { heute } from '../src/lib/serie.ts';
@@ -313,6 +314,64 @@ console.log('\n--- Tagesraetsel ---');
   ok(text.includes('🟩') || text.includes('⬜'), '... und den Balken');
   ok(!/[🍓🍋🫐🍊🍏🍇🌿🥥☕]/u.test(text),
      '... aber KEINE Farben — der Teiltext verraet das Raetsel nicht');
+}
+
+console.log('\n--- Duell ---');
+{
+  // Das Duell laesst sich nur hier wirklich pruefen: Brett UND Gegner
+  // entstehen auf dem Geraet, und beide muessen mit dem uebereinstimmen, was
+  // die Engine im Skript ausrechnet. Waere der Bot nicht deterministisch,
+  // saehen zwei Geraete zwei Gegner — und das faellt sonst nirgends auf.
+  //
+  // Erst das Siegfenster des Tagesraetsels verlassen: es liegt als Overlay
+  // ueber allem und faengt sonst jeden Klick ab.
+  await seite.getByRole('button', { name: 'Zur Levelfolge' }).click();
+  await seite.waitForTimeout(400);
+  await seite.locator('header button').first().click();
+  await seite.waitForTimeout(250);
+  ok(await seite.locator('[data-duell]').count() === 1, 'die Levelwahl bietet ein Duell an');
+  await seite.locator('[data-duell]').click();
+  // Brett (~75 ms) plus Botpartie (~170 ms), auf einem langsamen Lauf mehr.
+  await seite.waitForTimeout(3000);
+
+  const nummer = Number(await seite.locator('main').getAttribute('data-duell-nummer'));
+  ok(Number.isInteger(nummer) && nummer > 0, `die App nennt die Duellnummer (${nummer})`);
+
+  const brett = duellLevel(nummer);
+  const loesung = solve(standAusLevel(brett));
+  ok(loesung.status === 'optimal', `das Duellbrett ist loesbar (Optimum ${loesung.laenge})`);
+
+  const glaeser = seite.locator('button[aria-label^="Glas"]');
+  ok(await glaeser.count() === brett.glaeser,
+     `so viele Glaeser wie im Duellbrett (${brett.glaeser})`);
+
+  // Der erste Gegner ist der leichte — eine frische Bilanz faengt dort an.
+  const bot = botSpielt(brett, 'leicht', nummer);
+  ok(bot.zugzahl !== null && bot.zugzahl > loesung.laenge,
+     `der Gegner braucht mehr Zuege als das Optimum (${bot.zugzahl} > ${loesung.laenge})`);
+
+  for (const zug of loesung.zuege) {
+    await glaeser.nth(zug.von).click();
+    await seite.waitForTimeout(45);
+    await glaeser.nth(zug.nach).click();
+    await seite.waitForTimeout(45);
+  }
+  await seite.waitForTimeout(700);
+
+  const karte = seite.locator('[data-duell-ausgang]');
+  ok(await karte.count() === 1, 'das Duell ist ausgewertet');
+  ok(await karte.getAttribute('data-duell-ausgang') === 'a',
+     'die perfekte Partie gewinnt gegen den leichten Gegner');
+  ok(Number(await seite.locator('[data-duell-du]').getAttribute('data-duell-du')) === loesung.laenge,
+     `die App zeigt die eigene Zugzahl (${loesung.laenge})`);
+  // Der eigentliche Punkt: derselbe Bot im Browser und im Skript.
+  ok(Number(await seite.locator('[data-duell-gegner]').getAttribute('data-duell-gegner')) === bot.zugzahl,
+     `und dieselbe Zugzahl des Gegners wie die Engine (${bot.zugzahl})`);
+  await seite.screenshot({ path: join(bilder, '10-duell.png') });
+
+  const bilanz = await seite.evaluate(() => localStorage.getItem('fixthemix.duelle.v1'));
+  ok(bilanz !== null && JSON.parse(bilanz).siege === 1, 'der Sieg steht in der Bilanz');
+  ok(JSON.parse(bilanz).staerke === 'mittel', '... und der naechste Gegner ist haerter');
 }
 
 console.log('\n--- Einstellungen und Rechtstexte ---');

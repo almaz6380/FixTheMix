@@ -39,6 +39,11 @@ interface Eigenschaften {
   tagSerie: string;
   tagSterne: number;
   onTag: () => void;
+  /** Duell-Karte, direkt unter dem Tagesraetsel (Version 1.1). */
+  duellTitel: string;
+  duellZeile: string;
+  duellBilanz: string;
+  onDuell: () => void;
   einstellungen: string;
   onEinstellungen: () => void;
 }
@@ -46,7 +51,9 @@ interface Eigenschaften {
 export default function Levelwahl({
   level, aktuell, sterne, hoechstes, onWahl, onZu, titel, schliessen, bilanz,
   abschnittTitel, kachelTitel, gesperrtTitel, zurueck, vor,
-  tagTitel, tagZeile, tagSerie, tagSterne, onTag, einstellungen, onEinstellungen,
+  tagTitel, tagZeile, tagSerie, tagSterne, onTag,
+  duellTitel, duellZeile, duellBilanz, onDuell,
+  einstellungen, onEinstellungen,
 }: Eigenschaften) {
   const bloecke = Math.min(BLOECKE, Math.ceil(level.length / BLOCK));
   const [block, setBlock] = useState(() => Math.min(Math.floor(aktuell / BLOCK), bloecke - 1));
@@ -112,6 +119,31 @@ export default function Levelwahl({
                 <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
               </svg>
             ))}
+          </span>
+        </button>
+      </div>
+
+      {/* Das Duell steht neben dem Tagesraetsel und nicht in der Folge: es ist
+          kein Level, sondern eine Partie gegen jemanden. Beide Karten sind
+          bewusst gleich gebaut — die zwei Dinge, die man ausserhalb der Folge
+          tun kann, sollen gleich viel Gewicht haben. */}
+      <div className="px-6 pb-3">
+        <button
+          type="button"
+          onClick={onDuell}
+          data-duell
+          className="flex w-full touch-manipulation items-center gap-3 rounded-2xl border-[1.5px] border-glasrand/45 bg-theke-hell/70 px-4 py-3 text-left"
+        >
+          <svg width="26" height="26" viewBox="0 0 24 24" className="flex-shrink-0 text-glasrand" fill="none"
+            stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 3.5l9.5 9.5" /><path d="M20 3.5L10.5 13" />
+            <path d="M3 20.5l3.5-3.5" /><path d="M21 20.5l-3.5-3.5" />
+            <circle cx="12" cy="15.5" r="2.4" />
+          </svg>
+          <span className="min-w-0 flex-grow">
+            <span className="font-anzeige block text-base leading-tight font-bold text-glasrand">{duellTitel}</span>
+            <span className="block truncate text-[11px] leading-tight font-bold text-creme">{duellZeile}</span>
+            <span className="block truncate text-[10px] leading-tight font-bold text-rauch tabular-nums">{duellBilanz}</span>
           </span>
         </button>
       </div>

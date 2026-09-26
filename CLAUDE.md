@@ -255,6 +255,29 @@ Code auf seinem Rechner laufen.
 - [ ] **AdMob-App, RevenueCat-Schlüssel, Store-Produkte, Keystore, Zertifikat** — alles,
       was ein Konto braucht. `node tools/test-release.mts --release` listet es auf.
 
+### M10 Duelle (Version 1.1) — FERTIG gegen Bots (26.09.2026)
+- [x] **`src/engine/duell.ts`**: `duellLevel(nummer)` als der **eine** Weg zum Brett,
+      `duellSieger()` für den Ausgang, `botSpielt()` für den Gegner.
+      **Gleich viele Züge sind ein Remis** — jedes Stechen wäre unfair, siehe unten.
+- [x] **Der Bot spielt wirklich.** Keine erfundene Zahl: er folgt der kürzesten Lösung
+      und biegt an wenigen Stellen ab. Seine Zugfolge geht durch `replay()` wie die
+      eines Menschen. Gemessen: leicht +7,8 Züge über dem Optimum, mittel +3,1,
+      stark +1,8; langsamster Lauf 32 ms.
+- [x] **Drei Stufen, die sich anpassen** (`naechsteStaerke`): ein Sieg macht den
+      nächsten Gegner härter, eine Niederlage leichter, ein Remis lässt ihn stehen.
+      **„stark" spielt nie das Optimum** — damit gewinnt genau die perfekte Partie.
+- [x] **`src/engine/duellpruefung.ts`**: `pruefeDuell()` und `werteDuell()`, dieselbe
+      Bauart wie `tagespruefung.ts`. Eine nicht gelöste Partie ist ein **Ergebnis**,
+      kein Fehler.
+- [x] **`src/lib/duell.ts`**: Bilanz unter eigenem Schlüssel `fixthemix.duelle.v1`,
+      Duellnummern mit gerätespezifischer Basis
+- [x] Duell-Karte in der Levelwahl, Duellmodus im Spielbildschirm, Aufgeben aus dem
+      Festgefahren-Fenster, **fünf Sprachen**
+- [x] `supabase/migrations/0002_duelle.sql` und
+      `supabase/functions/duell-einreichen/index.ts` liegen fertig im Repo
+- [ ] **Menschliche Gegner** brauchen die Datenbank aus Phase 4 — nicht deployt. Bis
+      dahin ist der Gegner immer ein Bot.
+
 ## Was FixTheMix einzigartig macht
 
 1. **Eine Regel, sechs Schichten, kein Tutorial.** Gegossen wird nur auf dieselbe Farbe
@@ -279,7 +302,9 @@ Code auf seinem Rechner laufen.
    - Werbevideos nur freiwillig (Extra-Glas, Tipp);
    - „Werbung entfernen" als einmaliger Kauf.
 6. **Spielgefühl:** Gieß-Animation, Haptik beim Einrasten, dezente Bar-Geräusche.
-7. **Version 1.1: Duelle.** Beide lösen dasselbe Level, weniger Züge gewinnt.
+7. **Duelle.** Beide lösen dasselbe Level, weniger Züge gewinnt, gleich viele sind
+   ein Remis. Der Gegner ist kein Zahlengenerator, sondern spielt das Brett wirklich —
+   und die oberste Stufe verliert genau gegen die perfekte Partie.
 
 ## Technik
 
@@ -314,6 +339,8 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 | `kurve.ts` | Die ausgelieferte Levelfolge: `ANZAHL_LEVEL`, `stufeFuer(nr)`, `seedFuer(nr)`, `ABSCHNITTE`, `blockFuer(nr)`, `istExperte(nr)`. |
 | `tagesraetsel.ts` | Das Tagesrätsel: `tagLevel(iso)`, `tagesNummer`, `wochentag`, `tagDavor`/`tagDanach`, Datumsrechnung ohne `Date`. |
 | `tagespruefung.ts` | `pruefeTag()` — die Rechnung des Schummelschutzes, ohne Netz und ohne Uhr. |
+| `duell.ts` | Duelle: `duellLevel(nummer)`, `duellSieger()`, `botSpielt()`, `naechsteStaerke()`. |
+| `duellpruefung.ts` | `pruefeDuell()` / `werteDuell()` — der Schummelschutz der Duelle. |
 | `wiedergabe.ts` | `replay()` / `replayAusSeed()` — Vorstufe des Schummelschutzes. |
 | `index.ts` | Öffentliche Schnittstelle. |
 
@@ -609,6 +636,63 @@ Drei Folgen, die zusammenhängen:
 - **Der Neustart behält das Extra-Glas.** Wer dafür ein Werbevideo gesehen hat, soll es
   nicht durch einen Neustart verlieren — sonst wird aus der Hilfe eine Falle.
 
+### Duelle — `src/engine/duell.ts`
+
+Beide bekommen dasselbe Brett, wer weniger Züge braucht, gewinnt. Gespielt wird
+**zeitversetzt**, nicht gleichzeitig: ein Echtzeit-Duell braucht eine offene
+Verbindung, und die zerbricht auf dem Handy bei jedem Wechsel in den Hintergrund.
+
+Wie beim Tagesrätsel ist `duellLevel(nummer)` der **eine** Weg zum Brett, und
+`DUELL_KNOTEN` steht in der Engine statt beim Aufrufer — zwei verschiedene
+Knotendeckel ergäben für dasselbe Duell zwei verschiedene Bretter.
+
+**Gleich viele Züge sind ein Remis, und das bleibt so.** Naheliegend wäre ein Stechen
+über die Zeit oder über „wer zuerst eingereicht hat". Das erste belohnt das schnellere
+Telefon, das zweite die günstigere Zeitzone. Und bei einem Brett, dessen Optimum
+bewiesen ist, heißt gleich viele Züge wirklich gleich gut gespielt.
+
+**Der Bot spielt das Brett wirklich durch.** Naheliegend wäre gewesen, ihm eine Zahl zu
+geben („Optimum plus vier"). Drei Nachteile: die Zahl ließe sich nicht nachspielen, sie
+könnte unerreichbar sein, und man müsste erklären, warum der Gegner keine Züge hat. So
+entsteht eine echte Zugfolge, die durch `replay()` geht — und damit auch serverseitig
+auswertbar wäre.
+
+Billig ist es trotzdem: der Bot folgt der kürzesten Lösung und biegt nur an wenigen
+Stellen ab; nach jedem Umweg rechnet er **einmal** neu. Ein Bot, der bei jedem Zug den
+Löser fragte, bräuchte zwanzig Löserläufe statt fünf. Gemessen: langsamster Lauf 32 ms.
+
+*Hier ist ein Fehler aufgeflogen, der es wert ist, aufgeschrieben zu werden:* Gezählt
+wurde zunächst jeder Zug, der von `plan.zuege[0]` abwich. Viele Bretter haben aber
+**mehrere gleich gute erste Züge** — ein anderer Zug ist also noch lange kein Fehler.
+„leicht" spielte damit auf manchen Brettern das Optimum. Gezählt wird jetzt nur ein Zug,
+der die Partie wirklich verlängert (`neu.zuege.length >= plan.zuege.length`).
+
+| Stufe | Zuschlag über dem Optimum (gemessen über 12 Bretter) |
+|---|---|
+| leicht | +7,8 |
+| mittel | +3,1 |
+| stark | +1,8 |
+
+**„stark" spielt nie das Optimum** (`UMWEGE.stark = [1, 2]`, nicht `[0, 0]`). Ein Bot,
+der immer die kürzeste Lösung spielt, wäre unschlagbar — bestenfalls Remis, und damit
+wäre die oberste Stufe keine Aufgabe, sondern eine Wand. So gewinnt genau die perfekte
+Partie, und der Duellsieg hängt an derselben Zusicherung wie die drei Sterne.
+
+**Duelle zahlen keine Münzen.** Ein Duellbrett gehört zu keinem Level, also gäbe es kein
+„nur die Verbesserung" — jede Partie würde zahlen, und die Währung wäre farmbar. Der
+Lohn ist die Bilanz. Aus demselben Grund gibt es im Duell **kein Extra-Glas** und kein
+„Nochmal" auf demselben Brett: der Gegner hat seine Zugzahl bereits.
+
+**Wer sich festfährt, kann aufgeben** statt die Partie liegen zu lassen. Serverseitig ist
+„gültig gespielt, aber nicht gelöst" genauso ein Ergebnis — `pruefeDuell` weist es nicht
+ab, es zählt als Niederlage.
+
+**Menschliche Gegner brauchen die Datenbank.** `supabase/migrations/0002_duelle.sql`
+paart nur Menschen und hat **keine Bots in SQL**: Anigosha lässt Bots „lazy" in SQL
+ziehen, weil eine Quizantwort eine Zahl ist — hier müsste ein Bot ein Sortierpuzzle
+spielen, und das kann nur die Engine. Findet sich in zehn Minuten kein Gegner, läuft das
+Duell ab, und der Client bietet ein Botduell an. Das braucht keine Datenbank.
+
 ### Die nativen Projekte — `ios/` und `android/`
 
 Beide liegen **im Repo** und werden getrackt; nur die Build-Artefakte sind
@@ -763,12 +847,15 @@ ist das einspeisbare `jetzt` im Löserbudget.
    die Store-Einträge nach `docs/store-eintrag.md` — und die E-Mail-Adresse
    `fixthemix@wellbooked.at`.
    `node tools/test-release.mts --release` sagt jederzeit, was davon noch offen ist.
-7. **Version 1.1: Duelle.**
+7. **Version 1.1: Duelle.** **FERTIG gegen Bots (26.09.2026).** Gleiches Brett,
+   weniger Züge gewinnt, gleich viele sind ein Remis. Der Gegner spielt das Brett
+   wirklich durch und passt sich an. Migration und Edge Function für menschliche
+   Gegner liegen im Repo und warten auf das Supabase-Projekt aus Phase 4.
 
 ## Prüfung
 
-- **Testskripte** (alle grün zu halten). `npm test` fährt alle **zehn** nacheinander,
-  **401 Zusicherungen**, Gesamtlaufzeit rund 5 Minuten — davon entfallen 148 s auf den
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle **elf** nacheinander,
+  **468 Zusicherungen**, Gesamtlaufzeit rund 5 Minuten — davon entfallen 148 s auf den
   1.000er-Lauf des
   Generators und 21 s auf die Prüfung der ausgelieferten Folge. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
   `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
@@ -827,6 +914,13 @@ ist das einspeisbare `jetzt` im Löserbudget.
     **Unterschied** (von, nach, Menge), nicht den ganzen Stand — bei 14 Gläsern und
     60 Zügen ist das der Unterschied zwischen ein paar hundert Bytes und ein paar
     Kilobyte je Partie.
+  - `test-duell.mts` (67) — Duelle. Drei Stellen, an denen ein Fehler nicht auffaellt,
+    bis sich jemand zu Recht beschwert: das Brett (zwei Spieler mit verschiedenen
+    Brettern koennten ihre Zugzahlen nicht vergleichen — deshalb eine feste
+    Schluesseltabelle), der Bot (er muss eine ECHTE, nachspielbare Zugfolge liefern und
+    auf jedem Geraet dieselbe) und der Ausgang (ein Remis muss ein Remis bleiben).
+    Misst ausserdem die Staerkeleiter nach, statt sie zu behaupten — genau dort fiel
+    auf, dass „leicht" das Optimum spielen konnte.
   - `test-release.mts` (69) — die Verkabelung zu den Stores. Prüft nichts am Spiel,
     sondern das, was keinen Test hat und trotzdem ein Release kippt: die Bundle-ID an
     sieben Stellen, gleiche Versionen auf beiden Plattformen, dass Test-Anzeigen und
@@ -836,7 +930,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Workflows in `docs/release-ci.md` erklärt ist. Mit `--release` verlangt es
     zusätzlich die Bereitschaft (echte Anzeigen, echte IDs) — diese Fassung schlägt
     heute absichtlich fehl und ist damit die Liste dessen, was noch fehlt.
-  - `test-oberflaeche.mjs` (47, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-oberflaeche.mjs` (58, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
     Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein

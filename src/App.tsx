@@ -23,6 +23,7 @@ import Levelwahl from './components/Levelwahl.tsx';
 import { Partie } from './engine/verlauf.ts';
 import { festgefahren } from './engine/loeser.ts';
 import { tagLevel, tagesNummer } from './engine/tagesraetsel.ts';
+import { botSpielt, duellLevel, duellSieger, type Ausgang, type BotPartie } from './engine/duell.ts';
 import type { Level, Zug } from './engine/typen.ts';
 import {
   haptik, istFrei, ladeEinstellung, ladeFortschritt, merkeSterne,
@@ -35,6 +36,9 @@ import {
   heute, ladeTaeglich, merkeTag, serieLaeuft, speichereTaeglich,
 } from './lib/serie.ts';
 import { teilText } from './lib/teilen.ts';
+import {
+  ausgangZaehlen, ladeBilanz, naechsteNummer, speichereBilanz,
+} from './lib/duell.ts';
 import { BELOHNUNG_VIDEO } from './lib/muenzen.ts';
 import { werbefreiPruefen } from './lib/kauf.ts';
 import {
@@ -68,8 +72,16 @@ export default function App() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [index, setIndex] = useState(STARTLEVEL);
-  const [modus, setModus] = useState<'folge' | 'tag'>('folge');
+  const [modus, setModus] = useState<'folge' | 'tag' | 'duell'>('folge');
   const [tagBrett, setTagBrett] = useState<Level | null>(null);
+  // Das Duell (Version 1.1). Brett, Gegner und Ausgang liegen zusammen im
+  // State: ein Duell ohne seinen Gegner waere ein halber Zustand.
+  const [duellBrett, setDuellBrett] = useState<Level | null>(null);
+  const [duellNummer, setDuellNummer] = useState(0);
+  const [gegner, setGegner] = useState<BotPartie | null>(null);
+  const [duellAusgang, setDuellAusgang] = useState<Ausgang | null>(null);
+  const [duellBilanz, setDuellBilanz] = useState(() => ladeBilanz());
+  const [duellLaedt, setDuellLaedt] = useState(false);
   const [taeglich, setTaeglich] = useState(() => ladeTaeglich());
   const [tagLaedt, setTagLaedt] = useState(false);
   const [kopiert, setKopiert] = useState(false);
@@ -109,14 +121,15 @@ export default function App() {
   };
 
   const imTag = modus === 'tag' && tagBrett !== null;
-  const level = imTag ? tagBrett! : FOLGE[index]!;
+  const imDuell = modus === 'duell' && duellBrett !== null;
+  const level = imTag ? tagBrett! : imDuell ? duellBrett! : FOLGE[index]!;
   const tagNummer = tagesNummer(HEUTE);
   const stand = partie.zustand;
   const geloest = partie.isSolved();
   const zuege = partie.zugzahl;
   const sterne = sterneFuer(level, zuege, geloest);
 
-  const letztes = !imTag && index >= FOLGE.length - 1;
+  const letztes = !imTag && !imDuell && index >= FOLGE.length - 1;
   const gesamtSterne = Object.values(fortschritt.sterne).reduce((a, b) => a + b, 0);
 
   const wechsle = (i: number) => {
@@ -172,6 +185,59 @@ export default function App() {
     setSteckt(false);
     setGewinn(0);
     setWahlOffen(false);
+    setDuellAusgang(null);
+  };
+
+  /**
+   * Ein Duell starten. Brett und Gegner entstehen HIER, nicht vorgebaut —
+   * dasselbe Argument wie beim Tagesraetsel, und hier kommt noch dazu, dass
+   * der Gegner das Brett wirklich durchspielt. Gemessen: Brett bis ~75 ms,
+   * Botpartie bis ~170 ms. Zusammen unter einer halben Sekunde auf dem
+   * Bauserver, auf einem Handy gut eine — deshalb der Ladezustand.
+   *
+   * Der Gegner ist ein Bot. Ein Duell gegen einen MENSCHEN braucht die
+   * Datenbank aus Phase 4, und die steht noch nicht; Migration und Edge
+   * Function liegen fertig im Repo. Die Auswertung aendert sich dadurch
+   * nicht — sie steht in der Engine und wird von beiden Seiten gerufen.
+   */
+  const starteDuell = () => {
+    setDuellLaedt(true);
+    setWahlOffen(false);
+    window.setTimeout(() => {
+      const nummer = naechsteNummer(duellBilanz);
+      const brett = duellLevel(nummer);
+      setDuellNummer(nummer);
+      setDuellBrett(brett);
+      setGegner(botSpielt(brett, duellBilanz.staerke, nummer));
+      setPartie(new Partie(brett));
+      setModus('duell');
+      setGewaehlt(null);
+      setTippZiel(null);
+      setSteckt(false);
+      setGewinn(0);
+      setDuellAusgang(null);
+      setDuellLaedt(false);
+    }, 30);
+  };
+
+  /**
+   * Ein Duell abschliessen. `meine` ist `null`, wenn aufgegeben wurde — wer
+   * sich festfaehrt, verliert, wird aber nicht abgewiesen (dieselbe Regel wie
+   * serverseitig in `pruefeDuell`).
+   *
+   * Duelle zahlen KEINE Muenzen, und das ist Absicht: ein Duellbrett gehoert
+   * zu keinem Level, also gaebe es kein „nur die Verbesserung" — jede Partie
+   * wuerde zahlen, und die Waehrung waere farmbar. Der Lohn ist die Bilanz.
+   */
+  const duellEnde = (meine: number | null) => {
+    const ausgang = duellSieger(meine, gegner?.zugzahl ?? null);
+    setDuellAusgang(ausgang);
+    setDuellBilanz((b) => {
+      const neuB = ausgangZaehlen(b, ausgang);
+      speichereBilanz(neuB);
+      return neuB;
+    });
+    haptik(ausgang === 'a' ? 40 : 12);
   };
 
   const teilen = () => {
@@ -228,7 +294,8 @@ export default function App() {
         const vorher = imTag
           ? taeglich.tage[HEUTE]?.sterne ?? 0
           : fortschritt.sterne[index] ?? 0;
-        const verdient = lohnFuer(vorher, partie.sterne());
+        // Im Duell gibt es keine Muenzen — siehe `duellEnde`.
+        const verdient = imDuell ? 0 : lohnFuer(vorher, partie.sterne());
         setGewinn(verdient);
         if (verdient > 0) {
           setMuenzen((m) => {
@@ -242,7 +309,9 @@ export default function App() {
         // MIT, bekommt aber keine eigene Gelegenheit — nach dem einen Raetsel
         // am Tag zuverlaessig Werbung waere die unangenehmste Stelle im Spiel.
         if (!imTag) void vielleichtInterstitial();
-        if (imTag) {
+        if (imDuell) {
+          duellEnde(partie.zugzahl);
+        } else if (imTag) {
           setTaeglich((alt) => {
             const neu = merkeTag(alt, HEUTE, partie.zugzahl, partie.sterne());
             speichereTaeglich(neu);
@@ -379,7 +448,11 @@ export default function App() {
     : zuege <= level.sterne.zwei ? 'text-creme' : 'text-rauch';
 
   return (
-    <main className="flex min-h-dvh flex-col" data-takt={takt}>
+    <main className="flex min-h-dvh flex-col" data-takt={takt}
+      /* Die volle Duellnummer, nicht die gekuerzte aus der Kopfzeile:
+         der Oberflaechentest baut daraus Brett und Gegner selbst nach
+         und prueft, ob die App dasselbe Ergebnis zeigt wie die Engine. */
+      data-duell-nummer={imDuell ? duellNummer : undefined}>
       <header className="flex flex-shrink-0 items-center justify-between gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] pb-2">
         <button
           type="button"
@@ -387,7 +460,11 @@ export default function App() {
           className="flex min-h-[44px] touch-manipulation items-center gap-2 rounded-full border-[1.5px] border-kante bg-theke/85 px-4 text-sm font-bold text-creme"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" className="text-rauch" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
-          {imTag ? t('spiel.tagNr', { n: tagNummer }) : t('spiel.level', { n: index + 1 })}
+          {imTag
+            ? t('spiel.tagNr', { n: tagNummer })
+            : imDuell
+              ? t('spiel.duellNr', { n: duellNummer % 10000 })
+              : t('spiel.level', { n: index + 1 })}
         </button>
 
         {/* Bewusst ein div und kein Knopf: der Oberflaechentest greift den
@@ -467,9 +544,11 @@ export default function App() {
         </button>
       </footer>
 
-      {tagLaedt && (
+      {(tagLaedt || duellLaedt) && (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-nacht-tief/90 px-6">
-          <p className="font-anzeige text-lg font-bold text-creme">{t('spiel.tagLaedt')}</p>
+          <p className="font-anzeige text-lg font-bold text-creme">
+            {duellLaedt ? t('spiel.duellLaedt') : t('spiel.tagLaedt')}
+          </p>
         </div>
       )}
 
@@ -500,7 +579,7 @@ export default function App() {
       {/* Festgefahren. Gleiche Bauart wie das Siegfenster, aber mit Ausweg:
           ein Zug zurueck gegen Muenzen, oder der Neustart — der ist immer
           gratis, damit niemand mit leerem Guthaben im Nichts steht. */}
-      {steckt && !geloest && (
+      {steckt && !geloest && duellAusgang === null && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-nacht-tief/85 px-6 backdrop-blur-sm">
           <div className="w-full max-w-xs rounded-3xl border border-kante bg-theke p-7 text-center" data-steckt="1">
             <svg width="46" height="46" viewBox="0 0 24 24" className="mx-auto text-rauch" fill="none"
@@ -527,7 +606,7 @@ export default function App() {
                   wieder ein loesbares Brett. Nicht im Tagesraetsel — der Server
                   baut das Brett ohne dieses Glas nach, eine Zugfolge damit waere
                   nicht pruefbar und in einer Bestenliste nicht vergleichbar. */}
-              {!imTag && !partie.hatExtraGlas && belohnungMoeglich() && (
+              {!imTag && !imDuell && !partie.hatExtraGlas && belohnungMoeglich() && (
                 <button type="button" className="knopf" disabled={videoLaeuft} onClick={holeExtraGlas}>
                   {t('spiel.extraGlasHolen')}
                 </button>
@@ -540,14 +619,25 @@ export default function App() {
               <button type="button" className="knopf" onClick={neustart}>
                 {t('spiel.neustart')}
               </button>
+              {/* Im Duell ist der Neustart kein voller Ausweg: der Gegner hat
+                  seine Zugzahl schon. Wer nicht weiterkommt, soll die Partie
+                  beenden koennen, statt sie liegen zu lassen — serverseitig
+                  ist „gueltig gespielt, aber nicht geloest" genauso ein
+                  Ergebnis (siehe pruefeDuell). */}
+              {imDuell && (
+                <button type="button" className="knopf" onClick={() => duellEnde(null)}>
+                  {t('spiel.duellAufgeben')}
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {geloest && (
+      {(geloest || duellAusgang !== null) && (
         <div className="fixed inset-0 z-10 flex items-center justify-center bg-nacht-tief/85 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-xs rounded-3xl border border-kante bg-theke p-7 text-center">
+          <div className="w-full max-w-xs rounded-3xl border border-kante bg-theke p-7 text-center"
+            data-duell-ausgang={duellAusgang ?? undefined}>
             <div className="flex justify-center gap-1.5">
               {[0, 1, 2].map((i) => (
                 <svg key={i} width={i === 1 ? 54 : 40} height={i === 1 ? 54 : 40} viewBox="0 0 24 24" aria-hidden="true"
@@ -559,7 +649,10 @@ export default function App() {
               ))}
             </div>
             <h2 className="font-anzeige mt-4 text-3xl leading-tight font-bold">
-              {sterne === 3 ? t('spiel.perfekt') : t('spiel.gewonnen')}
+              {duellAusgang === 'a' ? t('spiel.duellGewonnen')
+                : duellAusgang === 'b' ? t('spiel.duellVerloren')
+                : duellAusgang === 'remis' ? t('spiel.duellRemis')
+                : sterne === 3 ? t('spiel.perfekt') : t('spiel.gewonnen')}
             </h2>
             {letztes && (
               <p className="mt-2 text-sm font-bold text-zitrus">
@@ -571,13 +664,27 @@ export default function App() {
                 🔥 {t('spiel.serie', { n: taeglich.serie })}
               </p>
             )}
-            <p className="mt-2 text-sm text-rauch">{t('spiel.bilanz', { zuege, optimum: level.optimalZuege })}</p>
+            {imDuell ? (
+              <div className="mt-3 flex flex-col gap-0.5">
+                <p className="text-sm font-bold text-creme" data-duell-du={geloest ? zuege : -1}>
+                  {geloest ? t('spiel.duellDu', { n: zuege }) : t('spiel.duellDuOhne')}
+                </p>
+                <p className="text-sm font-bold text-rauch" data-duell-gegner={gegner?.zugzahl ?? -1}>
+                  {t('spiel.duellGegnerZuege', { n: gegner?.zugzahl ?? 0 })}
+                </p>
+                <p className="mt-1 text-xs text-rauch">
+                  {t('spiel.duellOptimum', { n: level.optimalZuege })}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-rauch">{t('spiel.bilanz', { zuege, optimum: level.optimalZuege })}</p>
+            )}
             {gewinn > 0 && (
               <p className="mt-1 text-sm font-bold text-zitrus" data-gewinn={gewinn}>
                 {t('spiel.gewinn', { n: gewinn })}
               </p>
             )}
-            {sterne < 3 && (
+            {!imDuell && sterne < 3 && (
               <p className="mt-1 text-xs text-rauch">
                 {partie.hatExtraGlas ? t('spiel.extraGlasZwei') : t('spiel.dreiSterne', { n: level.optimalZuege })}
               </p>
@@ -586,7 +693,11 @@ export default function App() {
               {/* Beim letzten Level fuehrt der Hauptknopf in die Levelwahl.
                   Vorher stand hier ein abgeschalteter Knopf mit der Aufschrift
                   „Ende" — eine Sackgasse als Belohnung. */}
-              {imTag ? (
+              {imDuell ? (
+                <button type="button" onClick={starteDuell} className="knopf knopf-an">
+                  {t('spiel.duellNochmal')}
+                </button>
+              ) : imTag ? (
                 <button type="button" onClick={teilen} className="knopf knopf-an">
                   {t('spiel.teilen')}
                 </button>
@@ -600,10 +711,15 @@ export default function App() {
                 </button>
               )}
               <div className="flex gap-2.5">
-                <button type="button" className="knopf flex-grow" onClick={neustart}>
-                  {t('spiel.nochmal')}
-                </button>
-                {imTag ? (
+                {/* Im Duell gibt es kein „Nochmal" auf demselben Brett: der
+                    Gegner hat seine Zugzahl bereits, ein zweiter Anlauf waere
+                    also gegen einen Gegner, der nicht mehr mitspielt. */}
+                {!imDuell && (
+                  <button type="button" className="knopf flex-grow" onClick={neustart}>
+                    {t('spiel.nochmal')}
+                  </button>
+                )}
+                {imTag || imDuell ? (
                   <button type="button" className="knopf flex-grow" onClick={zurFolge}>
                     {t('spiel.zurFolge')}
                   </button>
@@ -648,6 +764,16 @@ export default function App() {
           }
           tagSterne={taeglich.tage[HEUTE]?.sterne ?? 0}
           onTag={starteTag}
+          duellTitel={t('spiel.duelle')}
+          duellZeile={t('spiel.duellZeile')}
+          duellBilanz={
+            duellBilanz.gespielt === 0
+              ? t('spiel.duellKeine')
+              : `${t('spiel.duellBilanz', {
+                  s: duellBilanz.siege, n: duellBilanz.niederlagen, r: duellBilanz.remis,
+                })} · ${t(`spiel.duellGegner${duellBilanz.staerke === 'leicht' ? 'Leicht' : duellBilanz.staerke === 'mittel' ? 'Mittel' : 'Stark'}`)}`
+          }
+          onDuell={starteDuell}
           einstellungen={t('spiel.einstellungen')}
           onEinstellungen={() => navigate('/einstellungen')}
         />

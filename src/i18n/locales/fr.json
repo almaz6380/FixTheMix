@@ -65,6 +65,8 @@
     "datenschutz": "Confidentialité",
     "nutzung": "Conditions d’utilisation",
     "loeschen": "Supprimer les données",
+    "loeschenStarten": "Supprimer toutes les données",
+    "bereichSpiel": "Jeu",
     "zurueck": "Retour",
     "standVom": "Mise à jour : {{datum}}",
     "kaufNichtEingerichtet": "L’achat n’est pas encore configuré.",

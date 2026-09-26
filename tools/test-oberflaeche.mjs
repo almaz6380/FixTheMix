@@ -360,7 +360,16 @@ console.log('\n--- Einstellungen und Rechtstexte ---');
   // Daten loeschen: danach steht der Fortschritt wieder auf Level 1.
   await seite.goto('http://localhost:4602/einstellungen', { waitUntil: 'networkidle' });
   await seite.waitForTimeout(300);
-  await seite.getByRole('button', { name: 'Daten löschen' }).click();
+  // Der Knopf heisst „Alle Daten löschen", die Bestaetigung darin „Daten
+  // löschen" — bewusst verschieden, damit er nicht mit dem gleichnamigen Link
+  // auf die Rechtsseite zu verwechseln ist. Genau das prueft die naechste
+  // Zusicherung.
+  const loeschKnopf = seite.getByRole('button', { name: 'Alle Daten löschen' });
+  ok(await loeschKnopf.count() === 1,
+     'der loeschende Knopf traegt eine eigene Beschriftung');
+  ok(await seite.getByRole('link', { name: 'Daten löschen' }).count() === 1,
+     '... und der Link auf die Rechtsseite bleibt davon unterscheidbar');
+  await loeschKnopf.click();
   await seite.waitForTimeout(200);
   await seite.getByRole('button', { name: 'Daten löschen' }).click();
   await seite.waitForTimeout(700);

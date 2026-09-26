@@ -65,6 +65,8 @@
     "datenschutz": "Privacy",
     "nutzung": "Terms of use",
     "loeschen": "Delete data",
+    "loeschenStarten": "Delete all data",
+    "bereichSpiel": "Game",
     "zurueck": "Back",
     "standVom": "Last updated: {{datum}}",
     "kaufNichtEingerichtet": "Purchases are not set up yet.",

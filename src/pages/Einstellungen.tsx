@@ -137,9 +137,11 @@ export default function Einstellungen() {
         ))}
       </div>
 
-      {/* Spiel */}
+      {/* Spiel. Eigener Schluessel und NICHT `spiel.tagesraetsel`: darunter steht
+          der Farbenblind-Schalter und der Muenzstand, mit dem Tagesraetsel hat
+          dieser Abschnitt nichts zu tun. */}
       <h2 className="font-anzeige mt-7 text-sm font-bold tracking-[0.08em] text-rauch uppercase">
-        {t('spiel.tagesraetsel')}
+        {t('spiel.bereichSpiel')}
       </h2>
       <div className="mt-2 flex flex-col gap-2.5">
         <button
@@ -210,6 +212,12 @@ export default function Einstellungen() {
         {kennung()}
       </p>
 
+      {/* Der Knopf heisst ANDERS als der Link darueber: der Link fuehrt auf die
+          Seite „Daten loeschen", die Google Play verlangt, dieser Knopf loescht
+          wirklich. Zweimal dasselbe Wort untereinander, mit voellig
+          verschiedener Wirkung, war der Stand nach Phase 5 — im Screenshot
+          aufgefallen. Die Bestaetigung darf weiter schlicht „Daten loeschen"
+          heissen, dort ist der Zusammenhang eindeutig. */}
       {loeschFrage ? (
         <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-kante bg-theke p-4">
           <p className="text-sm text-rauch">{rechtsTexte.loeschen[rechtsSprache].abschnitte[4]!.text}</p>
@@ -228,7 +236,7 @@ export default function Einstellungen() {
         </div>
       ) : (
         <button type="button" onClick={() => setLoeschFrage(true)} className="knopf mt-3 justify-start px-4">
-          {t('spiel.loeschen')}
+          {t('spiel.loeschenStarten')}
         </button>
       )}
     </main>

@@ -92,7 +92,8 @@
     "duellDuOhne": "You: not solved",
     "duellNochmal": "Another duel",
     "duellAufgeben": "Concede the duel",
-    "duellOptimum": "Optimum: {{n}} moves"
+    "duellOptimum": "Optimum: {{n}} moves",
+    "ton": "Turn bar sounds on or off"
   },
   "farben": {
     "rot": "Strawberry",

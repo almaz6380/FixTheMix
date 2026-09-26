@@ -130,10 +130,12 @@ Code auf seinem Rechner laufen.
 - [x] Fortschritt und Einstellungen in `localStorage`, jeder Zugriff eingepackt
 - [x] 999 vorgebaute Level (`tools/level-bauen.mts` → `src/levels/folge.json`) mit
       Levelwahl in Abschnitten
-- [ ] **Extra-Glas** — hängt an der Werbung und kommt mit Phase 5
-- [ ] Die Gieß-Animation ist bisher ein Kippen der Quelle plus weiches Einrasten der
-      Schichten, noch kein fließender Strahl
-- [ ] Bar-Geräusche
+- [x] **Extra-Glas** — kam mit Phase 5 (siehe M8)
+- [x] **Der Gießstrahl** (26.09.2026): ein Bogen von der Quelle ins Ziel, in der Farbe
+      der Flüssigkeit, mit Lichtkante. Er ist **reine Zierde** — er hält nichts auf,
+      fängt keinen Klick, und der Spielstand ist schon weitergezogen, bevor er beginnt.
+- [x] **Bar-Geräusche** (26.09.2026): `src/lib/klang.ts`, **ohne eine einzige
+      Tondatei** — alles wird im Browser erzeugt. Schalter in den Einstellungen.
 
 ### M4 Aussehen — FERTIG (25.09.2026)
 - [x] **Nachtblau mit Fischschuppen** als Grund (`repeating-radial-gradient`, 46 px),
@@ -184,8 +186,7 @@ Code auf seinem Rechner laufen.
 - [x] 31 Experten-Level mit 7 oder 8 Schichten, Optima 24–30 (statt 20–27)
 - [x] Der Tipp schweigt nicht mehr, wenn er nichts findet: entweder „festgefahren"
       (bewiesen) oder eine Meldung
-- [ ] Das **Werbevideo** für Münzen kommt mit Phase 5 (`src/lib/ads.ts` gibt es noch
-      nicht). Der Haken dafür steht kommentiert in `muenzen.ts`.
+- [x] Das **Werbevideo** für Münzen kam mit Phase 5 (`src/lib/werbung.ts`)
 
 ### M7 Tagesrätsel — FERTIG bis auf die Datenbank (26.09.2026)
 - [x] **`src/engine/tagesraetsel.ts`**: Datum → Seed → Schwierigkeit, `tagLevel(iso)` als
@@ -646,6 +647,57 @@ Drei Folgen, die zusammenhängen:
 - **Der Neustart behält das Extra-Glas.** Wer dafür ein Werbevideo gesehen hat, soll es
   nicht durch einen Neustart verlieren — sonst wird aus der Hilfe eine Falle.
 
+### Gießstrahl und Bar-Geräusche
+
+**Der Strahl** (`Brett.tsx` plus `.guss` in `index.css`) wird **gemessen, nicht
+gerechnet**: die Gläser stehen in einem Raster, dessen Pixelmaße von der Displaybreite
+abhängen. Zwei `getBoundingClientRect` sind billiger und ehrlicher, als die
+Rasterarithmetik ein zweites Mal nachzubauen — und sie bleiben richtig, wenn jemand am
+Layout dreht.
+
+Drei Dinge, die dabei nicht verhandelbar sind:
+
+1. **Er hält nichts auf.** `pointer-events: none`, und der Zug ist längst gespielt,
+   wenn die Bewegung beginnt. Ein Strahl, auf den das Spiel warten müsste, wäre bei
+   einer Folge schneller Züge eine Bremse — der Oberflächentest tippt im Abstand von
+   45 ms, ein Mensch ist kaum langsamer.
+2. **Er verschwindet mit dem Brett.** Undo, Neustart, Levelwechsel, Tagesrätsel, Duell:
+   überall wird er gelöscht. Sonst zeigte er auf Gläser eines Bretts, das es nicht mehr
+   gibt. *Genau das ist beim Einbau passiert und vom Test gefangen worden* — der
+   Rückkauf räumte ihn weg, der normale Undo-Knopf nicht.
+3. **`pathLength="1"`.** Damit läuft die `stroke-dashoffset`-Bewegung ohne gemessene
+   Pfadlänge, und ein `key` je Guss sorgt dafür, dass zweimal derselbe Zug auch zweimal
+   fließt.
+
+**Die Geräusche** (`src/lib/klang.ts`) kommen **ohne Tondateien** aus: gefiltertes
+Rauschen für das Gießen, ein paar Sinustöne für den Rest. Drei Gründe, der dritte ist
+der wichtigste:
+
+1. Null Bytes im Bundle. Fünf brauchbare `.mp3` wären schnell 150 KB — mehr als die
+   halbe Levelfolge.
+2. Offline sicher. Eine fehlende Tondatei wäre ein stummer Fehler, genau wie bei den
+   Schriften.
+3. **Die Länge richtet sich nach dem Zug.** Ein Guss von vier Schichten klingt länger
+   als einer von einer; mit einer festen Datei ginge das nur durch Abschneiden.
+
+**Die Regeln liegen in `klangregeln.ts`, nicht in `klang.ts`** — und dieser Schnitt hat
+einen handfesten Grund: `tsconfig.node.json` hat bewusst **keine DOM-Typen**, weil das
+der Schutz ist, der die Engine nach Deno portierbar hält. `klang.ts` braucht
+`AudioContext` und kann deshalb nie in dieses Projekt; die reine Rechnung
+(`gussDauer`, `siegToene`) schon. `test-klang.mts` prüft die Trennung ausdrücklich mit,
+sonst wandert sie beim nächsten Umbau zurück und `npm run build` fällt mit „Cannot find
+name AudioContext".
+
+*Zwei Fehler sind beim Bauen des Tests aufgeflogen, und beide sind derselbe:* Eine
+Zusicherung verbot das Wort `.mp3` in `klang.ts` — und fiel über den eigenen Kommentar,
+der erklärt, warum es keine `.mp3` gibt. Dieselbe Falle ein zweites Mal bei
+`AudioContext` in `klangregeln.ts`. **Ein Test, der die Begründung verbietet, ist
+keiner.** Geprüft wird jetzt das Laden bzw. der Code ohne Kommentare.
+
+**Die Autoplay-Regel:** der `AudioContext` entsteht **lazy**, beim ersten Geräusch — und
+das kommt immer aus einer Geste. Ein Context, der beim Laden der Seite angelegt wird,
+bleibt in `suspended` hängen und gibt bis zum Neuladen keinen Ton.
+
 ### Duelle — `src/engine/duell.ts`
 
 Beide bekommen dasselbe Brett, wer weniger Züge braucht, gewinnt. Gespielt wird
@@ -876,8 +928,8 @@ ist das einspeisbare `jetzt` im Löserbudget.
 
 ## Prüfung
 
-- **Testskripte** (alle grün zu halten). `npm test` fährt alle **elf** nacheinander,
-  **468 Zusicherungen**, Gesamtlaufzeit rund 5 Minuten — davon entfallen 148 s auf den
+- **Testskripte** (alle grün zu halten). `npm test` fährt alle **zwölf** nacheinander,
+  **495 Zusicherungen**, Gesamtlaufzeit rund 5 Minuten — davon entfallen 148 s auf den
   1.000er-Lauf des
   Generators und 21 s auf die Prüfung der ausgelieferten Folge. Einzeln über `npx tsx tools/test-x.mts`; **Node 22 kann
   `.mts` auch direkt** (`node tools/test-x.mts`), und das ist für den 1.000er-Lauf
@@ -943,6 +995,11 @@ ist das einspeisbare `jetzt` im Löserbudget.
     auf jedem Geraet dieselbe) und der Ausgang (ein Remis muss ein Remis bleiben).
     Misst ausserdem die Staerkeleiter nach, statt sie zu behaupten — genau dort fiel
     auf, dass „leicht" das Optimum spielen konnte.
+  - `test-klang.mts` (24) — die Regeln der Bar-Geräusche. WebAudio gibt es in node
+    nicht, und ein Test, der einen Ton anhört, wäre ohnehin keiner — geprüft wird wie
+    bei der Werbebremse die **Regel**: dass die Gussdauer mit der Menge wächst und unter
+    dem Deckel bleibt, dass die Siegmelodie steigt, dass nichts nachgeladen wird und
+    dass `klangregeln.ts` ohne Browser-Globale auskommt.
   - `test-release.mts` (69) — die Verkabelung zu den Stores. Prüft nichts am Spiel,
     sondern das, was keinen Test hat und trotzdem ein Release kippt: die Bundle-ID an
     sieben Stellen, gleiche Versionen auf beiden Plattformen, dass Test-Anzeigen und
@@ -952,7 +1009,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Workflows in `docs/release-ci.md` erklärt ist. Mit `--release` verlangt es
     zusätzlich die Bereitschaft (echte Anzeigen, echte IDs) — diese Fassung schlägt
     heute absichtlich fehl und ist damit die Liste dessen, was noch fehlt.
-  - `test-oberflaeche.mjs` (58, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-oberflaeche.mjs` (63, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
     Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein
@@ -1043,6 +1100,16 @@ heißt auch: was auf der Produktionsadresse liegt, muss nicht in `main` stehen.
 `public/fonts/` und druckt die `@font-face`-Regeln, die oben in `src/index.css` gehören.
 Einmalig gelaufen; das Ergebnis liegt im Repo. Es gibt **keinen** Netz-Fallback — fehlt
 eine Datei, fällt die Schrift still auf `system-ui` zurück.
+
+**Store-Bilder:** `node tools/store-bilder.mjs` (nach `npm run build`) nimmt die
+Screenshots in den Größen auf, die Apple und Google verlangen — 1290×2796, 1242×2688
+und 1080×1920 —, baut die **Feature-Grafik** 1024×500 und das 512er-Symbol für Play.
+Ergebnis in `.store/`, gitignored. Aufgenommen wird aus dem **echten Bundle**, nicht aus
+einem Entwurf: ein aufgehübschter Store-Screenshot ist bei Apple ein Ablehnungsgrund.
+Die Feature-Grafik entsteht im Browser und nicht mit sharp — nur so kommen die echten
+Schriften aus `public/fonts/` zum Einsatz. Die Screenshots des Oberflächentests taugen
+dafür **nicht**: die sind 390×844, und Apple weist zu kleine Bilder erst beim Hochladen
+ab.
 
 **Icons:** `node tools/icons-bauen.mjs` erzeugt aus `public/favicon.svg` die
 PNG-Größen. Nur SVG reicht nicht — iOS nimmt für „Zum Home-Bildschirm hinzufügen"

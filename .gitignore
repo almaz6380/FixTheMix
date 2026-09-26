@@ -51,3 +51,7 @@ android/keystore.properties
 # Vom Icon-Werkzeug erzeugte Zwischenstaende
 assets/
 .screenshots/
+# Store-Bilder aus tools/store-bilder.mjs — Erzeugnisse, keine Quellen.
+# Sie entstehen in Sekunden neu und waeren als PNG-Paar von 1290x2796 der
+# groesste Posten im ganzen Repo.
+.store/

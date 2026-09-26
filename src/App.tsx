@@ -18,7 +18,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Brett from './components/Brett.tsx';
+import Brett, { type Guss } from './components/Brett.tsx';
 import Levelwahl from './components/Levelwahl.tsx';
 import { Partie } from './engine/verlauf.ts';
 import { festgefahren } from './engine/loeser.ts';
@@ -36,6 +36,10 @@ import {
   heute, ladeTaeglich, merkeTag, serieLaeuft, speichereTaeglich,
 } from './lib/serie.ts';
 import { teilText } from './lib/teilen.ts';
+import {
+  klangDaneben, klangGuss, klangMuenze, klangSieg, klangSteckt, klangWahl,
+  setzeTon, tonGeladen,
+} from './lib/klang.ts';
 import {
   ausgangZaehlen, ladeBilanz, naechsteNummer, speichereBilanz,
 } from './lib/duell.ts';
@@ -90,6 +94,9 @@ export default function App() {
   const [partie, setPartie] = useState(() => new Partie(FOLGE[STARTLEVEL]!));
   const [fortschritt, setFortschritt] = useState(start);
   const [symbole, setSymbole] = useState(() => ladeEinstellung('symbole', false));
+  // Der Giessstrahl. `nr` zaehlt hoch, damit zweimal derselbe Zug auch zweimal
+  // fliesst — ohne das liefe die CSS-Bewegung nur beim ersten Mal.
+  const [guss, setGuss] = useState<Guss | null>(null);
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [kippt, setKippt] = useState<number | null>(null);
   const [tippZiel, setTippZiel] = useState<number | null>(null);
@@ -111,13 +118,21 @@ export default function App() {
       await starteWerbung();
       await werbefreiPruefen();
     })();
+    // Der gespeicherte Ton-Schalter. Gelesen wird er hier und nicht im
+    // Klangmodul selbst: `localStorage` gehoert nicht in eine Datei, die sonst
+    // nur mit WebAudio zu tun hat.
+    setzeTon(tonGeladen());
   }, []);
 
   /** Nach jedem Zug: ist von hier aus ueberhaupt noch etwas zu holen? */
   const pruefeSackgasse = () => {
     // Erst zeichnen lassen, dann rechnen — wie beim Tipp. Die Pruefung kostet
     // gemessen 1–2 ms, aber sie laeuft synchron im selben Faden.
-    window.setTimeout(() => setSteckt(festgefahren(partie.zustand)), 30);
+    window.setTimeout(() => {
+      const tot = festgefahren(partie.zustand);
+      setSteckt(tot);
+      if (tot) klangSteckt();
+    }, 30);
   };
 
   const imTag = modus === 'tag' && tagBrett !== null;
@@ -136,6 +151,7 @@ export default function App() {
     // Die Sperre wird hier ein zweites Mal geprueft, nicht nur in der
     // Levelwahl: sonst haengt die Regel an einem `disabled` in der Anzeige.
     if (i < 0 || i >= FOLGE.length || !istFrei(fortschritt, i)) return;
+    setGuss(null);
     setIndex(i);
     setPartie(new Partie(FOLGE[i]!));
     setGewaehlt(null);
@@ -164,6 +180,7 @@ export default function App() {
     setTagLaedt(true);
     setWahlOffen(false);
     window.setTimeout(() => {
+      setGuss(null);
       const brett = tagLevel(HEUTE);
       setTagBrett(brett);
       setPartie(new Partie(brett));
@@ -178,6 +195,7 @@ export default function App() {
   };
 
   const zurFolge = () => {
+    setGuss(null);
     setModus('folge');
     setPartie(new Partie(FOLGE[index]!));
     setGewaehlt(null);
@@ -204,6 +222,7 @@ export default function App() {
     setDuellLaedt(true);
     setWahlOffen(false);
     window.setTimeout(() => {
+      setGuss(null);
       const nummer = naechsteNummer(duellBilanz);
       const brett = duellLevel(nummer);
       setDuellNummer(nummer);
@@ -275,19 +294,25 @@ export default function App() {
     if (geloest) return;
     setTippZiel(null);
     if (gewaehlt === null) {
-      if (stand.fuell[b]! > 0) setGewaehlt(b);
+      if (stand.fuell[b]! > 0) { setGewaehlt(b); klangWahl(); }
       return;
     }
     if (gewaehlt === b) { setGewaehlt(null); return; }
     const quelle = gewaehlt;
-    if (partie.pour(quelle, b).ok) {
+    const e = partie.pour(quelle, b);
+    if (e.ok) {
       haptik(8);
+      klangGuss(e.menge);
       setKippt(quelle);
       window.setTimeout(() => setKippt(null), 200);
+      // Der Strahl wird HIER angestossen, nach dem Zug: gezeichnet wird er
+      // gegen den neuen Stand, und aufhalten darf er nichts.
+      setGuss((alt) => ({ von: quelle, nach: b, farbe: e.farbe, menge: e.menge, nr: (alt?.nr ?? 0) + 1 }));
       setGewaehlt(null);
       neuZeichnen();
       if (partie.isSolved()) {
         haptik(40);
+        klangSieg(partie.sterne());
         // Muenzen NUR fuer die Verbesserung — sonst waere ein leichtes Level
         // (oder dasselbe Tagesraetsel) eine Quelle zum Wiederholen. Die Regel
         // steht in lib/muenzen.ts.
@@ -298,6 +323,7 @@ export default function App() {
         const verdient = imDuell ? 0 : lohnFuer(vorher, partie.sterne());
         setGewinn(verdient);
         if (verdient > 0) {
+          klangMuenze();
           setMuenzen((m) => {
             const neu = m + verdient;
             speichereMuenzen(neu);
@@ -336,7 +362,8 @@ export default function App() {
     } else {
       // Fehlgriff: statt stumm abzuwaehlen die neue Quelle uebernehmen, wenn
       // dort ueberhaupt etwas drin ist. Das fuehlt sich fluessiger an.
-      setGewaehlt(stand.fuell[b]! > 0 ? b : null);
+      if (stand.fuell[b]! > 0) { setGewaehlt(b); klangWahl(); }
+      else { setGewaehlt(null); klangDaneben(); }
     }
   };
 
@@ -377,6 +404,7 @@ export default function App() {
     setMuenzen(rest);
     speichereMuenzen(rest);
     partie.undo();
+    setGuss(null);
     setGewaehlt(null);
     setTippZiel(null);
     neuZeichnen();
@@ -426,6 +454,7 @@ export default function App() {
           window.setTimeout(() => setVideoLeer(false), 2500);
           return;
         }
+        klangMuenze();
         setMuenzen((m) => {
           const neu = m + BELOHNUNG_VIDEO;
           speichereMuenzen(neu);
@@ -436,6 +465,9 @@ export default function App() {
   };
 
   const neustart = () => {
+    // Ein stehengebliebener Strahl zeigt auf Glaeser eines Bretts, das es so
+    // nicht mehr gibt.
+    setGuss(null);
     partie.neustart();
     setGewaehlt(null);
     setTippZiel(null);
@@ -501,6 +533,7 @@ export default function App() {
 
       <div className="flex flex-grow items-center justify-center px-4 py-2">
         <Brett
+          guss={guss}
           stand={stand}
           gewaehlt={gewaehlt}
           kippt={kippt}
@@ -513,7 +546,7 @@ export default function App() {
 
       <footer className="flex flex-shrink-0 items-center gap-2.5 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <button type="button" aria-label={t('spiel.undo')} disabled={!partie.kannUndo() || geloest}
-          onClick={() => { if (partie.undo()) { setGewaehlt(null); neuZeichnen(); } }}
+          onClick={() => { if (partie.undo()) { setGuss(null); setGewaehlt(null); neuZeichnen(); } }}
           className="knopf w-[54px] flex-shrink-0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h11a5.5 5.5 0 010 11H8" /><path d="M7 4L3 8l4 4" /></svg>
         </button>

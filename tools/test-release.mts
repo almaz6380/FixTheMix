@@ -93,20 +93,34 @@ console.log('\n--- Werbung: Test und Produktion duerfen sich nicht mischen ---')
   ok(iosApp.startsWith('ca-app-pub-'), `iOS hat eine AdMob-App-ID (${iosApp})`);
   ok(andApp.startsWith('ca-app-pub-'), `Android hat eine AdMob-App-ID (${andApp})`);
 
-  // Die Anzeigenbloecke aus dem PROD-Abschnitt.
+  // Die Anzeigenbloecke aus beiden Abschnitten.
+  const testBlock = /const TEST = \{([\s\S]*?)\n\};/.exec(werbung)?.[1] ?? '';
+  const TEST_BLOCK = [...testBlock.matchAll(/'(ca-app-pub-[^']*)'/g)].map((m) => m[1]!);
   const prodBlock = /const PROD = \{([\s\S]*?)\n\};/.exec(werbung)?.[1] ?? '';
   const prodIds = [...prodBlock.matchAll(/'(ca-app-pub-[^']*)'/g)].map((m) => m[1]!);
   const prodLeer = /interstitial: ''/.test(prodBlock) || /rewarded: ''/.test(prodBlock);
 
   if (testAn) {
-    // Der gefaehrliche Zustand ist NICHT „alles Test" und auch nicht „alles
-    // echt", sondern die Mischung. Eine echte App-ID mit Test-Anzeigen fuellt
-    // die AdMob-Statistik mit Scheinabrufen; eine Beispiel-App-ID mit echten
-    // Anzeigen liefert gar nichts aus.
-    ok(iosApp.startsWith(BEISPIEL),
-       'bei Test-Anzeigen traegt auch die iOS-App-ID Googles Beispiel-Kennung');
-    ok(andApp.startsWith(BEISPIEL),
-       '... und die Android-App-ID ebenso');
+    // HIER STAND EINE ZU STRENGE REGEL, und sie ist am 26.09.2026 gefallen.
+    //
+    // Verlangt wurde, dass bei Test-Anzeigen AUCH die App-IDs Googles
+    // Beispiel-Kennung tragen — begruendet damit, eine echte App-ID wuerde
+    // die AdMob-Statistik mit Scheinabrufen fuellen. Das stimmt nicht:
+    // Googles Test-Anzeigenbloecke gehoeren GOOGLE, nicht uns. Abrufe darauf
+    // erreichen das eigene Konto gar nicht, egal welche App-ID danebensteht.
+    //
+    // Die Regel verbot damit ausgerechnet den nuetzlichsten Zwischenstand:
+    // die AdMob-App ist angelegt, die echten App-IDs stehen in Info.plist und
+    // Manifest, ausgeliefert werden aber weiter Test-Anzeigen. Genau so
+    // entwickelt man vor dem Launch — und genau danach hat Josef gefragt.
+    //
+    // Was WIRKLICH gefaehrlich ist, bleibt geprueft (im `else`-Zweig): echte
+    // Anzeigen mit einer Beispiel-App-ID liefern gar nichts aus, und ein
+    // Release mit Test-Anzeigen verdient nichts.
+    ok(TEST_BLOCK.length >= 4 && TEST_BLOCK.every((i) => i.startsWith(BEISPIEL)),
+       `bei Test-Anzeigen sind alle vier Bloecke Googles Test-IDs (${TEST_BLOCK.length})`);
+    const echt = !iosApp.startsWith(BEISPIEL) && !andApp.startsWith(BEISPIEL);
+    console.log(`       App-IDs: ${echt ? 'echt (AdMob-App angelegt)' : 'noch Googles Beispiel'}`);
   } else {
     ok(!iosApp.startsWith(BEISPIEL), 'bei echten Anzeigen ist die iOS-App-ID keine Beispiel-ID mehr');
     ok(!andApp.startsWith(BEISPIEL), '... und die Android-App-ID auch nicht');

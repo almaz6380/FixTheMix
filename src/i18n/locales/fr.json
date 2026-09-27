@@ -4,6 +4,9 @@
   },
   "spiel": {
     "level": "Niveau {{n}}",
+    "spielen": "Jouer",
+    "weiterspielen": "Continuer",
+    "startZeile": "Triez toute la bar",
     "vonZuegen": "sur {{n}} coups",
     "sterne": "{{n}} étoiles sur 3",
     "sterneGesamt": "{{n}} étoiles sur {{gesamt}}",

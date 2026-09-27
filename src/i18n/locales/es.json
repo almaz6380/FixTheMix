@@ -4,6 +4,9 @@
   },
   "spiel": {
     "level": "Nivel {{n}}",
+    "spielen": "Jugar",
+    "weiterspielen": "Continuar",
+    "startZeile": "Ordena toda la barra",
     "vonZuegen": "de {{n}} movimientos",
     "sterne": "{{n}} de 3 estrellas",
     "sterneGesamt": "{{n}} de {{gesamt}} estrellas",

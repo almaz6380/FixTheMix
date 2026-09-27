@@ -116,6 +116,10 @@ Code auf seinem Rechner laufen.
       und Tests tragen keine Spur mehr davon
 
 ### M3 Spielbildschirm — GRÖSSTENTEILS FERTIG (25.09.2026)
+- [x] **Der Aufbau stimmt** (27.09.2026, Josefs Entscheidung): Startbildschirm unter `/`,
+      Spiel unter `/spiel`, Levelwahl unter `/level`, Tagesrätsel und Duell mit eigenen
+      Adressen. Vorher öffnete die App mitten in einem Level, und die gesamte Navigation
+      steckte in einem Fenster darüber. Siehe „Der Aufbau der App".
 - [x] Bar-Look, Gläser skalieren mit der Spaltenbreite
 - [x] Antippen = wählen, nochmal antippen = gießen. Bewusst kein Ziehen: mit dem
       Daumen über ein halbes Display zu ziehen ist unangenehm, und ein abgebrochener
@@ -937,7 +941,7 @@ still eine leere Zeichenkette. Und jedes `secrets.X` aus beiden Workflows muss i
 `docs/release-ci.md` stehen, sonst legt niemand es an und der Lauf scheitert
 später mit „leer".
 
-### Routen — und warum es sie überhaupt gibt
+### Der Aufbau der App — Routen statt Fenster
 
 Seit Phase 5 hat die App einen Router, und zwar nicht aus Schönheit: **Apple und Google
 verlangen eine öffentlich erreichbare Datenschutz-URL**, Google Play zusätzlich eine
@@ -946,13 +950,64 @@ sein — ein Fenster über dem Spiel hat keine Adresse, die man in ein Store-For
 eintragen kann. Dass `vercel.json` alles auf `index.html` umschreibt, ist dafür die
 Voraussetzung.
 
-Der Weg zu den Einstellungen führt über die **Levelwahl**, nicht über die Kopfzeile: die
-ist voll, und der Burger muss das erste `button` im `<header>` bleiben — daran hängt der
+**Am 27.09.2026 ist daraus ein richtiger Aufbau geworden** (Josefs Entscheidung):
+
+| Adresse | Was |
+|---|---|
+| `/` | **Startbildschirm** (`src/pages/Start.tsx`) — die Haustür |
+| `/spiel` | Die Levelfolge |
+| `/tagesraetsel` | Das Rätsel des Tages |
+| `/duell` | Ein Duell |
+| `/level` | Die Levelwahl (`src/pages/LevelSeite.tsx`) |
+| `/einstellungen`, `/impressum`, `/datenschutz`, `/nutzungsbedingungen`, `/daten-loeschen` | wie bisher |
+
+**Vorher lag unter `/` sofort ein Level**, und Levelwahl, Tagesrätsel, Duelle und
+Einstellungen steckten alle in **einem Fenster über dem Spiel**, erreichbar nur über den
+Burger in der Kopfzeile. Die gesamte Navigation hing damit an einem Knopf innerhalb des
+einzigen Bildschirms, den es gab. Drei Folgen, alle unangenehm:
+
+1. **Nichts davon hatte eine Adresse.** Ein Neuladen im Tagesrätsel landete in der
+   Levelfolge.
+2. **Die App öffnete mitten in einer Partie**, ohne Anfang, ohne Titel.
+3. **Der Modus war ein Zustand statt eines Ortes** — „ich bin im Duell" stand in einem
+   `useState`, nicht in der URL.
+
+Jetzt entscheidet die **Route** den Modus: `App.tsx` nimmt `startModus` als Eigenschaft
+und erzeugt Tagesrätsel bzw. Duellbrett in einem Effekt beim Betreten. Der Knopf in der
+Kopfzeile führt **eine Stufe nach oben** — aus der Folge in die Levelwahl, aus
+Tagesrätsel und Duell an den Anfang. Er bleibt das erste `button` im `<header>`, daran
+hängt weiterhin der Oberflächentest.
+
+*Hier ist ein Fehler aufgeflogen, den es ohne Routen gar nicht geben konnte:*
+`STARTLEVEL` war eine **Konstante auf Modulebene** und wurde damit genau einmal
+gerechnet — beim Import. Solange `/` der einzige Einstieg war, hieß das „bei jedem
+Seitenaufruf", und es stimmte. Mit dem Router wechselt man von `/level` nach `/spiel`,
+ohne dass das Modul neu geladen wird: die Konstante stand dann noch auf dem Level von
+vorhin, und **die Levelwahl sprang ins Leere**. Sie ist jetzt die Funktion
+`startLevel(f)`, aufgerufen aus den `useState`-Initialisierern. Gefangen hat das der
 Oberflächentest.
+
+**Die Levelwahl reicht ihre Wahl über den Fortschritt weiter**, nicht über den
+Router-Zustand: sie schreibt `zuletzt` und navigiert nach `/spiel`, das sein Level von
+dort holt. Damit überlebt die Wahl ein Neuladen, und `/spiel` hat genau **einen** Weg,
+sein Level zu bestimmen. Die Sperre wird auch dort ein zweites Mal geprüft (`istFrei`) —
+eine Regel, die nur an einem `disabled` hängt, ist keine.
+
+**Tagesrätsel und Duell sind aus der Levelwahl ausgezogen** und stehen auf dem
+Startbildschirm. Beides ist kein Level; in einer Liste von Leveln zu stehen war schon
+vorher falsch, hinter dem Spielbildschirm zu liegen erst recht. `Levelwahl.tsx` ist
+dadurch von 25 auf 15 Eigenschaften geschrumpft und macht jetzt, was sein Name sagt.
+
+**Der Tresen gibt es in zwei Fassungen:** `.theke` hängt an der Unterkante des Bretts
+(Spielbildschirm, siehe „Die Bar als Ort"), `.theke-fest` steht fest am unteren Rand —
+für Bildschirme ohne Brett, an denen er sonst nichts hätte, woran er hängen könnte. Auf
+dem Startbildschirm sind die Gläser ein **Bild** (`.start-glas`), kein Brett: feste
+Höhen, keine Zustände, kein Antippen. Ein halbes Spielbrett, das nichts tut, wäre eine
+Einladung, darauf zu tippen.
 
 ### Sprachen
 
-Fünf Dateien in `src/i18n/locales/`, alle mit denselben 79 Schlüsseln;
+Fünf Dateien in `src/i18n/locales/`, alle mit demselben Schlüsselsatz;
 `tools/test-recht.mts` prüft das, samt der Platzhalter (`{{n}}`) und daran, dass keine
 Zeile unübersetzt deutsch in einer fremden Datei steht.
 
@@ -1231,9 +1286,12 @@ heißt auch: was auf der Produktionsadresse liegt, muss nicht in `main` stehen.
 Einmalig gelaufen; das Ergebnis liegt im Repo. Es gibt **keinen** Netz-Fallback — fehlt
 eine Datei, fällt die Schrift still auf `system-ui` zurück.
 
-**Store-Bilder:** `node tools/store-bilder.mjs` (nach `npm run build`) nimmt die
-Screenshots in den Größen auf, die Apple und Google verlangen — 1290×2796, 1242×2688
-und 1080×1920 —, baut die **Feature-Grafik** 1024×500 und das 512er-Symbol für Play.
+**Store-Bilder:** `node tools/store-bilder.mjs` (nach `npm run build`) nimmt **fünf**
+Screenshots je Gerät auf — Startbildschirm, Spiel mit gewähltem Lauf, Farbenblind-Modus,
+Levelwahl, Tagesrätsel — in den Größen, die Apple und Google verlangen: 1290×2796,
+1242×2688 und 1080×1920. Dazu die **Feature-Grafik** 1024×500 und das 512er-Symbol für
+Play. Das Skript fährt die Routen direkt an (`/`, `/spiel`, `/level`, `/tagesraetsel`);
+vor dem 27.09.2026 klickte es sich über den Burger durch das Fenster über dem Spiel.
 Ergebnis in `.store/`, gitignored. Aufgenommen wird aus dem **echten Bundle**, nicht aus
 einem Entwurf: ein aufgehübschter Store-Screenshot ist bei Apple ein Ablehnungsgrund.
 Die Feature-Grafik entsteht im Browser und nicht mit sharp — nur so kommen die echten

@@ -19,7 +19,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Brett, { type Guss } from './components/Brett.tsx';
-import Levelwahl from './components/Levelwahl.tsx';
 import { Partie } from './engine/verlauf.ts';
 import { festgefahren } from './engine/loeser.ts';
 import { tagLevel, tagesNummer } from './engine/tagesraetsel.ts';
@@ -33,7 +32,7 @@ import {
   KOSTEN_RUECKKAUF, KOSTEN_TIPP, ladeMuenzen, lohnFuer, reichtFuer, speichereMuenzen,
 } from './lib/muenzen.ts';
 import {
-  heute, ladeTaeglich, merkeTag, serieLaeuft, speichereTaeglich,
+  heute, ladeTaeglich, merkeTag, speichereTaeglich,
 } from './lib/serie.ts';
 import { teilText } from './lib/teilen.ts';
 import {
@@ -55,15 +54,28 @@ import roheFolge from './levels/folge.json';
 // dafuer stehen tools/test-generator.mts und tools/test-folge.mts.
 const FOLGE = roheFolge as unknown as Level[];
 
-const start = ladeFortschritt();
-// Doppelt geklemmt: an die Laenge der Folge UND an die Freischaltung. Ein
-// Speicherstand aus einer laengeren Folge oder ein von Hand veraenderter darf
-// nicht in ein gesperrtes Level starten.
-const STARTLEVEL = Math.min(
-  Math.max(start.zuletzt, 0),
-  Math.max(start.hoechstes, 0),
-  FOLGE.length - 1,
-);
+/**
+ * Mit welchem Level `/spiel` aufgeht.
+ *
+ * Eine FUNKTION und keine Konstante, und das ist seit dem Umbau auf Routen
+ * kein Geschmack mehr: eine Konstante auf Modulebene wird genau einmal
+ * gerechnet, naemlich beim Import. Solange `/` der einzige Einstieg war, hiess
+ * das „bei jedem Seitenaufruf". Mit dem Router wechselt man von `/level` nach
+ * `/spiel`, ohne dass das Modul neu geladen wird — die Konstante stand dann
+ * noch auf dem Level von vorhin, und die Levelwahl sprang ins Leere.
+ * Genau das hat der Oberflaechentest gefangen.
+ *
+ * Doppelt geklemmt: an die Laenge der Folge UND an die Freischaltung. Ein
+ * Speicherstand aus einer laengeren Folge oder ein von Hand veraenderter darf
+ * nicht in ein gesperrtes Level starten.
+ */
+function startLevel(f: ReturnType<typeof ladeFortschritt>): number {
+  return Math.min(
+    Math.max(f.zuletzt, 0),
+    Math.max(f.hoechstes, 0),
+    FOLGE.length - 1,
+  );
+}
 
 /**
  * Der heutige Tag wird EINMAL beim Laden festgehalten, nicht bei jedem Render.
@@ -72,10 +84,28 @@ const STARTLEVEL = Math.min(
  */
 const HEUTE = heute();
 
-export default function App() {
+interface Eigenschaften {
+  /**
+   * Welcher Modus gespielt wird — entschieden von der ROUTE, nicht von einem
+   * Knopf im Spielbildschirm. `/spiel` ist die Levelfolge, `/tagesraetsel`
+   * das Raetsel des Tages, `/duell` ein Duell.
+   *
+   * Vor dem 27.09.2026 gab es nur `/`, und der Modus wurde aus einem Fenster
+   * ueber dem Spiel heraus umgeschaltet. Damit hatte weder das Tagesraetsel
+   * noch ein Duell eine Adresse, und ein Neuladen warf einen zurueck in die
+   * Levelfolge.
+   */
+  startModus?: 'folge' | 'tag' | 'duell';
+}
+
+export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [index, setIndex] = useState(STARTLEVEL);
+  // Beim Betreten der Route EINMAL aus dem Speicher gelesen — danach fuehrt
+  // der State das Spiel. `useState` mit Funktion, damit das nicht bei jedem
+  // Neuzeichnen passiert.
+  const [fortschritt, setFortschritt] = useState(ladeFortschritt);
+  const [index, setIndex] = useState(() => startLevel(ladeFortschritt()));
   const [modus, setModus] = useState<'folge' | 'tag' | 'duell'>('folge');
   const [tagBrett, setTagBrett] = useState<Level | null>(null);
   // Das Duell (Version 1.1). Brett, Gegner und Ausgang liegen zusammen im
@@ -91,8 +121,7 @@ export default function App() {
   const [kopiert, setKopiert] = useState(false);
   const [videoLaeuft, setVideoLaeuft] = useState(false);
   const [videoLeer, setVideoLeer] = useState(false);
-  const [partie, setPartie] = useState(() => new Partie(FOLGE[STARTLEVEL]!));
-  const [fortschritt, setFortschritt] = useState(start);
+  const [partie, setPartie] = useState(() => new Partie(FOLGE[startLevel(ladeFortschritt())]!));
   const [symbole, setSymbole] = useState(() => ladeEinstellung('symbole', false));
   // Der Giessstrahl. `nr` zaehlt hoch, damit zweimal derselbe Zug auch zweimal
   // fliesst — ohne das liefe die CSS-Bewegung nur beim ersten Mal.
@@ -101,7 +130,6 @@ export default function App() {
   const [kippt, setKippt] = useState<number | null>(null);
   const [tippZiel, setTippZiel] = useState<number | null>(null);
   const [rechnet, setRechnet] = useState(false);
-  const [wahlOffen, setWahlOffen] = useState(false);
   const [muenzen, setMuenzen] = useState(() => ladeMuenzen());
   // Ob das Brett tot ist, steht im State und wird NICHT bei jedem Render
   // gerechnet — sonst liefe der Loeser bei jeder Kleinigkeit mit.
@@ -110,6 +138,21 @@ export default function App() {
   const [gewinn, setGewinn] = useState(0);
   const [takt, setTakt] = useState(0);
   const neuZeichnen = () => setTakt((x) => x + 1);
+
+  /*
+    Tagesraetsel und Duell werden beim Betreten der Route erzeugt. Beides
+    kostet Zeit (Raetsel 1–584 ms, Duell samt Botpartie bis ~250 ms), deshalb
+    laufen sie durch dieselben Starter wie vorher — mit Ladezustand.
+
+    Die Abhaengigkeitsliste ist absichtlich leer: das soll genau EINMAL beim
+    Betreten passieren. Liefe es erneut, bekaeme der Spieler mitten in der
+    Partie ein frisches Brett.
+  */
+  useEffect(() => {
+    if (startModus === 'tag') starteTag();
+    else if (startModus === 'duell') starteDuell();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Werbung und Kaufstatus einmal beim Start. Im Browser tut beides nichts —
   // die Funktionen pruefen das selbst und kehren still zurueck.
@@ -156,7 +199,6 @@ export default function App() {
     setPartie(new Partie(FOLGE[i]!));
     setGewaehlt(null);
     setTippZiel(null);
-    setWahlOffen(false);
     setSteckt(false);
     setGewinn(0);
     // Auch das Springen merkt sich die App — vorher stand nach einem Neuladen
@@ -178,7 +220,6 @@ export default function App() {
    */
   const starteTag = () => {
     setTagLaedt(true);
-    setWahlOffen(false);
     window.setTimeout(() => {
       setGuss(null);
       const brett = tagLevel(HEUTE);
@@ -194,17 +235,12 @@ export default function App() {
     }, 30);
   };
 
-  const zurFolge = () => {
-    setGuss(null);
-    setModus('folge');
-    setPartie(new Partie(FOLGE[index]!));
-    setGewaehlt(null);
-    setTippZiel(null);
-    setSteckt(false);
-    setGewinn(0);
-    setWahlOffen(false);
-    setDuellAusgang(null);
-  };
+  /**
+   * Zurueck in die Levelfolge. Seit dem Umbau ist das ein ROUTENWECHSEL und
+   * kein Umschalten im selben Bildschirm — `/spiel` baut sich frisch auf und
+   * holt sein Level aus dem Fortschritt.
+   */
+  const zurFolge = () => navigate('/spiel');
 
   /**
    * Ein Duell starten. Brett und Gegner entstehen HIER, nicht vorgebaut —
@@ -220,7 +256,6 @@ export default function App() {
    */
   const starteDuell = () => {
     setDuellLaedt(true);
-    setWahlOffen(false);
     window.setTimeout(() => {
       setGuss(null);
       const nummer = naechsteNummer(duellBilanz);
@@ -492,7 +527,7 @@ export default function App() {
       <header className="flex flex-shrink-0 items-center justify-between gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] pb-2">
         <button
           type="button"
-          onClick={() => setWahlOffen(true)}
+          onClick={() => navigate(imTag || imDuell ? '/' : '/level')}
           className="flex min-h-[44px] touch-manipulation items-center gap-2 rounded-full border-[1.5px] border-kante bg-theke/85 px-4 text-sm font-bold text-creme"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" className="text-rauch" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
@@ -791,7 +826,7 @@ export default function App() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => (letztes ? setWahlOffen(true) : wechsle(index + 1))}
+                  onClick={() => (letztes ? navigate('/level') : wechsle(index + 1))}
                   className="knopf knopf-an"
                 >
                   {letztes ? t('spiel.levelwahl') : t('spiel.weiter')}
@@ -811,7 +846,7 @@ export default function App() {
                     {t('spiel.zurFolge')}
                   </button>
                 ) : !letztes && (
-                  <button type="button" className="knopf flex-grow" onClick={() => setWahlOffen(true)}>
+                  <button type="button" className="knopf flex-grow" onClick={() => navigate('/level')}>
                     {t('spiel.levelwahl')}
                   </button>
                 )}
@@ -821,51 +856,6 @@ export default function App() {
         </div>
       )}
 
-      {wahlOffen && (
-        <Levelwahl
-          level={FOLGE}
-          aktuell={index}
-          sterne={fortschritt.sterne}
-          hoechstes={fortschritt.hoechstes}
-          onWahl={wechsle}
-          onZu={() => setWahlOffen(false)}
-          titel={t('spiel.levelwahl')}
-          schliessen={t('spiel.schliessen')}
-          bilanz={t('spiel.sterneGesamt', { n: gesamtSterne, gesamt: FOLGE.length * 3 })}
-          abschnittTitel={(von, bis) => t('spiel.abschnitt', { von, bis })}
-          kachelTitel={(nr, s, experte) =>
-            t(experte ? 'spiel.kachelExperte' : 'spiel.kachel', { n: nr, sterne: s })}
-          gesperrtTitel={(nr) => t('spiel.kachelGesperrt', { n: nr })}
-          zurueck={t('spiel.abschnittZurueck')}
-          vor={t('spiel.abschnittVor')}
-          weiter={t('spiel.weiter')}
-          tagTitel={t('spiel.tagesraetsel')}
-          tagZeile={
-            taeglich.tage[HEUTE]
-              ? t('spiel.tagFertig', { zuege: taeglich.tage[HEUTE]!.zuege })
-              : t('spiel.tagHeute', { n: tagNummer })
-          }
-          tagSerie={
-            serieLaeuft(taeglich, HEUTE)
-              ? t('spiel.serie', { n: taeglich.serie })
-              : t('spiel.serieKeine')
-          }
-          tagSterne={taeglich.tage[HEUTE]?.sterne ?? 0}
-          onTag={starteTag}
-          duellTitel={t('spiel.duelle')}
-          duellZeile={t('spiel.duellZeile')}
-          duellBilanz={
-            duellBilanz.gespielt === 0
-              ? t('spiel.duellKeine')
-              : `${t('spiel.duellBilanz', {
-                  s: duellBilanz.siege, n: duellBilanz.niederlagen, r: duellBilanz.remis,
-                })} · ${t(`spiel.duellGegner${duellBilanz.staerke === 'leicht' ? 'Leicht' : duellBilanz.staerke === 'mittel' ? 'Mittel' : 'Stark'}`)}`
-          }
-          onDuell={starteDuell}
-          einstellungen={t('spiel.einstellungen')}
-          onEinstellungen={() => navigate('/einstellungen')}
-        />
-      )}
     </main>
   );
 }

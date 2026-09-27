@@ -4,6 +4,9 @@
   },
   "spiel": {
     "level": "Nível {{n}}",
+    "spielen": "Jogar",
+    "weiterspielen": "Continuar",
+    "startZeile": "Organize o bar inteiro",
     "vonZuegen": "de {{n}} movimentos",
     "sterne": "{{n}} de 3 estrelas",
     "sterneGesamt": "{{n}} de {{gesamt}} estrelas",

@@ -78,12 +78,29 @@ const NR = 10; // ein groesseres Brett aus der Mitte der Folge
 const level = folge[NR];
 const loesung = solve(standAusLevel(level));
 
-console.log('--- Start ---');
+console.log('--- Startbildschirm ---');
+// Seit dem 27.09.2026 liegt unter `/` der Startbildschirm und nicht mehr
+// sofort ein Level. Der Weg ins Spiel geht ueber einen Knopf — genau den
+// prueft dieser Abschnitt, denn er ist die Haustuer der App.
 await seite.goto('http://localhost:4602/', { waitUntil: 'networkidle' });
 await seite.evaluate(() => localStorage.clear());
 await seite.reload({ waitUntil: 'networkidle' });
-await seite.waitForTimeout(300);
+await seite.waitForTimeout(350);
 ok(konsole.length === 0, `kein Konsolenfehler beim Start${konsole.length ? `: ${konsole[0]}` : ''}`);
+ok((await seite.locator('h1').innerText()).includes('FixTheMix'), 'der Startbildschirm traegt den Namen');
+ok(await seite.locator('button[data-weiter]').count() === 1, '... und einen Knopf ins Spiel');
+ok(await seite.getByRole('link', { name: /Alle Level/ }).count() === 1, '... einen Weg in die Levelwahl');
+ok(await seite.locator('[data-duell]').count() === 1, '... und einen ins Duell');
+await seite.screenshot({ path: join(bilder, '00-start.png') });
+
+// Ohne Spielstand heisst der Knopf „Spielen", nicht „Weiterspielen".
+ok((await seite.locator('button[data-weiter]').innerText()).trim() === 'Spielen',
+   'beim ersten Start heisst der Knopf „Spielen"');
+
+console.log('\n--- Ins Spiel ---');
+await seite.locator('button[data-weiter]').click();
+await seite.waitForTimeout(400);
+ok(seite.url().endsWith('/spiel'), `das Spiel hat eine eigene Adresse (${new URL(seite.url()).pathname})`);
 ok((await seite.locator('header').innerText()).includes('Level 1'), 'startet bei Level 1');
 await seite.screenshot({ path: join(bilder, '01-start.png') });
 
@@ -123,8 +140,11 @@ console.log('\n--- Ein Zug, dann zurueck ---');
 
 console.log('\n--- Sperre ---');
 {
+  // Die Kopfzeile fuehrt eine Stufe nach oben — in der Levelfolge ist das die
+  // Levelwahl. Vorher oeffnete derselbe Knopf ein Fenster ueber dem Spiel.
   await seite.locator('header button').first().click();
-  await seite.waitForTimeout(250);
+  await seite.waitForTimeout(400);
+  ok(seite.url().endsWith('/level'), 'die Kopfzeile fuehrt in die Levelwahl');
   const zu = seite.getByRole('button', { name: /^Level 2, gesperrt/ });
   ok(await zu.count() === 1 && await zu.isDisabled(),
      'bei frischem Start ist Level 2 gesperrt');
@@ -145,7 +165,7 @@ console.log('\n--- Sperre ---');
     ),
     [NR, FOLGE_VERSION],
   );
-  await seite.reload({ waitUntil: 'networkidle' });
+  await seite.goto('http://localhost:4602/spiel', { waitUntil: 'networkidle' });
   await seite.waitForTimeout(350);
 }
 
@@ -168,9 +188,9 @@ console.log('\n--- Farbenblind-Modus ---');
 console.log(`\n--- Level ${NR + 1} durchspielen ---`);
 {
   await seite.locator('header button').first().click();
-  await seite.waitForTimeout(250);
+  await seite.waitForTimeout(400);
   await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 1},`) }).click();
-  await seite.waitForTimeout(350);
+  await seite.waitForTimeout(450);
   ok((await seite.locator('header').innerText()).includes(`Level ${NR + 1}`), `Levelwahl springt auf Level ${NR + 1}`);
   ok(loesung.status === 'optimal' && loesung.laenge === level.optimalZuege,
      `der Loeser bestaetigt das gespeicherte Optimum (${level.optimalZuege})`);
@@ -195,7 +215,7 @@ console.log('\n--- Weiter und Fortschritt ---');
   await seite.waitForTimeout(350);
   ok((await seite.locator('header').innerText()).includes(`Level ${NR + 2}`), '"Weiter" geht ins naechste Level');
   await seite.locator('header button').first().click();
-  await seite.waitForTimeout(250);
+  await seite.waitForTimeout(400);
   const gemerkt = await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 1},`) }).getAttribute('aria-label');
   ok(gemerkt?.includes('3 von 3'), `die Levelliste merkt sich die drei Sterne (${gemerkt})`);
   // Der Sieg schaltet genau EIN Level frei, nicht den Rest der Folge.
@@ -204,7 +224,10 @@ console.log('\n--- Weiter und Fortschritt ---');
   ok(await seite.getByRole('button', { name: new RegExp(`^Level ${NR + 3}, gesperrt`) }).isDisabled(),
      `... und Level ${NR + 3} bleibt gesperrt`);
   await seite.screenshot({ path: join(bilder, '05-levelwahl.png') });
-  await seite.reload({ waitUntil: 'networkidle' });
+  // Zurueck ins Spiel und neu laden: der Fortschritt haelt ueber die Route
+  // hinweg, weil `/spiel` sein Level aus dem Speicher holt und nicht aus dem
+  // Router-Zustand.
+  await seite.goto('http://localhost:4602/spiel', { waitUntil: 'networkidle' });
   await seite.waitForTimeout(400);
   ok((await seite.locator('header').innerText()).includes(`Level ${NR + 2}`),
      'nach dem Neuladen steht man wieder im richtigen Level');
@@ -257,7 +280,7 @@ console.log('\n--- Sackgasse ---');
       ),
       [TOT, FOLGE_VERSION],
     );
-    await seite.reload({ waitUntil: 'networkidle' });
+    await seite.goto('http://localhost:4602/spiel', { waitUntil: 'networkidle' });
     await seite.waitForTimeout(400);
     ok((await seite.locator('header').innerText()).includes(`Level ${TOT + 1}`),
        `springt in Level ${TOT + 1}`);
@@ -295,9 +318,14 @@ console.log('\n--- Tagesraetsel ---');
   const loesung = solve(standAusLevel(brett));
   ok(loesung.status === 'optimal', `das Raetsel von ${iso} ist loesbar (Optimum ${loesung.laenge})`);
 
-  await seite.locator('header button').first().click();
-  await seite.waitForTimeout(250);
-  await seite.getByRole('button', { name: new RegExp('Tagesr', 'i') }).click();
+  // Das Tagesraetsel hat eine eigene Adresse und liegt auf dem
+  // Startbildschirm — nicht mehr in einem Fenster hinter dem Spiel.
+  await seite.goto('http://localhost:4602/', { waitUntil: 'networkidle' });
+  await seite.waitForTimeout(350);
+  await seite.getByRole('link', { name: new RegExp('Tagesr', 'i') }).click();
+  await seite.waitForTimeout(400);
+  ok(seite.url().endsWith('/tagesraetsel'),
+     `das Tagesraetsel hat eine eigene Adresse (${new URL(seite.url()).pathname})`);
   // Das Brett wird auf dem Geraet erzeugt — dem Ladezustand Zeit lassen.
   await seite.waitForTimeout(2500);
   ok((await seite.locator('header').innerText()).includes(`#${nummer}`),
@@ -339,10 +367,13 @@ console.log('\n--- Duell ---');
   // ueber allem und faengt sonst jeden Klick ab.
   await seite.getByRole('button', { name: 'Zur Levelfolge' }).click();
   await seite.waitForTimeout(400);
-  await seite.locator('header button').first().click();
-  await seite.waitForTimeout(250);
-  ok(await seite.locator('[data-duell]').count() === 1, 'die Levelwahl bietet ein Duell an');
+  await seite.goto('http://localhost:4602/', { waitUntil: 'networkidle' });
+  await seite.waitForTimeout(350);
+  ok(await seite.locator('[data-duell]').count() === 1, 'der Startbildschirm bietet ein Duell an');
   await seite.locator('[data-duell]').click();
+  await seite.waitForTimeout(300);
+  ok(seite.url().endsWith('/duell'),
+     `das Duell hat eine eigene Adresse (${new URL(seite.url()).pathname})`);
   // Brett (~75 ms) plus Botpartie (~170 ms), auf einem langsamen Lauf mehr.
   await seite.waitForTimeout(3000);
 
@@ -393,11 +424,12 @@ console.log('\n--- Einstellungen und Rechtstexte ---');
   await seite.getByRole('button', { name: 'Zur Levelfolge' }).click();
   await seite.waitForTimeout(400);
 
-  // Der Weg dorthin fuehrt ueber die Levelwahl, nicht ueber die Kopfzeile: die
-  // ist voll, und der Burger muss das erste Button im header bleiben.
-  await seite.locator('header button').first().click();
-  await seite.waitForTimeout(250);
-  await seite.getByRole('button', { name: 'Einstellungen' }).click();
+  // Der Weg dorthin fuehrt ueber den Startbildschirm. Bis zum 27.09.2026 lag
+  // er in der Levelwahl und damit hinter dem Spiel — der einzige Ort, an dem
+  // ueberhaupt Platz war, solange es nur einen Bildschirm gab.
+  await seite.goto('http://localhost:4602/', { waitUntil: 'networkidle' });
+  await seite.waitForTimeout(350);
+  await seite.getByRole('link', { name: 'Einstellungen' }).click();
   await seite.waitForTimeout(400);
   ok(seite.url().endsWith('/einstellungen'), `die Einstellungen haben eine Adresse (${new URL(seite.url()).pathname})`);
   ok(await seite.getByRole('button', { name: 'Deutsch' }).count() === 1, 'die Sprachwahl ist da');
@@ -468,8 +500,12 @@ console.log('\n--- Einstellungen und Rechtstexte ---');
   const neueKennung = await seite.evaluate(() => localStorage.getItem('fixthemix.kennung.v1'));
   ok(neueKennung !== kennung,
      `die alte Kennung ist weg (${kennung.slice(0, 10)}… -> ${(neueKennung ?? 'keine').slice(0, 10)}…)`);
-  ok((await seite.locator('header').innerText()).includes('Level 1'),
-     '... und das Spiel startet wieder bei Level 1');
+  // Nach dem Loeschen fuehrt die App auf `/`, und das ist jetzt der
+  // Startbildschirm. Ohne Spielstand heisst der Knopf wieder „Spielen" —
+  // damit ist nachgewiesen, dass der Fortschritt wirklich weg ist und nicht
+  // nur die Anzeige.
+  ok((await seite.locator('button[data-weiter]').innerText()).trim() === 'Spielen',
+     '... und die App steht wieder am Anfang');
 }
 
 ok(konsole.length === 0, `keine Konsolenfehler im ganzen Durchlauf${konsole.length ? `: ${konsole.join(' | ')}` : ''}`);

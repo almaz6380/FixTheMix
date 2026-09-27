@@ -61,7 +61,7 @@ const KIPP_DREHARM = 0.72;
  * genauso lange (`guss-fliesst` in index.css), und ein Glas, das vorher
  * zurueckschnellt, giesst ins Nichts.
  */
-export const KIPP_MS = 500;
+export const KIPP_MS = 540;
 
 /** Ein Guss, der gezeichnet werden soll. `nr` zaehlt hoch und startet die Bewegung neu. */
 export interface Guss {

@@ -161,16 +161,16 @@ body {
         Licht — ohne sie endet das Glas einfach im Nichts. */
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.32) 0%,
-    rgba(10, 20, 36, 0.4) 3.5%,
-    rgba(255, 255, 255, 0.09) 12%,
-    rgba(255, 255, 255, 0.34) 21%,
-    rgba(255, 255, 255, 0.05) 33%,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(10, 20, 36, 0.46) 3.5%,
+    rgba(255, 255, 255, 0.1) 11%,
+    rgba(255, 255, 255, 0.2) 22%,
+    rgba(255, 255, 255, 0.06) 32%,
     rgba(10, 20, 36, 0) 54%,
-    rgba(10, 20, 36, 0.09) 72%,
-    rgba(255, 255, 255, 0.17) 84%,
-    rgba(10, 20, 36, 0.34) 96.5%,
-    rgba(255, 255, 255, 0.28) 100%
+    rgba(10, 20, 36, 0.12) 73%,
+    rgba(255, 255, 255, 0.24) 85%,
+    rgba(10, 20, 36, 0.4) 96.5%,
+    rgba(255, 255, 255, 0.45) 100%
   );
   pointer-events: none;
 }
@@ -186,6 +186,66 @@ body {
    gefuellte letzte Reihe genauso linksbuendig steht wie vorher — und damit
    sie eine eigene Leiste bekommen kann.
 */
+/*
+   Der Glanz. Erst diese beiden Lichter lassen ein Glas glaenzen — vorher war
+   es sauber schattiert, aber matt, und matt liest sich als billig.
+
+   Beide kommen OHNE `filter: blur` aus — die Begruendung steht unten. */
+.glas-glanz {
+  position: absolute;
+  top: 5%;
+  left: 14.5%;
+  width: 9%;
+  height: 40%;
+  /*
+    Weiche Kanten OHNE `filter: blur`. Bei 14 Glaesern waeren das 28 unscharfe
+    Elemente gleichzeitig, jedes mit eigener GPU-Ebene — auf einem billigen
+    Android kostet das Bilder pro Sekunde, und das Spiel soll auf jedem Geraet
+    fluessig laufen. Ein radialer Verlauf sieht bei einem so schmalen Streifen
+    genauso aus und kostet nichts.
+  */
+  background: radial-gradient(
+    50% 50% at 50% 26%,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.6) 42%,
+    rgba(255, 255, 255, 0.12) 78%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+}
+
+/* Das zweite, kurze Spitzlicht weiter unten. Ein einzelner Streifen sieht
+   aus wie ein Aufkleber; zwei in einer Linie sehen aus wie Glas. */
+.glas-glanz::after {
+  content: '';
+  position: absolute;
+  top: 116%;
+  right: 0;
+  left: 0;
+  height: 30%;
+  background: radial-gradient(
+    50% 50% at 50% 30%,
+    rgba(255, 255, 255, 0.6) 0%,
+    rgba(255, 255, 255, 0.28) 45%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+.glas-glanz-rand {
+  position: absolute;
+  top: 12%;
+  right: 5.5%;
+  width: 7%;
+  height: 64%;
+  background: radial-gradient(
+    50% 50% at 50% 22%,
+    rgba(255, 255, 255, 0.52) 0%,
+    rgba(255, 255, 255, 0.22) 46%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+}
+
 .brett {
   position: relative;
   display: flex;

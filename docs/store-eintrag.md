@@ -237,15 +237,21 @@ der Erklärung **genau dann**, wenn es die Datei gibt.
 in `.store/`:
 
 ```
-ios-6.7-1-spiel.png        1290×2796   mitten im Spiel, mit gewähltem Lauf
-ios-6.7-2-farbenblind.png  1290×2796   Farbenblind-Modus
-ios-6.7-3-levelwahl.png    1290×2796   Levelwahl mit Sternen, Tagesrätsel, Duellen
-ios-6.7-4-tagesraetsel.png 1290×2796   das Rätsel des Tages
-ios-6.5-*.png              1242×2688   dieselben vier
-play-*.png                 1080×1920   dieselben vier
+ios-6.7-1-start.png        1290×2796   der Startbildschirm
+ios-6.7-2-spiel.png        1290×2796   mitten im Spiel, mit gewähltem Lauf
+ios-6.7-3-farbenblind.png  1290×2796   Farbenblind-Modus
+ios-6.7-4-levelwahl.png    1290×2796   Levelwahl mit Sternen und Fortschritt
+ios-6.7-5-tagesraetsel.png 1290×2796   das Rätsel des Tages
+ios-6.5-*.png              1242×2688   dieselben fünf
+play-*.png                 1080×1920   dieselben fünf
 play-feature-1024x500.png  1024×500    Feature-Grafik (Pflicht bei Play)
 play-icon-512.png           512×512    Symbol für Play, ohne Alphakanal
 ```
+
+**Das Skript leert `.store/` vor jedem Lauf.** Die Namen tragen eine laufende
+Nummer, und die verschiebt sich, sobald ein Bild dazukommt — beim Umbau auf den
+Startbildschirm wurde aus `1-spiel` ein `2-spiel`. Ohne das Leeren lagen beide
+Stände nebeneinander, und in den Store wäre ein Gemisch gewandert.
 
 Aufgenommen wird aus dem **echten Bundle**, nicht aus einem Entwurf — ein
 aufgehübschter Store-Screenshot ist bei Apple ein Ablehnungsgrund.
@@ -260,9 +266,12 @@ Für die englischen Store-Seiten in `tools/store-bilder.mjs` `locale: 'de-DE'` a
 Die Reihenfolge im Store ist die der Dateinamen, und sie ist bewusst so gewählt:
 das erste Bild entscheidet, ob jemand weiterliest.
 
-1. **Spiel** — ein mittleres Level mit gewähltem Lauf. Man sieht sofort, worum es
+1. **Startbildschirm** — die Haustür: Name, Gläser, und was es zu tun gibt. Er
+   sagt in einem Bild, was die App ist; ein Level mitten im Spiel sagt das erst
+   auf den zweiten Blick.
+2. **Spiel** — ein mittleres Level mit gewähltem Lauf. Man sieht sofort, worum es
    geht, und dazu die Vorschau, die FixTheMix von den meisten Mitbewerbern
    unterscheidet.
-2. **Farbenblind-Modus** — ein Verkaufsargument, das man sehen muss.
-3. **Levelwahl** — Sterne, Tagesrätsel und Duelle auf einen Blick.
-4. **Tagesrätsel** — der Grund, jeden Tag wiederzukommen.
+3. **Farbenblind-Modus** — ein Verkaufsargument, das man sehen muss.
+4. **Levelwahl** — Sterne und Fortschritt auf einen Blick.
+5. **Tagesrätsel** — der Grund, jeden Tag wiederzukommen.

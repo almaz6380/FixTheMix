@@ -14,7 +14,7 @@
 // Ergebnis: .store/ (gitignored — das sind Erzeugnisse, keine Quellen)
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
-import { readFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import sharp from 'sharp';
 import { solve } from '../src/engine/loeser.ts';
@@ -27,7 +27,13 @@ if (!existsSync(join(dist, 'index.html'))) {
   console.log('dist/ fehlt — bitte zuerst `npm run build`.');
   process.exit(1);
 }
+// GELEERT, nicht ueberschrieben. Die Namen tragen eine laufende Nummer
+// (`1-start`, `2-spiel`, …), und die verschiebt sich, sobald ein Bild
+// dazukommt: der Lauf vom 26.09. hiess `1-spiel`, der vom 27.09. `2-spiel`.
+// Ein blosses Ueberschreiben liess damit beide liegen, und Josef haette ein
+// Gemisch aus zwei Staenden in den Store geladen — ohne dass etwas warnt.
 const ziel = join(wurzel, '.store');
+rmSync(ziel, { recursive: true, force: true });
 mkdirSync(ziel, { recursive: true });
 
 const folge = JSON.parse(readFileSync(join(wurzel, 'src/levels/folge.json'), 'utf8'));

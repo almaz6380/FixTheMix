@@ -71,20 +71,23 @@ export default function Glas({
       <div
         key={i}
         style={{
+          position: 'relative',
           height: schichtHoehe,
           // DREI Toene ueber die Hoehe, nicht eine Flaeche mit Lichtstreifen:
           // Fluessigkeit ist unten tiefer und damit dunkler, oben faellt Licht
           // durch. Vorher war jede Schicht ein flacher Farbbalken mit einer
           // hellen Kante — genau das sah billig aus.
           background: [
-            // Die OBERSTE Schicht ist die einzige mit einer echten
-            // Oberflaeche. Nur sie bekommt den Meniskus; auf den Schichten
-            // darunter waere er eine Kante, die es gar nicht gibt.
-            ...(istOben
-              ? [`radial-gradient(62% 11px at 50% 0, rgba(255,255,255,0.5) 0%,`
-                 + ` rgba(255,255,255,0.14) 58%, rgba(255,255,255,0) 100%)`]
-              : []),
-            `linear-gradient(180deg, ${f.hell} 0%, ${f.ton} 26%, ${f.ton} 60%, ${f.tief} 100%)`,
+            // QUER schattiert, und das ist der eigentliche Unterschied
+            // zwischen einem Farbbalken und Fluessigkeit in einem Zylinder:
+            // dunkel an beiden Raendern, ein Spitzlicht links, ein
+            // Gegenlicht rechts. Nur von oben nach unten zu verlaufen hat
+            // flach gewirkt, egal wie gut die Toene waren.
+            'linear-gradient(90deg, rgba(0,0,0,0.34) 0%, rgba(0,0,0,0.13) 6%,'
+              + ' rgba(255,255,255,0.30) 19%, rgba(255,255,255,0.07) 33%,'
+              + ' rgba(255,255,255,0) 50%, rgba(0,0,0,0.11) 73%,'
+              + ' rgba(255,255,255,0.16) 87%, rgba(0,0,0,0.36) 100%)',
+            `linear-gradient(180deg, ${f.hell} 0%, ${f.ton} 28%, ${f.ton} 62%, ${f.tief} 100%)`,
           ].join(', '),
           // Die Grenze zwischen zwei Fluessigkeiten ist eine dunkle Linie,
           // keine Rasierklinge. Die oberste Schicht hat darueber nichts mehr.
@@ -96,6 +99,30 @@ export default function Glas({
           justifyContent: symbole ? 'center' : undefined,
         }}
       >
+        {/*
+          Die Oberflaeche der obersten Schicht ist ein OVAL, kein Strich. In
+          eine Roehre sieht man hinein — die hintere Kante der Fluessigkeit
+          liegt hoeher als die vordere, deshalb ragt das Oval zur Haelfte
+          ueber die Schicht hinaus. Vorher war es ein heller Farbverlauf mit
+          gerader Oberkante, und genau daran sah man, dass das Glas flach ist.
+        */}
+        {istOben && (
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: 0,
+              height: '11px',
+              transform: 'translateY(-50%)',
+              borderRadius: '50%',
+              background: `radial-gradient(64% 130% at 50% 14%, rgba(255,255,255,0.8) 0%,`
+                + ` ${f.hell} 42%, ${f.ton} 100%)`,
+              boxShadow: `inset 0 -1px 2px ${f.tief}`,
+            }}
+          />
+        )}
         {symbole && <Symbol id={idVon(code)} groesse={zeichenGroesse} />}
       </div>,
     );
@@ -158,6 +185,12 @@ export default function Glas({
           {blasen}
         </div>
         <div className="glas-licht" style={{ borderRadius: FORM }} />
+        {/* Der Glanz. Zwei Lichter, wie an einem echten Glas: ein schmales
+            hartes vorne links (die Lichtquelle selbst) und ein weiches am
+            rechten Rand (das Licht, das sich um den Zylinder legt). Ohne die
+            beiden bleibt das Glas eine getoente Flaeche. */}
+        <div className="glas-glanz" aria-hidden="true" />
+        <div className="glas-glanz-rand" aria-hidden="true" />
         <div
           style={{
             position: 'absolute',

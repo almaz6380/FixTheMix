@@ -31,8 +31,9 @@ export interface Farbe {
   hell: string;
   /**
    * Verdunkelung fuer den Fuss der Schicht. Fluessigkeit ist unten tiefer und
-   * damit dunkler; ohne diesen dritten Ton bleibt jede Schicht eine flache
-   * Flaeche, und genau das sah billig aus.
+   * damit dunkler. `hell` und `tief` liegen bewusst WEIT auseinander (rund
+   * 28 L*): aus dem Abstand entsteht die Woelbung. Ein enger Abstand ergibt
+   * einen flachen Farbbalken — und flach ist genau das, was billig aussieht.
    */
   tief: string;
   /**
@@ -54,15 +55,15 @@ export interface Farbe {
  * und damit jedes gespeicherte Level und jedes Tagesraetsel der Vergangenheit.
  */
 export const FARBEN: readonly Farbe[] = [
-  { id: 'rot',    symbol: 'erdbeere',  ton: '#DF646C', hell: '#F38A91', tief: '#C74A52', tinte: 'dunkel', emoji: '\u{1F353}', i18n: 'farben.rot' },
-  { id: 'gelb',   symbol: 'zitrone',   ton: '#EFCF63', hell: '#FFE387', tief: '#D7B649', tinte: 'dunkel', emoji: '\u{1F34B}', i18n: 'farben.gelb' },
-  { id: 'blau',   symbol: 'blaubeere', ton: '#476ABC', hell: '#6987CE', tief: '#2F53A7', tinte: 'hell',   emoji: '\u{1FAD0}', i18n: 'farben.blau' },
-  { id: 'orange', symbol: 'orange',    ton: '#D88C49', hell: '#F0AE75', tief: '#C17430', tinte: 'dunkel', emoji: '\u{1F34A}', i18n: 'farben.orange' },
-  { id: 'gruen',  symbol: 'apfel',     ton: '#7EBC51', hell: '#A3D87C', tief: '#63A336', tinte: 'dunkel', emoji: '\u{1F34F}', i18n: 'farben.gruen' },
-  { id: 'lila',   symbol: 'traube',    ton: '#A95ECE', hell: '#C281E2', tief: '#9245B8', tinte: 'dunkel', emoji: '\u{1F347}', i18n: 'farben.lila' },
-  { id: 'minze',  symbol: 'minze',     ton: '#58CEB8', hell: '#87ECD9', tief: '#3DB59F', tinte: 'dunkel', emoji: '\u{1F33F}', i18n: 'farben.minze' },
-  { id: 'kokos',  symbol: 'kokos',     ton: '#F1E4CD', hell: '#FBF0DC', tief: '#D8CBB4', tinte: 'dunkel', emoji: '\u{1F965}', i18n: 'farben.kokos' },
-  { id: 'kaffee', symbol: 'kaffee',    ton: '#7D4F30', hell: '#936C51', tief: '#673819', tinte: 'hell',   emoji: '☕',        i18n: 'farben.kaffee' },
+  { id: 'rot',    symbol: 'erdbeere',  ton: '#FD455E', hell: '#FF93A1', tief: '#D4112B', tinte: 'dunkel', emoji: '\u{1F353}', i18n: 'farben.rot' },
+  { id: 'gelb',   symbol: 'zitrone',   ton: '#F4CE50', hell: '#FFE07D', tief: '#D2A925', tinte: 'dunkel', emoji: '\u{1F34B}', i18n: 'farben.gelb' },
+  { id: 'blau',   symbol: 'blaubeere', ton: '#3268D5', hell: '#6692E8', tief: '#0943B7', tinte: 'hell',   emoji: '\u{1FAD0}', i18n: 'farben.blau' },
+  { id: 'orange', symbol: 'orange',    ton: '#E9842C', hell: '#FFAF68', tief: '#C95E01', tinte: 'dunkel', emoji: '\u{1F34A}', i18n: 'farben.orange' },
+  { id: 'gruen',  symbol: 'apfel',     ton: '#55C316', hell: '#92EA5F', tief: '#3A9D00', tinte: 'dunkel', emoji: '\u{1F34F}', i18n: 'farben.gruen' },
+  { id: 'lila',   symbol: 'traube',    ton: '#B44FE7', hell: '#D584FE', tief: '#9024C6', tinte: 'dunkel', emoji: '\u{1F347}', i18n: 'farben.lila' },
+  { id: 'minze',  symbol: 'minze',     ton: '#34D2B2', hell: '#7CFBE2', tief: '#05AD8B', tinte: 'dunkel', emoji: '\u{1F33F}', i18n: 'farben.minze' },
+  { id: 'kokos',  symbol: 'kokos',     ton: '#F4E3C6', hell: '#FFF2DA', tief: '#D1BFA0', tinte: 'dunkel', emoji: '\u{1F965}', i18n: 'farben.kokos' },
+  { id: 'kaffee', symbol: 'kaffee',    ton: '#894919', hell: '#A6734C', tief: '#642B00', tinte: 'hell',   emoji: '☕',        i18n: 'farben.kaffee' },
 ];
 
 /** Eine Schicht Fluessigkeit, oder LEER. 0 ist bewusst „nichts“. */

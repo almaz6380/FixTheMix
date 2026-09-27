@@ -97,10 +97,17 @@ async function bilderFuer(geraet) {
     [NR, FOLGE_VERSION, sterne],
   );
   await seite.reload({ waitUntil: 'networkidle' });
-  await seite.waitForTimeout(400);
+  await seite.waitForTimeout(500);
 
-  // 1 — mitten im Spiel, mit gewaehltem Lauf. Das erste Bild entscheidet, ob
-  //     jemand weiterliest: es muss auf einen Blick zeigen, worum es geht.
+  // 1 — der Startbildschirm. Er sagt in einem Bild, was die App IST; die
+  //     Spielbilder sagen, was man darin tut. Seit dem Umbau am 27.09.2026
+  //     gibt es ihn, und er gehoert nach vorn.
+  await schuss(1, 'start');
+
+  // 2 — mitten im Spiel, mit gewaehltem Lauf. Das Bild, das zeigt, worum es
+  //     geht.
+  await seite.goto('http://localhost:4620/spiel', { waitUntil: 'networkidle' });
+  await seite.waitForTimeout(500);
   const level = folge[NR];
   const loesung = solve(standAusLevel(level));
   const glaeser = seite.locator('button[aria-label^="Glas"]');
@@ -115,27 +122,27 @@ async function bilderFuer(geraet) {
   const naechster = loesung.zuege[Math.floor(loesung.zuege.length / 2)];
   if (naechster) await glaeser.nth(naechster.von).click();
   await seite.waitForTimeout(500);
-  await schuss(1, 'spiel');
+  await schuss(2, 'spiel');
 
-  // 2 — Farbenblind-Modus. Ein Verkaufsargument, das man sehen muss.
+  // 3 — Farbenblind-Modus. Ein Verkaufsargument, das man sehen muss.
   await seite.getByRole('button', { name: 'Symbole für Farbenblinde ein- oder ausschalten' }).click();
   await seite.waitForTimeout(450);
-  await schuss(2, 'farbenblind');
+  await schuss(3, 'farbenblind');
   await seite.getByRole('button', { name: 'Symbole für Farbenblinde ein- oder ausschalten' }).click();
   await seite.waitForTimeout(250);
 
-  // 3 — die Levelwahl mit Sternen, Tagesraetsel und Duellen.
-  await seite.locator('header button').first().click();
-  await seite.waitForTimeout(400);
-  await schuss(3, 'levelwahl');
+  // 4 — die Levelwahl mit Sternen. Sie zeigt den Umfang: 999 Level.
+  await seite.goto('http://localhost:4620/level', { waitUntil: 'networkidle' });
+  await seite.waitForTimeout(500);
+  await schuss(4, 'levelwahl');
 
-  // 4 — das Tagesraetsel.
-  await seite.getByRole('button', { name: /Tagesr/i }).click();
+  // 5 — das Tagesraetsel.
+  await seite.goto('http://localhost:4620/tagesraetsel', { waitUntil: 'networkidle' });
   await seite.waitForTimeout(3000);
-  await schuss(4, 'tagesraetsel');
+  await schuss(5, 'tagesraetsel');
 
   await seite.close();
-  console.log(`  ${geraet.name}: vier Bilder ${geraet.breite * geraet.dpr}x${geraet.hoehe * geraet.dpr}`);
+  console.log(`  ${geraet.name}: fuenf Bilder ${geraet.breite * geraet.dpr}x${geraet.hoehe * geraet.dpr}`);
 }
 
 console.log('--- Screenshots ---');

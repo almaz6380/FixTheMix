@@ -4,6 +4,9 @@
   },
   "spiel": {
     "level": "Level {{n}}",
+    "spielen": "Play",
+    "weiterspielen": "Continue",
+    "startZeile": "Sort your way through the bar",
     "vonZuegen": "of {{n}} moves",
     "sterne": "{{n}} of 3 stars",
     "sterneGesamt": "{{n}} of {{gesamt}} stars",

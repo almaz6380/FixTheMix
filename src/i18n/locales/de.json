@@ -4,6 +4,9 @@
   },
   "spiel": {
     "level": "Level {{n}}",
+    "spielen": "Spielen",
+    "weiterspielen": "Weiterspielen",
+    "startZeile": "Sortier dich durch die Bar",
     "vonZuegen": "von {{n}} Zügen",
     "sterne": "{{n}} von 3 Sternen",
     "sterneGesamt": "{{n}} von {{gesamt}} Sternen",

@@ -809,11 +809,18 @@ Vier Dinge daran sind Entscheidungen, keine Zahlen:
    Seite, zielt der nächste Tipp ins Leere oder auf den Nachbarn — und der
    Oberflächentest tippt im Abstand von 45 ms, ein Mensch ist kaum langsamer.
    So bleibt der Knopf stehen und nur das Bild bewegt sich.
-2. **Den Weg macht der Winkel, nicht die Wanderung.** Bei 54 × 140 px und
-   `transform-origin: 50% 72%` schiebt eine Drehung um 30 Grad die Öffnung
-   schon rund 50 px zur Seite — fast eine ganze Spalte. Die Wanderung bleibt
-   deshalb bei 22 % des Abstands, höchstens 34 px. Größere Werte sahen aus,
-   als hätte jemand das Glas hochgehoben und daneben gestellt.
+2. **Die Wanderung ist der REST.** Bei 54 × 140 px und
+   `transform-origin: 50% 72%` schiebt eine Drehung um 34 Grad die Öffnung
+   schon rund 56 px zur Seite — fast eine ganze Spalte. Das Glas wandert
+   deshalb nur noch `dx − Schwung`, also genau so weit, dass die Öffnung über
+   der **Mitte des Zielglases** steht: es hält wirklich darüber, statt daneben
+   zu stehen und zu spucken (Josef, 27.09.2026). `KIPP_MAX` (72 px) deckelt
+   das — bei einem Ziel fünf Spalten weiter soll kein Glas quer durch die Bar
+   reisen; dort übernimmt der Strahl den Rest.
+   *Der erste Anlauf nahm stattdessen einen festen Anteil des Abstands (22 %,
+   höchstens 34 px) und hob nur 26 px. Josefs Urteil: „nicht schlecht, aber
+   könnte besser sein" — das Glas neigte sich neben dem Ziel, statt darüber zu
+   gehen. Der Hub steht jetzt auf 54 px.*
 3. **Wohin, entscheidet `Brett.tsx`**, und zwar in dem `useLayoutEffect`, das
    ohnehin beide Gläser misst — `Glas` kennt seine eigene Lage nicht. Übergeben
    wird es als drei CSS-Variablen auf dem Knopf (`--kipp-x`, `--kipp-y`,
@@ -823,7 +830,7 @@ Vier Dinge daran sind Entscheidungen, keine Zahlen:
 4. **Der Strahl beginnt an der Öffnung des gekippten Glases**, nicht an der
    Kante des stehenden: `0,72 · Höhe · sin(Winkel)` zur Seite,
    `0,72 · Höhe · (1 − cos(Winkel))` nach unten, plus Hub und Wanderung. Und
-   die ersten **33 %** von `guss-fliesst` sind leer — genau die 190 ms, die das
+   die ersten **46 %** von `guss-fliesst` sind leer — genau die 230 ms, die das
    Glas zum Kippen braucht. Ohne das hing der Strahl ein paar Bilder lang neben
    einem Glas, das noch gerade stand.
 
@@ -831,7 +838,7 @@ Vier Dinge daran sind Entscheidungen, keine Zahlen:
 Körper: das kippende Glas ragt weit über seinen Nachbarn, und auf dem Körper
 verschwand es hinter dem nächsten Glas.
 
-`KIPP_MS` (430 ms) steht in `Brett.tsx` **neben** der Bahn und nicht in
+`KIPP_MS` (500 ms) steht in `Brett.tsx` **neben** der Bahn und nicht in
 `App.tsx`, wo der Zeitgeber läuft: Bewegung und Zeitgeber müssen dieselbe Zahl
 sehen, sonst richtet sich das Glas auf, während der Strahl noch fließt.
 `raeumeGuss()` in `App.tsx` löscht Strahl **und** Kippung zusammen — beide
@@ -839,15 +846,15 @@ zeigen auf Glasindizes, und bei Undo, Neustart, Rückkauf oder Levelwechsel
 neigte sich sonst ein Glas, das nie gegossen hat.
 
 *Aufnehmen lässt sich das nicht mit einem Screenshot* — die Bewegung dauert
-430 ms, eine Aufnahme länger. Wer sie prüfen will, schaltet den Übergang per
+500 ms, eine Aufnahme länger. Wer sie prüfen will, schaltet den Übergang per
 `addStyleTag` ab (`transition: none`, `animation: none`, `stroke-dashoffset: 0`)
-und tippt; dann steht die Endstellung sofort und fällt noch in die 430 ms, in
+und tippt; dann steht die Endstellung sofort und fällt noch in die 500 ms, in
 denen die Stapelordnung gilt. Ein bloßes *Bremsen* reicht nicht: der Zeitgeber
 ist JavaScript und lässt sich von CSS nicht aufhalten.
 
 Die Flüssigkeit dreht sich mit dem Glas, statt waagrecht zu bleiben. Das ist
 physikalisch falsch und bleibt trotzdem: die Schichten sind gestapelte
-Elemente, eine Gegendrehung würde sie scheren. Bei 430 ms sieht es niemand.
+Elemente, eine Gegendrehung würde sie scheren. Bei 500 ms sieht es niemand.
 
 ### Gießstrahl und Bar-Geräusche
 
@@ -1103,9 +1110,19 @@ dadurch von 25 auf 15 Eigenschaften geschrumpft und macht jetzt, was sein Name s
 **Der Tresen gibt es in zwei Fassungen:** `.theke` hängt an der Unterkante des Bretts
 (Spielbildschirm, siehe „Die Bar als Ort"), `.theke-fest` steht fest am unteren Rand —
 für Bildschirme ohne Brett, an denen er sonst nichts hätte, woran er hängen könnte. Auf
-dem Startbildschirm sind die Gläser ein **Bild** (`.start-glas`), kein Brett: feste
-Höhen, keine Zustände, kein Antippen. Ein halbes Spielbrett, das nichts tut, wäre eine
-Einladung, darauf zu tippen.
+dem Startbildschirm sind die Gläser ein **Bild**, kein Brett: keine Zustände, kein
+Antippen. Ein halbes Spielbrett, das nichts tut, wäre eine Einladung, darauf zu tippen.
+
+**Gezeichnet werden sie aber vom SELBEN Teil wie im Spiel** — `GlasKoerper` aus
+`Glas.tsx`, das seit dem 27.09.2026 vom Knopf getrennt ist. `Glas` ist nur noch
+der Knopf darum herum. *Davor waren die fünf Gläser dort von Hand nachgebaut: eigene
+Form (`border-radius: 8px 8px 22px 22px` statt der Reagenzglas-Radien) und eigene
+Hexwerte (`#3FA9F5`, `#FF4D6D`, `#4ED16A` …) — die alte Neon-Palette. Als die echten
+Gläser neu gezeichnet und die Farben neu gemessen wurden, blieben diese stehen, und die
+Haustür zeigte ein anderes Spiel als das Spiel. Josef hat es sofort gesehen.* Die
+Farben kommen jetzt über `codeVon()` aus `farben.ts`, und `.start-glas` ist nur noch
+ein Maßrahmen: die verschiedenen **Breiten** (38–64 px) geben die verschiedenen Höhen,
+weil der Körper sein Seitenverhältnis hält.
 
 ### Sprachen
 

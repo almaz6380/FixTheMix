@@ -15,6 +15,8 @@
 
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
+import { GlasKoerper } from '../components/Glas.tsx';
+import { codeVon } from '../engine/farben.ts';
 import { ANZAHL_LEVEL } from '../engine/kurve.ts';
 import { tagesNummer } from '../engine/tagesraetsel.ts';
 import { ladeFortschritt } from '../lib/fortschritt.ts';
@@ -24,6 +26,31 @@ import { ladeBilanz } from '../lib/duell.ts';
 
 /** Wie in App.tsx: der Tag wird EINMAL beim Laden festgehalten. */
 const HEUTE = heute();
+
+/**
+ * Die fuenf Glaeser hinter dem Titel. Reine Zierde — kein Brett, kein Zustand,
+ * kein Antippen. Ein halbes Spielbrett, das nichts tut, waere eine Einladung,
+ * darauf zu tippen.
+ *
+ * Die Farben kommen ueber `codeVon` aus `farben.ts` und stehen nicht als
+ * Hexwerte hier: genau daran ist die vorige Fassung gescheitert.
+ */
+const BLAU = codeVon('blau');
+const GELB = codeVon('gelb');
+const ROT = codeVon('rot');
+const GRUEN = codeVon('gruen');
+const LILA = codeVon('lila');
+const MINZE = codeVon('minze');
+const ORANGE = codeVon('orange');
+const KOKOS = codeVon('kokos');
+
+const GLAESER: readonly { breite: number; fuellung: number[] }[] = [
+  { breite: 42, fuellung: [BLAU, BLAU, BLAU, BLAU] },
+  { breite: 54, fuellung: [GELB, GELB, ROT, ROT] },
+  { breite: 64, fuellung: [GRUEN, GRUEN, LILA, LILA, MINZE] },
+  { breite: 50, fuellung: [ORANGE, ORANGE, ORANGE] },
+  { breite: 38, fuellung: [KOKOS, KOKOS] },
+];
 
 export default function Start() {
   const { t } = useTranslation();
@@ -76,24 +103,24 @@ export default function Start() {
               ihn auf dem Startbildschirm zu wiederholen hiesse, die Bar an
               der Haustuer wieder abzuschaffen. */}
           <div className="brett-leiste" style={{ left: '-14px', right: '-14px', bottom: '-4px' }} />
-          <div className="start-glas" style={{ height: '108px' }}>
-            <span style={{ height: '58%', background: 'linear-gradient(180deg,#86CBFA 0%,#3FA9F5 54%)' }} />
-          </div>
-          <div className="start-glas" style={{ height: '140px' }}>
-            <span style={{ height: '34%', background: 'linear-gradient(180deg,#FFDC7A 0%,#FFC93C 54%)' }} />
-            <span style={{ height: '30%', background: 'linear-gradient(180deg,#FF7A93 0%,#FF4D6D 54%)' }} />
-          </div>
-          <div className="start-glas" style={{ height: '168px' }}>
-            <span style={{ height: '26%', background: 'linear-gradient(180deg,#8FE3A2 0%,#4ED16A 54%)' }} />
-            <span style={{ height: '22%', background: 'linear-gradient(180deg,#C6A2F2 0%,#A26BE8 54%)' }} />
-            <span style={{ height: '24%', background: 'linear-gradient(180deg,#8AEBD9 0%,#45DDC4 54%)' }} />
-          </div>
-          <div className="start-glas" style={{ height: '132px' }}>
-            <span style={{ height: '46%', background: 'linear-gradient(180deg,#FFB47E 0%,#FF8A3D 54%)' }} />
-          </div>
-          <div className="start-glas" style={{ height: '96px' }}>
-            <span style={{ height: '30%', background: 'linear-gradient(180deg,#FBF3E6 0%,#F2E4CE 54%)' }} />
-          </div>
+          {/*
+            Dieselbe Zeichnung wie im Spiel (`GlasKoerper`) und dieselben
+            Farben aus `farben.ts` — aber OHNE Knopf. Hier standen bis zum
+            27.09.2026 von Hand nachgebaute Glaeser mit eigenen Hexwerten und
+            eigener Form. Als die echten Glaeser neu gezeichnet wurden, blieben
+            diese in der alten Neon-Palette stehen, und die Haustuer zeigte ein
+            anderes Spiel als das Spiel. Zwei Zeichnungen desselben Dings
+            laufen immer auseinander.
+
+            Verschiedene BREITEN geben die verschiedenen Hoehen: der Koerper
+            haelt sein Seitenverhaeltnis, eine Bar hat verschieden grosse
+            Glaeser, und so bleibt die Form die des Spiels.
+          */}
+          {GLAESER.map((g, i) => (
+            <div key={i} className="start-glas" style={{ width: `${g.breite}px` }}>
+              <GlasKoerper fuellung={g.fuellung} hoehe={6} saat={i * 3 + 1} />
+            </div>
+          ))}
         </div>
 
         <div className="relative mt-9 flex flex-col gap-2.5">

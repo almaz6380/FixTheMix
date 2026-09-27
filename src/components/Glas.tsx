@@ -14,8 +14,15 @@
 //  4. RAND als Ellipse und ein STANDSCHATTEN darunter. Ohne den Schatten
 //     schwebt jedes Glas, egal wie gut der Rest gezeichnet ist.
 //
-// Die Blaeschen sind aus dem Glasindex gerechnet, nicht zufaellig: sie sollen
+// Die Blaeschen sind aus einer Saat gerechnet, nicht zufaellig: sie sollen
 // beim Neuzeichnen an derselben Stelle bleiben.
+//
+// ZWEI TEILE, und das ist der Punkt: `GlasKoerper` zeichnet, `Glas` macht
+// daraus einen Knopf. Der Startbildschirm braucht Glaeser, die NICHT antippbar
+// sind — er nimmt deshalb den Koerper allein. Vorher waren sie dort von Hand
+// nachgebaut, mit eigenen Farben und eigener Form, und sind beim Umbau der
+// echten Glaeser am 27.09.2026 schlicht stehengeblieben. Josef hat es sofort
+// gesehen. Zwei Zeichnungen desselben Dings laufen immer auseinander.
 
 import { farbeVon, idVon, LEER } from '../engine/farben.ts';
 import type { Spielstand } from '../engine/typen.ts';
@@ -24,48 +31,43 @@ import Symbol from './Symbole.tsx';
 /** Anteil der Hoehe, der oben frei bleibt — ein Glas ist nie randvoll. */
 const KOPFRAUM = 0.15;
 const FORM = '13% 13% 50% 50% / 4% 4% 23% 23%';
+/** Breite zu Hoehe. Wer den Koerper ohne Brett benutzt, gibt nur die Breite an. */
+export const GLAS_SEITEN = '60 / 156';
 
-interface Eigenschaften {
-  stand: Spielstand;
-  glas: number;
-  gewaehlt: boolean;
-  kippt: boolean;
-  /** Vom Tipp hervorgehoben. */
-  tipp: boolean;
-  symbole: boolean;
-  onTap: () => void;
-  beschriftung: string;
+interface KoerperEigenschaften {
+  /** Farbcodes von UNTEN nach oben. Die Laenge ist der Fuellstand. */
+  fuellung: readonly number[];
+  /** Wie viele Schichten ins Glas passen. Bestimmt die Hoehe einer Schicht. */
+  hoehe: number;
   /**
-   * Wird von `Brett` gesetzt, um die Lage des Glases zu messen — daraus
-   * entsteht der Giessstrahl. Bewusst eine Eigenschaft statt `forwardRef`:
-   * gemessen wird genau EIN Element, und ein Weiterreichen von Refs waere
-   * hier nur Zeremonie.
+   * Ab diesem Index hebt sich der oberste Lauf um 6 px — die Vorschau, die
+   * VOR dem Giessen zeigt, was fliessen wuerde. `undefined` = keine.
    */
-  innerRef?: (el: HTMLButtonElement | null) => void;
+  laufAb?: number;
+  /** Gewaehlt oder vom Tipp gezeigt: gelber Rand und Schein. */
+  hervor?: boolean;
+  /** Farbenblind-Modus: ein Zeichen auf jeder Schicht. */
+  symbole?: boolean;
+  /** Streut die Blaeschen. Gleiche Saat heisst gleiche Stellen. */
+  saat?: number;
+  /** Laeuft gerade der Giesszug (siehe `.glas-kippt`). */
+  kippt?: boolean;
 }
 
-export default function Glas({
-  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef,
-}: Eigenschaften) {
-  const hoehe = stand.hoehe;
-  const fuell = stand.fuell[glas]!;
+export function GlasKoerper({
+  fuellung, hoehe, laufAb, hervor = false, symbole = false, saat = 0, kippt = false,
+}: KoerperEigenschaften) {
+  const fuell = fuellung.length;
   // Bei sieben oder acht Schichten (den Experten-Leveln) ist eine Schicht nur
   // noch rund 16 px hoch — ein 16-px-Zeichen laege dann ueber der Kante.
   const zeichenGroesse = hoehe >= 7 ? 12 : 16;
   const schichtHoehe = `${((1 - KOPFRAUM) / hoehe) * 100}%`;
-  const hervor = gewaehlt || tipp;
-
-  // Der oberste zusammenhaengende Lauf hebt sich mit, wenn das Glas gewaehlt
-  // ist — so sieht man vor dem Giessen, WAS fliessen wuerde.
-  const obersteFarbe = fuell > 0 ? stand.zellen[glas * hoehe + fuell - 1]! : LEER;
-  let laufAb = fuell;
-  while (laufAb > 0 && stand.zellen[glas * hoehe + laufAb - 1] === obersteFarbe) laufAb--;
 
   const schichten = [];
   for (let i = 0; i < fuell; i++) {
-    const code = stand.zellen[glas * hoehe + i]!;
+    const code = fuellung[i]!;
     const f = farbeVon(code);
-    const gehoben = gewaehlt && i >= laufAb;
+    const gehoben = laufAb !== undefined && i >= laufAb;
     const istOben = i === fuell - 1;
     schichten.push(
       <div
@@ -131,8 +133,8 @@ export default function Glas({
   const blasen = [];
   if (fuell > 0) {
     for (let k = 0; k < 3; k++) {
-      const h = (glas * 37 + k * 53) % 100;
-      const hoch = 6 + ((glas * 29 + k * 41) % Math.max(1, Math.round(fuell * 12)));
+      const h = (saat * 37 + k * 53) % 100;
+      const hoch = 6 + ((saat * 29 + k * 41) % Math.max(1, Math.round(fuell * 12)));
       blasen.push(
         <div
           key={`b${k}`}
@@ -154,6 +156,100 @@ export default function Glas({
   }
 
   return (
+    <div
+      className={`glas-koerper ${kippt ? 'glas-kippt' : ''}`}
+      style={{ position: 'relative', width: '100%', aspectRatio: GLAS_SEITEN }}
+    >
+      <div className="glas-schatten" />
+      {hervor && <div className="glas-schein" />}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: FORM,
+          // HELLER als der Grund, nicht dunkler. Vorher war der leere Teil
+          // eines Glases fast schwarz — ein leeres Glas las sich als Loch
+          // im Hintergrund statt als Glas. Milchig durchscheinend ist es
+          // das, was es sein soll: ein Gefaess, durch das man die Bar sieht.
+          background:
+            'linear-gradient(100deg, rgba(190,220,255,0.30) 0%, rgba(190,220,255,0.15) 30%,'
+            + ' rgba(190,220,255,0.11) 62%, rgba(190,220,255,0.24) 100%)',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column-reverse',
+        }}
+      >
+        {schichten}
+        {blasen}
+      </div>
+      <div className="glas-licht" style={{ borderRadius: FORM }} />
+      {/* Der Glanz. Zwei Lichter, wie an einem echten Glas: ein schmales
+          hartes vorne links (die Lichtquelle selbst) und ein weiches am
+          rechten Rand (das Licht, das sich um den Zylinder legt). Ohne die
+          beiden bleibt das Glas eine getoente Flaeche. */}
+      <div className="glas-glanz" aria-hidden="true" />
+      <div className="glas-glanz-rand" aria-hidden="true" />
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: FORM,
+          border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand)'}`,
+          borderTopColor: 'transparent',
+          transition: 'border-color 140ms',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          top: '-2px',
+          height: '10%',
+          borderRadius: '50%',
+          border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand-hell)'}`,
+          transition: 'border-color 140ms',
+        }}
+      />
+    </div>
+  );
+}
+
+interface Eigenschaften {
+  stand: Spielstand;
+  glas: number;
+  gewaehlt: boolean;
+  kippt: boolean;
+  /** Vom Tipp hervorgehoben. */
+  tipp: boolean;
+  symbole: boolean;
+  onTap: () => void;
+  beschriftung: string;
+  /**
+   * Wird von `Brett` gesetzt, um die Lage des Glases zu messen — daraus
+   * entsteht der Giessstrahl. Bewusst eine Eigenschaft statt `forwardRef`:
+   * gemessen wird genau EIN Element, und ein Weiterreichen von Refs waere
+   * hier nur Zeremonie.
+   */
+  innerRef?: (el: HTMLButtonElement | null) => void;
+}
+
+export default function Glas({
+  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef,
+}: Eigenschaften) {
+  const hoehe = stand.hoehe;
+  const fuell = stand.fuell[glas]!;
+
+  const fuellung = [];
+  for (let i = 0; i < fuell; i++) fuellung.push(stand.zellen[glas * hoehe + i]!);
+
+  // Der oberste zusammenhaengende Lauf hebt sich mit, wenn das Glas gewaehlt
+  // ist — so sieht man vor dem Giessen, WAS fliessen wuerde.
+  const obersteFarbe = fuell > 0 ? stand.zellen[glas * hoehe + fuell - 1]! : LEER;
+  let laufAb = fuell;
+  while (laufAb > 0 && stand.zellen[glas * hoehe + laufAb - 1] === obersteFarbe) laufAb--;
+
+  return (
     <button
       type="button"
       ref={innerRef}
@@ -162,74 +258,22 @@ export default function Glas({
       className={`glas ${gewaehlt ? 'glas-gewaehlt' : ''} ${kippt ? 'glas-giesst' : ''}`}
     >
       {/*
-        Der Kippzug liegt auf DIESEM Element und nicht auf dem Knopf darueber.
-        Der Knopf ist die Trefferflaeche: wandert er waehrend des Giessens um
-        vierzig Pixel zur Seite, zielt der naechste Tipp ins Leere oder auf den
+        Der Kippzug liegt auf dem Koerper und nicht auf diesem Knopf. Der Knopf
+        ist die Trefferflaeche: wandert er waehrend des Giessens um vierzig
+        Pixel zur Seite, zielt der naechste Tipp ins Leere oder auf den
         Nachbarn. Der Oberflaechentest tippt im Abstand von 45 ms, ein Mensch
         ist kaum langsamer. So bleibt der Knopf, wo er steht, und nur das Bild
         bewegt sich.
       */}
-      <div
-        className={`glas-koerper ${kippt ? 'glas-kippt' : ''}`}
-        style={{ position: 'relative', width: '100%', aspectRatio: '60 / 156' }}
-      >
-        <div className="glas-schatten" />
-        {hervor && <div className="glas-schein" />}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: FORM,
-            // HELLER als der Grund, nicht dunkler. Vorher war der leere Teil
-            // eines Glases fast schwarz — ein leeres Glas las sich als Loch
-            // im Hintergrund statt als Glas. Milchig durchscheinend ist es
-            // das, was es sein soll: ein Gefaess, durch das man die Bar sieht.
-            background:
-              'linear-gradient(100deg, rgba(190,220,255,0.30) 0%, rgba(190,220,255,0.15) 30%,'
-              + ' rgba(190,220,255,0.11) 62%, rgba(190,220,255,0.24) 100%)',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column-reverse',
-          }}
-        >
-          {schichten}
-          {blasen}
-        </div>
-        <div className="glas-licht" style={{ borderRadius: FORM }} />
-        {/* Der Glanz. Zwei Lichter, wie an einem echten Glas: ein schmales
-            hartes vorne links (die Lichtquelle selbst) und ein weiches am
-            rechten Rand (das Licht, das sich um den Zylinder legt). Ohne die
-            beiden bleibt das Glas eine getoente Flaeche. */}
-        <div className="glas-glanz" aria-hidden="true" />
-        <div className="glas-glanz-rand" aria-hidden="true" />
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: FORM,
-            border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand)'}`,
-            borderTopColor: 'transparent',
-            transition: 'border-color 140ms',
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            right: 0,
-            top: '-2px',
-            height: '10%',
-            borderRadius: '50%',
-            border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand-hell)'}`,
-            transition: 'border-color 140ms',
-          }}
-        />
-      </div>
+      <GlasKoerper
+        fuellung={fuellung}
+        hoehe={hoehe}
+        {...(gewaehlt ? { laufAb } : {})}
+        hervor={gewaehlt || tipp}
+        symbole={symbole}
+        saat={glas}
+        kippt={kippt}
+      />
     </button>
   );
 }
-
-/**
- * Dieselbe Farbe mit Deckkraft 0. Nicht `transparent` verwenden: das ist
- * rgba(0,0,0,0) und kann im Verlauf einen dunklen Saum erzeugen.
- */

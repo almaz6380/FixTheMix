@@ -71,6 +71,15 @@
   --color-glasrand: #9BC4E8;
   --color-glasrand-hell: #BEDCF5;
 
+  /* Die Bar als Ort: Holz fuer den Tresen, Messing fuer die Leisten, auf
+     denen die Glaeser stehen. Bewusst NICHT `zitrus`: das ist das Licht
+     (Sterne, Werte), Messing ist Metall. Zwei verschiedene Dinge, die sonst
+     im selben Gelb verschwaenden. */
+  --color-holz: #2E1F18;
+  --color-holz-hell: #3E2A21;
+  --color-messing: #E8B04B;
+  --color-messing-hell: #F6C76B;
+
   --font-sans: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-anzeige: 'Fredoka', 'Nunito', system-ui, sans-serif;
 }
@@ -86,12 +95,19 @@ body {
   font-weight: 600;
   /* Fischschuppen. Gezeichnet statt Bilddatei: kostet keine Ladezeit und
      bleibt auf jedem Display scharf. Bewusst kontrastarm — ein Muster darf
-     nie mit den Glaesern konkurrieren. */
+     nie mit den Glaesern konkurrieren.
+
+     Die MITTLERE Lage ist neu und der eigentliche Punkt: sie blendet die
+     Schuppen nach unten hin aus. Vorher lief das Muster mit vollem Kontrast
+     bis unter die Glaeser durch und stritt dort mit der Fluessigkeit. Jetzt
+     ist es oben eine Ruecktwand und verschwindet, bevor das Brett beginnt.
+     Reihenfolge zaehlt: die zuerst genannte Lage liegt oben. */
   background-color: var(--color-nacht);
   background-image:
     radial-gradient(120% 44% at 50% -6%, rgba(255, 201, 60, 0.13) 0%, rgba(255, 201, 60, 0) 62%),
-    repeating-radial-gradient(circle at 50% 0, transparent 0 16px, rgba(110, 165, 235, 0.18) 16px 18px);
-  background-size: 100% 100%, 46px 46px;
+    linear-gradient(180deg, rgba(14, 26, 46, 0) 0%, rgba(14, 26, 46, 0.55) 22%, var(--color-nacht) 46%),
+    repeating-radial-gradient(circle at 50% 0, transparent 0 16px, rgba(110, 165, 235, 0.11) 16px 18px);
+  background-size: 100% 100%, 100% 100%, 46px 46px;
   background-attachment: fixed;
 }
 
@@ -149,11 +165,113 @@ body {
   pointer-events: none;
 }
 
+/* --- Die Bar ------------------------------------------------------------- */
+/*
+   Jede Reihe steht auf einer Messingleiste, die vorderste auf dem Tresen.
+   Vorher schwebten die Glaeser frei im Nachtblau — bei 999 Leveln der
+   Unterschied zwischen einer Tapete und einem Ort.
+
+   Das Brett ist deshalb keine EINE Gitterflaeche mehr, sondern eine Spalte
+   aus Reihen. Jede Reihe traegt dasselbe Spaltenraster, damit eine halb
+   gefuellte letzte Reihe genauso linksbuendig steht wie vorher — und damit
+   sie eine eigene Leiste bekommen kann.
+*/
 .brett {
-  display: grid;
+  position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  gap: 22px 14px;
+  gap: 22px;
+}
+
+.brett-reihe {
+  position: relative;
+  display: grid;
+  gap: 14px;
   justify-items: center;
+}
+
+.brett-leiste {
+  position: absolute;
+  right: -10px;
+  bottom: -5px;
+  left: -10px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    rgba(232, 176, 75, 0.05) 0%,
+    rgba(232, 176, 75, 0.55) 16%,
+    rgba(232, 176, 75, 0.55) 84%,
+    rgba(232, 176, 75, 0.05) 100%
+  );
+}
+
+/* Der Schlagschatten UNTER der Leiste. Ohne ihn ist sie ein Strich, mit ihm
+   ein Brett, auf dem etwas steht. */
+.brett-leiste::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  right: 0;
+  left: 0;
+  height: 13px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0));
+}
+
+/*
+   Der Tresen. Er haengt an der UNTERKANTE des Bretts (`top: 100%`) und nicht
+   an einer festen Hoehe — sonst braeche er genau in dem Fall, fuer den er
+   gebaut ist: das Extra-Glas kann aus zwei Reihen drei machen (gemessen:
+   10 -> 11 Glaeser, Brett 317 -> 539 px). So rutscht er einfach mit.
+
+   `left/right: -50vw` laesst ihn ueber die Brettbreite hinauslaufen, `100vh`
+   bis unter den Bildrand; beides wird von `overflow: hidden` auf <main>
+   abgeschnitten. Er liegt als ERSTES Kind im DOM und damit hinter den
+   Glaesern — ohne z-index-Basteleien. */
+.theke {
+  position: absolute;
+  top: 100%;
+  right: -50vw;
+  left: -50vw;
+  height: 100vh;
+  background: linear-gradient(
+    180deg,
+    var(--color-holz-hell) 0%,
+    var(--color-holz) 22%,
+    #1D1310 56%,
+    #150F0D 100%
+  );
+  pointer-events: none;
+}
+
+/* Die Messingkante des Tresens ist zugleich die Leiste der vordersten
+   Reihe — deshalb traegt die letzte Reihe keine eigene. */
+.theke::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    rgba(232, 176, 75, 0.1) 0%,
+    rgba(246, 199, 107, 0.85) 18%,
+    rgba(246, 199, 107, 0.85) 82%,
+    rgba(232, 176, 75, 0.1) 100%
+  );
+}
+
+/* Glanz auf der Platte. */
+.theke::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 62px;
+  background: linear-gradient(180deg, rgba(255, 226, 170, 0.14), rgba(255, 226, 170, 0));
 }
 
 /* Der Giessstrahl. Er laeuft von der Quelle zum Ziel und verschwindet dann —
@@ -206,10 +324,30 @@ body {
   cursor: default;
 }
 
+/*
+   Der Hauptknopf ist jetzt gefuellt statt umrandet — und er ist der EINZIGE
+   gefuellte Knopf auf dem Spielbildschirm. Vorher war er ein blauer Kasten
+   mit gelber Schrift und damit von den beiden runden Nebenknoepfen kaum zu
+   unterscheiden; welcher der drei der Hauptweg ist, stand nur in der Breite.
+*/
 .knopf-haupt {
-  border-color: var(--color-kante-hell);
-  background: rgba(32, 56, 86, 0.95);
-  color: var(--color-zitrus);
+  border-color: transparent;
+  background: linear-gradient(180deg, var(--color-messing-hell) 0%, #E0A038 100%);
+  color: #2A1C16;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), 0 6px 18px rgba(224, 160, 56, 0.3);
+}
+
+.knopf-haupt:active:not(:disabled) {
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 3px 10px rgba(224, 160, 56, 0.28);
+}
+
+/*
+   Die runden Knoepfe der Fusszeile stehen seit dem Umbau auf HOLZ und nicht
+   mehr auf Nachtblau. Die blaue Kante verschwand dort fast — sie waren im
+   Screenshot kaum zu sehen. Warme Kante, hellere Fuellung. */
+.knopf-bar {
+  border-color: rgba(246, 199, 107, 0.32);
+  background: rgba(255, 240, 215, 0.08);
 }
 
 .knopf-an {

@@ -122,7 +122,13 @@ export default function Glas({
             position: 'absolute',
             inset: 0,
             borderRadius: FORM,
-            background: 'rgba(8,14,26,0.86)',
+            // HELLER als der Grund, nicht dunkler. Vorher war der leere Teil
+            // eines Glases fast schwarz — ein leeres Glas las sich als Loch
+            // im Hintergrund statt als Glas. Milchig durchscheinend ist es
+            // das, was es sein soll: ein Gefaess, durch das man die Bar sieht.
+            background:
+              'linear-gradient(100deg, rgba(190,220,255,0.30) 0%, rgba(190,220,255,0.15) 30%,'
+              + ' rgba(190,220,255,0.11) 62%, rgba(190,220,255,0.24) 100%)',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column-reverse',

@@ -802,14 +802,23 @@ Bis zum 27.09.2026 drehte sich die Quelle um **acht Grad auf der Stelle**
 Ansage: das Glas soll *aufgehoben und umgeleert* werden. Jetzt hebt es sich
 26 px an, wandert ein Stück zum Ziel und kippt ihm die Öffnung entgegen.
 
-Vier Dinge daran sind Entscheidungen, keine Zahlen:
+Fünf Dinge daran sind Entscheidungen, keine Zahlen:
 
 1. **Die Bewegung liegt auf dem Glaskörper, nicht auf dem Knopf.** Der Knopf
    ist die Trefferfläche. Wandert er während des Gießens vierzig Pixel zur
    Seite, zielt der nächste Tipp ins Leere oder auf den Nachbarn — und der
    Oberflächentest tippt im Abstand von 45 ms, ein Mensch ist kaum langsamer.
    So bleibt der Knopf stehen und nur das Bild bewegt sich.
-2. **Die Wanderung ist der REST.** Bei 54 × 140 px und
+2. **Der HUB ist gerechnet, nicht fest** (27.09.2026). Ein fester Hub war ein
+   echter Fehler: beim Gießen aus der unteren in die obere Reihe hob sich das
+   Glas um 54 px, das Ziel lag aber 220 px höher — **der Strahl lief bergauf.**
+   Josefs Meldung: „wenn ich von der unteren reihe etwas in die obere reihe
+   fülle, bewegt sich das glas nicht hoch genug". Gerechnet wird jetzt, wo die
+   Öffnung nach dem Kippen *ohne* Hub läge, und von dort aus muss sie
+   `KIPP_LUFT` (26 px) über die Öffnung des Ziels. Gemessen über alle 21
+   legalen Züge auf Level 121: bei einem Zug nach oben springt der Hub von
+   −54 auf −213 px.
+3. **Die Wanderung ist der REST.** Bei 54 × 140 px und
    `transform-origin: 50% 72%` schiebt eine Drehung um 34 Grad die Öffnung
    schon rund 56 px zur Seite — fast eine ganze Spalte. Das Glas wandert
    deshalb nur noch `dx − Schwung`, also genau so weit, dass die Öffnung über
@@ -821,13 +830,13 @@ Vier Dinge daran sind Entscheidungen, keine Zahlen:
    höchstens 34 px) und hob nur 26 px. Josefs Urteil: „nicht schlecht, aber
    könnte besser sein" — das Glas neigte sich neben dem Ziel, statt darüber zu
    gehen. Der Hub steht jetzt auf 54 px.*
-3. **Wohin, entscheidet `Brett.tsx`**, und zwar in dem `useLayoutEffect`, das
+4. **Wohin, entscheidet `Brett.tsx`**, und zwar in dem `useLayoutEffect`, das
    ohnehin beide Gläser misst — `Glas` kennt seine eigene Lage nicht. Übergeben
    wird es als drei CSS-Variablen auf dem Knopf (`--kipp-x`, `--kipp-y`,
    `--kipp-winkel`); der Körper erbt sie. Das kostet kein Neuzeichnen, und weil
    `useLayoutEffect` vor dem Zeichnen läuft, stehen die Werte, bevor die Klasse
    zum ersten Mal wirkt.
-4. **Der Strahl beginnt an der Öffnung des gekippten Glases**, nicht an der
+5. **Der Strahl beginnt an der Öffnung des gekippten Glases**, nicht an der
    Kante des stehenden: `0,72 · Höhe · sin(Winkel)` zur Seite,
    `0,72 · Höhe · (1 − cos(Winkel))` nach unten, plus Hub und Wanderung. Und
    die ersten **46 %** von `guss-fliesst` sind leer — genau die 230 ms, die das
@@ -1363,7 +1372,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Workflows in `docs/release-ci.md` erklärt ist. Mit `--release` verlangt es
     zusätzlich die Bereitschaft (echte Anzeigen, echte IDs) — diese Fassung schlägt
     heute absichtlich fehl und ist damit die Liste dessen, was noch fehlt.
-  - `test-oberflaeche.mjs` (63, braucht Playwright + Chromium, sonst kein Netz und
+  - `test-oberflaeche.mjs` (67, braucht Playwright + Chromium, sonst kein Netz und
     keine Schlüssel) — spielt ein Level im echten Browser mit der Lösung des
     Lösers durch und vergleicht, ob die Oberfläche dasselbe erzählt wie die Engine.
     Prüft auch die Sperre: bei frischem Start ist Level 2 zu, ein Sieg öffnet genau ein
@@ -1376,6 +1385,12 @@ ist das einspeisbare `jetzt` im Löserbudget.
     Zuletzt das **Tagesrätsel**: das Skript rechnet das Rätsel des heutigen Tages selbst
     aus, spielt es mit der Lösung des Lösers durch, und liest den geteilten Text aus der
     Zwischenablage — inklusive der Prüfung, dass keine Farbe darin steht.
+    Dazu **die Geometrie des Gießzugs**, und die steht dort, weil Josef einen
+    Fehler gefunden hat, den kein Test melden konnte: für jeden legalen Zug auf
+    Level 121 (drei Reihen) wird nachgerechnet, dass die Öffnung der Quelle
+    nach dem Kippen über der des Ziels steht und dass das Glas nicht aus dem
+    Brett wandert. Im DOM stimmte vorher alles — sichtbar war der bergauf
+    laufende Strahl nur am Gerät.
     Zuletzt **Einstellungen und Rechtstexte**: alle vier Adressen werden aufgerufen und
     ihre Überschrift geprüft, und „Daten löschen" muss den Speicher wirklich leeren.
     Der Test läuft mit `locale: 'de-DE'`, weil die App seit Phase 5 die Gerätesprache

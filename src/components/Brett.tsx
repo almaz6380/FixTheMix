@@ -39,8 +39,16 @@ import type { Spielstand } from '../engine/typen.ts';
  * nicht quer durch die Bar reisen. Dann uebernimmt der Strahl den Rest.
  */
 const KIPP_MAX = 72;
-/** Hub nach oben, in Pixeln (negativ = hoch). */
+/**
+ * GRUNDhub nach oben, in Pixeln (negativ = hoch). Beim Giessen in eine hoehere
+ * Reihe wird mehr daraus — siehe die Rechnung im Effekt: die Oeffnung der
+ * Quelle muss ueber der des Ziels stehen, sonst fliesst es bergauf.
+ */
 const KIPP_HUB = -54;
+/** Wie weit die Oeffnung der Quelle ueber der des Ziels steht. */
+const KIPP_LUFT = 26;
+/** Wie weit ein Glas ueber den Rand des Bretts hinausragen darf. */
+const KIPP_UEBERHANG = 16;
 const KIPP_WINKEL = 34;
 /**
  * Abstand der Oeffnung vom Drehpunkt, in Glashoehen. Muss zum
@@ -125,7 +133,7 @@ function band(
   x1: number, y1: number, cx: number, cy: number, x2: number, y2: number,
   wOben: number, wUnten: number,
 ): { d: string; minX: number; minY: number; maxX: number; maxY: number } {
-  const N = 20;
+  const N = 22;
   const links: string[] = [];
   const rechts: string[] = [];
   let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity;
@@ -138,7 +146,10 @@ function band(
     const rx = 2 * u * (cx - x1) + 2 * t * (x2 - cx);
     const ry = 2 * u * (cy - y1) + 2 * t * (y2 - cy);
     const len = Math.hypot(rx, ry) || 1;
-    const w = (wOben * u + wUnten * t) / 2;
+    // Die Verjuengung plus eine leichte Unruhe. Eine mathematisch gerade
+    // Kante ist kein Saft, sondern ein Trichter — das Wellchen ist klein
+    // genug, um nicht aufzufallen, und gross genug, dass die Kante lebt.
+    const w = ((wOben * u + wUnten * t) * (1 + 0.07 * Math.sin(t * 9.4))) / 2;
     // Normale zur Richtung, mal halbe Breite.
     const ox = (-ry / len) * w;
     const oy = (rx / len) * w;
@@ -151,9 +162,14 @@ function band(
     links.push(`${(px + ox).toFixed(1)} ${(py + oy).toFixed(1)}`);
     rechts.push(`${(px - ox).toFixed(1)} ${(py - oy).toFixed(1)}`);
   }
+  const kopf = rechts[rechts.length - 1]!;
   rechts.reverse();
+  // Der Kopf ist RUND. Ein gerade abgeschnittenes Ende sieht aus wie ein
+  // Schlauch, aus dem jemand den Stecker gezogen hat; fallende Fluessigkeit
+  // endet in einem Tropfen.
+  const r = (wUnten / 2).toFixed(1);
   return {
-    d: `M ${links.join(' L ')} L ${rechts.join(' L ')} Z`,
+    d: `M ${links.join(' L ')} A ${r} ${r} 0 0 1 ${kopf} L ${rechts.slice(1).join(' L ')} Z`,
     minX, minY, maxX, maxY,
   };
 }
@@ -204,10 +220,45 @@ export default function Brett({
     // Bei 54 x 140 px sind das rund 56 px — fast eine ganze Spalte.
     const schwung = a.height * KIPP_DREHARM * Math.sin(bogen);
     // Also wandert das Glas nur noch den REST bis ueber die Mitte des Ziels.
-    const kippX = Math.max(-KIPP_MAX, Math.min(KIPP_MAX, dx - schwung));
+    const wunsch = Math.max(-KIPP_MAX, Math.min(KIPP_MAX, dx - schwung));
+    /*
+      ... aber nur so weit, wie das Brett reicht. `<main>` schneidet ab, was
+      darueber hinausragt (das braucht der Tresen), und ein Glas in der
+      AEUSSERSTEN Spalte wanderte dort hinein: beim Giessen von ganz links
+      nach ganz links unten ist `dx` null, der Schwung schiebt die Oeffnung
+      aber nach rechts, also muss der Koerper nach links — und wurde am Rand
+      abgeschnitten. Ein Stueck Ueberhang ist in Ordnung, das Brett ist
+      schmaler als der Schirm; ein halbes Glas ist es nicht.
+    */
+    const linksRaum = (a.left - kasten.left) + KIPP_UEBERHANG;
+    const rechtsRaum = (kasten.width - (a.left - kasten.left + a.width)) + KIPP_UEBERHANG;
+    const kippX = Math.max(-linksRaum, Math.min(rechtsRaum, wunsch));
+
+    // Wohin der Strahl faellt: die Oeffnung des Zielglases.
+    const x2 = b.left - kasten.left + b.width * 0.5;
+    const y2 = b.top - kasten.top + b.height * 0.1;
+
+    /*
+      DER HUB IST GERECHNET, NICHT FEST. Wo die Oeffnung der Quelle nach dem
+      Kippen laege, wenn das Glas nicht stiege — von dort aus muss sie UEBER
+      die Oeffnung des Ziels.
+
+      Ein fester Hub war der Fehler: beim Giessen aus der unteren in die obere
+      Reihe hob sich das Glas um 54 px, das Ziel lag aber 220 px hoeher. Der
+      Strahl lief damit bergauf. Josef hat es sofort gesehen; kein Test konnte
+      es melden, weil im DOM alles stimmte.
+    */
+    const muendungRuhe = (a.top - kasten.top) + a.height * KIPP_DREHARM * (1 - Math.cos(bogen));
+    // Nie weniger als der Grundhub, nie so hoch, dass das Glas aus dem Brett
+    // faellt — darueber liegt die Rueckwand, ein Stueck davon ist in Ordnung.
+    const hub = Math.max(
+      -(a.top - kasten.top) - a.height * 0.35,
+      Math.min(KIPP_HUB, y2 - KIPP_LUFT - muendungRuhe),
+    );
+
     const quelle = glasRefs.current[guss.von];
     quelle?.style.setProperty('--kipp-x', `${kippX}px`);
-    quelle?.style.setProperty('--kipp-y', `${KIPP_HUB}px`);
+    quelle?.style.setProperty('--kipp-y', `${hub}px`);
     quelle?.style.setProperty('--kipp-winkel', `${winkel}deg`);
 
     // Startpunkt ist die Oeffnung des GEKIPPTEN Glases, nicht seine Kante im
@@ -215,23 +266,23 @@ export default function Brett({
     // liegt 0,72 Glashoehen darueber und beschreibt damit einen Bogen, den
     // der Strahl mitmachen muss — sonst haengt er in der Luft neben dem Glas.
     const x1 = a.left - kasten.left + a.width * 0.5 + schwung + kippX;
-    const y1 = a.top - kasten.top
-      + a.height * KIPP_DREHARM * (1 - Math.cos(bogen)) + KIPP_HUB;
-    const x2 = b.left - kasten.left + b.width * 0.5;
-    const y2 = b.top - kasten.top + b.height * 0.1;
+    const y1 = muendungRuhe + hub;
     // Der Bogen. Er richtet sich nach dem SEITLICHEN Abstand: steht das Glas
     // fast senkrecht ueber dem Ziel, faellt die Fluessigkeit auch senkrecht,
     // und ein hoher Steuerpunkt machte daraus eine unsinnige Ausbuchtung.
     const cx = (x1 + x2) / 2;
     const cy = Math.min(y1, y2) - Math.min(26, Math.max(4, Math.abs(x2 - x1) * 0.35));
 
-    // Die Breite des Strahls haengt an der MENGE: vier Schichten auf einmal
-    // sind ein Schwall, eine einzelne ein Rinnsal.
-    const wOben = a.width * Math.min(0.34, 0.15 + 0.045 * guss.menge);
-    // Deutlich schmaler unten. Fallende Fluessigkeit wird schneller, und was
-    // schneller wird, wird duenner — bei nur wenig Unterschied sieht das Band
-    // wieder wie ein Rohr aus.
-    const wUnten = wOben * 0.45;
+    // Die Breite des Strahls. Sie haengt an der MENGE — vier Schichten auf
+    // einmal sind ein Schwall, eine einzelne ein Rinnsal —, ist aber vor
+    // allem eines: BREIT. Mit gut zehn Pixeln auf einer Bahn von 250 sah das
+    // Ganze wieder aus wie ein Strich, und genau das hat Josef beanstandet.
+    // Ein Glas, das man umleert, gibt seinen Inhalt fast in voller Breite der
+    // Oeffnung ab.
+    const wOben = a.width * Math.min(0.62, 0.34 + 0.05 * guss.menge);
+    // Schmaler unten: fallende Fluessigkeit wird schneller, und was schneller
+    // wird, wird duenner.
+    const wUnten = wOben * 0.5;
     const b1 = band(x1, y1, cx, cy, x2, y2, wOben, wUnten);
 
     // Der Verlauf liegt QUER zum Strahl, nicht laengs — daher kommt die

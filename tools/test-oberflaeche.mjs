@@ -245,6 +245,75 @@ console.log('\n--- Muenzen und Tipp ---');
      `ein Tipp kostet ${KOSTEN_TIPP} Muenzen (${vorher} -> ${nachher})`);
 }
 
+console.log('\n--- Der Giesszug ---');
+{
+  // DIESER ABSCHNITT GIBT ES, WEIL JOSEF EINEN FEHLER GEFUNDEN HAT, DEN KEIN
+  // TEST MELDEN KONNTE: beim Giessen aus der unteren in die obere Reihe hob
+  // sich das Glas um feste 54 px, das Ziel lag aber 220 px hoeher — der Strahl
+  // lief bergauf. Im DOM stimmte alles; sichtbar war es nur am Geraet.
+  //
+  // Geprueft wird deshalb die GEOMETRIE: nach dem Kippen muss die Oeffnung der
+  // Quelle ueber der des Ziels stehen, bei JEDEM legalen Zug — auch quer ueber
+  // drei Reihen. Und das Glas darf dabei nicht aus dem Brett wandern.
+  const NR = 120; // Level 121: drei Reihen, also gibt es Zuege nach oben.
+  await seite.evaluate((n) => {
+    localStorage.setItem('fixthemix.fortschritt.v2',
+      JSON.stringify({ folgeVersion: 2, sterne: {}, zuletzt: n, hoechstes: n }));
+  }, NR);
+  await seite.goto('http://localhost:4602/spiel', { waitUntil: 'networkidle' });
+  await seite.waitForSelector('.glas');
+
+  const glaeser = seite.locator('.glas');
+  const anzahl = await glaeser.count();
+  let geprueft = 0;
+  let nachOben = 0;
+  let zuTief = 0;
+  let ausserhalb = 0;
+  for (let i = 0; i < anzahl; i++) {
+    for (let j = 0; j < anzahl; j++) {
+      if (i === j) continue;
+      await glaeser.nth(i).click();
+      await glaeser.nth(j).click();
+      await seite.waitForTimeout(15);
+      if (await seite.locator('.guss').count() === 0) {
+        await glaeser.nth(j).click().catch(() => {});
+        continue;
+      }
+      const m = await seite.evaluate(([vi, vj]) => {
+        const g = document.querySelectorAll('.glas');
+        const brett = document.querySelector('.brett').getBoundingClientRect();
+        const a = g[vi].getBoundingClientRect();
+        const b = g[vj].getBoundingClientRect();
+        const cs = getComputedStyle(g[vi]);
+        const hub = parseFloat(cs.getPropertyValue('--kipp-y')) || 0;
+        const x = parseFloat(cs.getPropertyValue('--kipp-x')) || 0;
+        const bog = ((parseFloat(cs.getPropertyValue('--kipp-winkel')) || 0) * Math.PI) / 180;
+        // Muss zu KIPP_DREHARM in Brett.tsx passen.
+        const muendung = a.top + a.height * 0.72 * (1 - Math.cos(bog)) + hub;
+        return {
+          luft: (b.top + b.height * 0.1) - muendung,
+          nachOben: b.top < a.top - 40,
+          links: (a.left + x) - brett.left,
+          rechts: brett.right - (a.left + a.width + x),
+        };
+      }, [i, j]);
+      geprueft++;
+      if (m.nachOben) nachOben++;
+      if (m.luft < 15) zuTief++;
+      // 16 px Ueberhang sind erlaubt (KIPP_UEBERHANG), ein bisschen Toleranz
+      // fuer das Runden dazu.
+      if (m.links < -20 || m.rechts < -20) ausserhalb++;
+      await seite.locator('footer button').first().click({ force: true });
+      await seite.waitForTimeout(15);
+    }
+  }
+  ok(geprueft >= 15, `genug Zuege geprueft (${geprueft})`);
+  ok(nachOben >= 1, `darunter Zuege in eine HOEHERE Reihe (${nachOben})`);
+  ok(zuTief === 0,
+     `die Oeffnung steht bei jedem Zug ueber dem Ziel (${geprueft - zuTief}/${geprueft})`);
+  ok(ausserhalb === 0, `kein Glas wandert aus dem Brett (${ausserhalb} Ausreisser)`);
+}
+
 console.log('\n--- Sackgasse ---');
 {
   // Ein grosses Level freischalten und direkt hineinspringen — auf den kleinen

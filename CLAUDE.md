@@ -795,6 +795,60 @@ sieht auf jedem Gerät anders aus, und auf manchen gar nicht.
 
 **Im geteilten Text bleiben Emoji.** Dort sind sie der Inhalt, nicht die Oberfläche.
 
+### Der Giesszug — das Glas hebt sich und kippt
+
+Bis zum 27.09.2026 drehte sich die Quelle um **acht Grad auf der Stelle**
+(`.glas-kippt`, 200 ms). Das las sich als Wackeln, nicht als Gießen. Josefs
+Ansage: das Glas soll *aufgehoben und umgeleert* werden. Jetzt hebt es sich
+26 px an, wandert ein Stück zum Ziel und kippt ihm die Öffnung entgegen.
+
+Vier Dinge daran sind Entscheidungen, keine Zahlen:
+
+1. **Die Bewegung liegt auf dem Glaskörper, nicht auf dem Knopf.** Der Knopf
+   ist die Trefferfläche. Wandert er während des Gießens vierzig Pixel zur
+   Seite, zielt der nächste Tipp ins Leere oder auf den Nachbarn — und der
+   Oberflächentest tippt im Abstand von 45 ms, ein Mensch ist kaum langsamer.
+   So bleibt der Knopf stehen und nur das Bild bewegt sich.
+2. **Den Weg macht der Winkel, nicht die Wanderung.** Bei 54 × 140 px und
+   `transform-origin: 50% 72%` schiebt eine Drehung um 30 Grad die Öffnung
+   schon rund 50 px zur Seite — fast eine ganze Spalte. Die Wanderung bleibt
+   deshalb bei 22 % des Abstands, höchstens 34 px. Größere Werte sahen aus,
+   als hätte jemand das Glas hochgehoben und daneben gestellt.
+3. **Wohin, entscheidet `Brett.tsx`**, und zwar in dem `useLayoutEffect`, das
+   ohnehin beide Gläser misst — `Glas` kennt seine eigene Lage nicht. Übergeben
+   wird es als drei CSS-Variablen auf dem Knopf (`--kipp-x`, `--kipp-y`,
+   `--kipp-winkel`); der Körper erbt sie. Das kostet kein Neuzeichnen, und weil
+   `useLayoutEffect` vor dem Zeichnen läuft, stehen die Werte, bevor die Klasse
+   zum ersten Mal wirkt.
+4. **Der Strahl beginnt an der Öffnung des gekippten Glases**, nicht an der
+   Kante des stehenden: `0,72 · Höhe · sin(Winkel)` zur Seite,
+   `0,72 · Höhe · (1 − cos(Winkel))` nach unten, plus Hub und Wanderung. Und
+   die ersten **33 %** von `guss-fliesst` sind leer — genau die 190 ms, die das
+   Glas zum Kippen braucht. Ohne das hing der Strahl ein paar Bilder lang neben
+   einem Glas, das noch gerade stand.
+
+**Die Stapelordnung sitzt auf dem Knopf** (`.glas-giesst`), nicht auf dem
+Körper: das kippende Glas ragt weit über seinen Nachbarn, und auf dem Körper
+verschwand es hinter dem nächsten Glas.
+
+`KIPP_MS` (430 ms) steht in `Brett.tsx` **neben** der Bahn und nicht in
+`App.tsx`, wo der Zeitgeber läuft: Bewegung und Zeitgeber müssen dieselbe Zahl
+sehen, sonst richtet sich das Glas auf, während der Strahl noch fließt.
+`raeumeGuss()` in `App.tsx` löscht Strahl **und** Kippung zusammen — beide
+zeigen auf Glasindizes, und bei Undo, Neustart, Rückkauf oder Levelwechsel
+neigte sich sonst ein Glas, das nie gegossen hat.
+
+*Aufnehmen lässt sich das nicht mit einem Screenshot* — die Bewegung dauert
+430 ms, eine Aufnahme länger. Wer sie prüfen will, schaltet den Übergang per
+`addStyleTag` ab (`transition: none`, `animation: none`, `stroke-dashoffset: 0`)
+und tippt; dann steht die Endstellung sofort und fällt noch in die 430 ms, in
+denen die Stapelordnung gilt. Ein bloßes *Bremsen* reicht nicht: der Zeitgeber
+ist JavaScript und lässt sich von CSS nicht aufhalten.
+
+Die Flüssigkeit dreht sich mit dem Glas, statt waagrecht zu bleiben. Das ist
+physikalisch falsch und bleibt trotzdem: die Schichten sind gestapelte
+Elemente, eine Gegendrehung würde sie scheren. Bei 430 ms sieht es niemand.
+
 ### Gießstrahl und Bar-Geräusche
 
 **Der Strahl** (`Brett.tsx` plus `.guss` in `index.css`) wird **gemessen, nicht

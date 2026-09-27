@@ -127,8 +127,41 @@ body {
   transform: translateY(-11px);
 }
 
+/*
+   Der Giesszug. Das Glas wird angehoben, wandert ein Stueck zum Ziel und
+   kippt ihm die Oeffnung entgegen — vorher drehte es sich um acht Grad auf
+   der Stelle, und das las sich als Wackeln, nicht als Giessen.
+
+   Wohin und wie weit, steht in drei Variablen, die `Brett.tsx` vor dem
+   Zeichnen setzt: nur dort sind die Lagen beider Glaeser bekannt (das Raster
+   haengt an der Displaybreite). Ohne Wert kippt es nach links — das ist der
+   Zustand, in dem noch nie gegossen wurde, und er kommt nie zur Anzeige.
+
+   `transform-origin` liegt tief im Glas, nicht in der Mitte: ein Glas kippt
+   um seinen Fuss, und dadurch beschreibt die Oeffnung den weiten Bogen, den
+   man von einer Bar kennt.
+*/
+.glas-koerper {
+  transform-origin: 50% 72%;
+  transition: transform 190ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/*
+   Nur die Stapelordnung, keine Bewegung — und sie sitzt auf dem KNOPF, nicht
+   auf dem Glaskoerper. Das kippende Glas ragt weit ueber seinen Nachbarn; auf
+   dem Koerper reichte ein `z-index` nicht, weil er in einem anderen
+   Stapelzusammenhang liegt und hinter dem naechsten Glas verschwand. Der Knopf
+   ist das Rasterfeld selbst, und dort gilt die Ordnung fuer die ganze Reihe.
+*/
+.glas-giesst {
+  position: relative;
+  z-index: 3;
+}
+
 .glas-kippt {
-  transform: rotate(-8deg);
+  transform:
+    translate(var(--kipp-x, 0px), var(--kipp-y, -26px))
+    rotate(var(--kipp-winkel, -30deg));
 }
 
 .glas-schatten {
@@ -410,12 +443,19 @@ body {
    einer Folge schneller Zuege eine Bremse. */
 .guss path {
   stroke-dasharray: 1;
-  animation: guss-fliesst 380ms ease-out forwards;
+  animation: guss-fliesst 430ms ease-out forwards;
 }
 
+/* Die ersten 33 % sind LEER, und das ist kein Leerlauf: so lange braucht das
+   Glas, um sich anzuheben und zu kippen (190 ms Uebergang auf
+   `.glas-koerper`). Der Strahl wurde an der ENDstellung gemessen — liefe er
+   sofort los, haenge er ein paar Bilder lang neben einem Glas, das noch
+   gerade steht. Er beginnt jetzt, wenn die Oeffnung da ist, wo er anfaengt,
+   und ist weg, bevor das Glas sich aufrichtet (430 ms, `KIPP_MS`). */
 @keyframes guss-fliesst {
-  0% { stroke-dashoffset: 1; opacity: 0.9; }
-  55% { stroke-dashoffset: 0; opacity: 1; }
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  33% { stroke-dashoffset: 1; opacity: 0.9; }
+  78% { stroke-dashoffset: 0; opacity: 1; }
   100% { stroke-dashoffset: 0; opacity: 0; }
 }
 
@@ -483,7 +523,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glas, .knopf { transition: none; }
+  .glas, .knopf, .glas-koerper { transition: none; }
+  /* Kein Kippen: ein Glas, das ohne Bewegung einfach schraeg dasteht und
+     dann wieder gerade, ist schlimmer als eines, das stehen bleibt. */
+  .glas-kippt { transform: none; }
   /* Der Strahl verschwindet ganz, statt still dazustehen: ein halb
      gezeichneter Bogen ueber dem Brett waere schlimmer als keiner. */
   .guss { display: none; }

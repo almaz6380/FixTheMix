@@ -15,10 +15,10 @@
 // nirgends `useCallback` — alle Handler haengen an genau diesem
 // veraenderlichen Objekt, eine Merkung waere bestenfalls wirkungslos.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Brett, { type Guss } from './components/Brett.tsx';
+import Brett, { KIPP_MS, type Guss } from './components/Brett.tsx';
 import { Partie } from './engine/verlauf.ts';
 import { festgefahren } from './engine/loeser.ts';
 import { tagLevel, tagesNummer } from './engine/tagesraetsel.ts';
@@ -128,6 +128,21 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const [guss, setGuss] = useState<Guss | null>(null);
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [kippt, setKippt] = useState<number | null>(null);
+  const kippUhr = useRef<number | undefined>(undefined);
+
+  /**
+   * Raeumt weg, was auf das ALTE Brett zeigt: den Strahl und das gekippte
+   * Glas. Beides haengt an Glasindizes. Bleibt es stehen, waehrend Undo,
+   * Neustart, Rueckkauf oder ein Levelwechsel das Brett tauschen, neigt sich
+   * ploetzlich ein Glas, das nie gegossen hat. Beim Strahl ist genau das
+   * schon einmal passiert und vom Oberflaechentest gefangen worden — der
+   * Rueckkauf raeumte ihn weg, der normale Undo-Knopf nicht.
+   */
+  const raeumeGuss = () => {
+    setGuss(null);
+    window.clearTimeout(kippUhr.current);
+    setKippt(null);
+  };
   const [tippZiel, setTippZiel] = useState<number | null>(null);
   const [rechnet, setRechnet] = useState(false);
   const [muenzen, setMuenzen] = useState(() => ladeMuenzen());
@@ -194,7 +209,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
     // Die Sperre wird hier ein zweites Mal geprueft, nicht nur in der
     // Levelwahl: sonst haengt die Regel an einem `disabled` in der Anzeige.
     if (i < 0 || i >= FOLGE.length || !istFrei(fortschritt, i)) return;
-    setGuss(null);
+    raeumeGuss();
     setIndex(i);
     setPartie(new Partie(FOLGE[i]!));
     setGewaehlt(null);
@@ -221,7 +236,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const starteTag = () => {
     setTagLaedt(true);
     window.setTimeout(() => {
-      setGuss(null);
+      raeumeGuss();
       const brett = tagLevel(HEUTE);
       setTagBrett(brett);
       setPartie(new Partie(brett));
@@ -257,7 +272,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const starteDuell = () => {
     setDuellLaedt(true);
     window.setTimeout(() => {
-      setGuss(null);
+      raeumeGuss();
       const nummer = naechsteNummer(duellBilanz);
       const brett = duellLevel(nummer);
       setDuellNummer(nummer);
@@ -339,7 +354,11 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
       haptik(8);
       klangGuss(e.menge);
       setKippt(quelle);
-      window.setTimeout(() => setKippt(null), 200);
+      // Der Zeitgeber wird ERSETZT, nicht gestapelt. Zwei Guesse kurz
+      // hintereinander liessen sonst den ersten Zeitgeber das zweite Glas
+      // aufrichten, mitten im Zug — sichtbar als Zucken bei schnellem Spiel.
+      window.clearTimeout(kippUhr.current);
+      kippUhr.current = window.setTimeout(() => setKippt(null), KIPP_MS);
       // Der Strahl wird HIER angestossen, nach dem Zug: gezeichnet wird er
       // gegen den neuen Stand, und aufhalten darf er nichts.
       setGuss((alt) => ({ von: quelle, nach: b, farbe: e.farbe, menge: e.menge, nr: (alt?.nr ?? 0) + 1 }));
@@ -439,7 +458,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
     setMuenzen(rest);
     speichereMuenzen(rest);
     partie.undo();
-    setGuss(null);
+    raeumeGuss();
     setGewaehlt(null);
     setTippZiel(null);
     neuZeichnen();
@@ -502,7 +521,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const neustart = () => {
     // Ein stehengebliebener Strahl zeigt auf Glaeser eines Bretts, das es so
     // nicht mehr gibt.
-    setGuss(null);
+    raeumeGuss();
     partie.neustart();
     setGewaehlt(null);
     setTippZiel(null);
@@ -619,7 +638,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
           passiert und im Screenshot aufgefallen. */}
       <footer className="relative flex flex-shrink-0 items-center gap-2.5 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <button type="button" aria-label={t('spiel.undo')} disabled={!partie.kannUndo() || geloest}
-          onClick={() => { if (partie.undo()) { setGuss(null); setGewaehlt(null); neuZeichnen(); } }}
+          onClick={() => { if (partie.undo()) { raeumeGuss(); setGewaehlt(null); neuZeichnen(); } }}
           className="knopf knopf-bar w-[54px] flex-shrink-0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h11a5.5 5.5 0 010 11H8" /><path d="M7 4L3 8l4 4" /></svg>
         </button>

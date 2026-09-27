@@ -19,6 +19,37 @@ import Glas from './Glas.tsx';
 import { farbeVon } from '../engine/farben.ts';
 import type { Spielstand } from '../engine/typen.ts';
 
+/*
+   Der Giesszug in Zahlen. Er ist absichtlich kein reiner Drehzug: ein Glas,
+   das sich nur neigt, wackelt; eines, das sich anhebt, hinueberwandert und
+   dann kippt, giesst.
+
+   Das meiste erledigt der WINKEL, nicht die Wanderung. Bei einem Glas von
+   rund 54 px Breite und 140 px Hoehe schiebt eine Drehung um 30 Grad die
+   Oeffnung schon rund 50 px zur Seite — fast eine ganze Spalte. Die
+   Wanderung darf deshalb klein bleiben; grosse Werte sahen aus, als haette
+   jemand das Glas hochgehoben und daneben gestellt.
+*/
+/** Wie weit die Quelle zum Ziel wandert, als Anteil des Abstands. */
+const KIPP_ANTEIL = 0.22;
+/** ... hoechstens aber so viele Pixel. Sonst reist ein Glas quer durch die Bar. */
+const KIPP_MAX = 34;
+/** Hub nach oben, in Pixeln (negativ = hoch). */
+const KIPP_HUB = -26;
+const KIPP_WINKEL = 30;
+/**
+ * Abstand der Oeffnung vom Drehpunkt, in Glashoehen. Muss zum
+ * `transform-origin: 50% 72%` von `.glas-koerper` passen.
+ */
+const KIPP_DREHARM = 0.72;
+/**
+ * Wie lange das Glas gekippt bleibt. Steht HIER und nicht in `App.tsx`,
+ * damit Bewegung und Zeitgeber nicht auseinanderlaufen: der Strahl braucht
+ * genauso lange (`guss-fliesst` in index.css), und ein Glas, das vorher
+ * zurueckschnellt, giesst ins Nichts.
+ */
+export const KIPP_MS = 430;
+
 /** Ein Guss, der gezeichnet werden soll. `nr` zaehlt hoch und startet die Bewegung neu. */
 export interface Guss {
   von: number;
@@ -80,11 +111,29 @@ export default function Brett({
     const b = glasRefs.current[guss.nach]?.getBoundingClientRect();
     if (!kasten || !a || !b) return;
 
-    // Startpunkt ist die Kante der Quelle, die zum Ziel zeigt — ein Glas
-    // kippt beim Giessen, und der Strahl soll nicht aus der Mitte kommen.
-    const nachRechts = b.left > a.left;
-    const x1 = a.left - kasten.left + a.width * (nachRechts ? 0.78 : 0.22);
-    const y1 = a.top - kasten.top + a.height * 0.06;
+    // Der Kippzug. Wohin das Glas sich neigt, kann nur hier entschieden
+    // werden: `Glas` kennt seine eigene Lage nicht, und das Raster haengt an
+    // der Displaybreite. Uebergeben wird es als CSS-Variablen auf dem Knopf,
+    // von wo sie der Glaskoerper erbt — das kostet kein Neuzeichnen, und die
+    // Werte stehen vor dem ersten Bild (`useLayoutEffect`).
+    const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
+    const rechts = dx >= 0;
+    const kippX = Math.max(-KIPP_MAX, Math.min(KIPP_MAX, dx * KIPP_ANTEIL));
+    const winkel = rechts ? KIPP_WINKEL : -KIPP_WINKEL;
+    const quelle = glasRefs.current[guss.von];
+    quelle?.style.setProperty('--kipp-x', `${kippX}px`);
+    quelle?.style.setProperty('--kipp-y', `${KIPP_HUB}px`);
+    quelle?.style.setProperty('--kipp-winkel', `${winkel}deg`);
+
+    // Startpunkt ist die Oeffnung des GEKIPPTEN Glases, nicht seine Kante im
+    // Stand. Das Glas dreht um `transform-origin: 50% 72%`; die Oeffnung
+    // liegt 0,72 Glashoehen darueber und beschreibt damit einen Bogen, den
+    // der Strahl mitmachen muss — sonst haengt er in der Luft neben dem Glas.
+    const bog = (winkel * Math.PI) / 180;
+    const x1 = a.left - kasten.left + a.width * 0.5
+      + a.height * KIPP_DREHARM * Math.sin(bog) + kippX;
+    const y1 = a.top - kasten.top
+      + a.height * KIPP_DREHARM * (1 - Math.cos(bog)) + KIPP_HUB;
     const x2 = b.left - kasten.left + b.width * 0.5;
     const y2 = b.top - kasten.top + b.height * 0.1;
     // Der Bogen: der Steuerpunkt liegt ueber BEIDEN Glaesern, sonst laeuft die

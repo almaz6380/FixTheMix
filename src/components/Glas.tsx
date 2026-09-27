@@ -159,9 +159,20 @@ export default function Glas({
       ref={innerRef}
       onClick={onTap}
       aria-label={beschriftung}
-      className={`glas ${gewaehlt ? 'glas-gewaehlt' : ''} ${kippt ? 'glas-kippt' : ''}`}
+      className={`glas ${gewaehlt ? 'glas-gewaehlt' : ''} ${kippt ? 'glas-giesst' : ''}`}
     >
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '60 / 156' }}>
+      {/*
+        Der Kippzug liegt auf DIESEM Element und nicht auf dem Knopf darueber.
+        Der Knopf ist die Trefferflaeche: wandert er waehrend des Giessens um
+        vierzig Pixel zur Seite, zielt der naechste Tipp ins Leere oder auf den
+        Nachbarn. Der Oberflaechentest tippt im Abstand von 45 ms, ein Mensch
+        ist kaum langsamer. So bleibt der Knopf, wo er steht, und nur das Bild
+        bewegt sich.
+      */}
+      <div
+        className={`glas-koerper ${kippt ? 'glas-kippt' : ''}`}
+        style={{ position: 'relative', width: '100%', aspectRatio: '60 / 156' }}
+      >
         <div className="glas-schatten" />
         {hervor && <div className="glas-schein" />}
         <div

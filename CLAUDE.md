@@ -1490,6 +1490,23 @@ curl -X POST -H "Authorization: Bearer $Vercel_CLI" -H "Content-Type: applicatio
 
 Danach den Zustand pollen, bis `readyState` auf `READY` steht.
 
+**Das Gratis-Konto erlaubt 100 Deployments am Tag**, und am 27.09.2026 war das
+Limit einmal erreicht (`payment_required`, `api-deployments-free-per-day`). Der
+Grund war keine Panne, sondern Gewohnheit: nach jeder Runde einmal deployen, und
+**jeder Push auf den Feature-Zweig erzeugt zusätzlich automatisch eine Vorschau**
+— also mindestens zwei je Änderung. Ist das Limit voll, schlägt auch der
+automatische Deploy des Merges still fehl: `main` ist dann aktuell, die
+Produktionsadresse nicht. Vor einem „ist live" also **nachsehen**, welcher Commit
+wirklich ausgeliefert ist:
+
+```bash
+curl -s -H "Authorization: Bearer $Vercel_CLI" \
+  "https://api.vercel.com/v6/deployments?app=fixthemix&limit=5"
+```
+
+Lehre: mehrere Runden an einer Sache sammeln und **einmal** deployen, nicht nach
+jedem Zwischenstand.
+
 **Der Produktionszweig ist `main`.** Ein Push auf einen Feature-Zweig erzeugt also
 höchstens eine Vorschau. `"target": "production"` im Aufruf oben hebt das auf und
 hängt `fixthemix.vercel.app` an genau diesen Stand — praktisch zum Testen, aber es

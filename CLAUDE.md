@@ -858,11 +858,52 @@ Elemente, eine Gegendrehung würde sie scheren. Bei 500 ms sieht es niemand.
 
 ### Gießstrahl und Bar-Geräusche
 
-**Der Strahl** (`Brett.tsx` plus `.guss` in `index.css`) wird **gemessen, nicht
+**Der Strahl** (`Brett.tsx` plus `.guss-maske` in `index.css`) wird **gemessen, nicht
 gerechnet**: die Gläser stehen in einem Raster, dessen Pixelmaße von der Displaybreite
 abhängen. Zwei `getBoundingClientRect` sind billiger und ehrlicher, als die
 Rasterarithmetik ein zweites Mal nachzubauen — und sie bleiben richtig, wenn jemand am
 Layout dreht.
+
+**Er ist eine FLÄCHE, kein Strich** (27.09.2026). Josefs Urteil zur ersten Fassung:
+„Es sieht billig aus. Es soll mehr danach aussehen als würde man eine Flüssigkeit
+reinleeren." Beides stimmte, und es waren zwei verschiedene Fehler:
+
+1. **Ein Strich hat überall dieselbe Breite** und sieht damit gezogen aus, nicht
+   gegossen. `band()` tastet die Bézierkurve an 20 Stellen ab und trägt an jeder die
+   Normale ab — oben `0,15 + 0,045 · menge` der Glasbreite, unten **45 %** davon.
+   Fallende Flüssigkeit wird schneller und damit dünner, und die Menge entscheidet
+   mit: vier Schichten sind ein Schwall, eine ein Rinnsal.
+2. **Quer, nicht längs schattiert.** Der Verlauf liegt auf der Normalen der Sehne:
+   `tief` an beiden Kanten, `ton`, `hell`, und bei 42 % ein **Spitzlicht** aus
+   `heller(hell, 0,62)`. Ohne das ist der Strang ein flaches Rohr in einer Farbe.
+   Die Aufhellung ist **gerechnet und nicht `color-mix()`** — das gibt es in älteren
+   WebViews nicht, und ein Verlauf, der dort still auf die Grundfarbe zurückfällt,
+   kostet genau das Glanzlicht, um das es geht.
+
+**Fließen lässt ihn eine MASKE.** Ein Strich auf der Mittellinie, dessen sichtbares
+Stück erst wächst (der Kopf läuft nach unten) und dann nach vorne wegrutscht (der
+Schwanz hebt ab, der Rest fällt ins Glas) — `stroke-dasharray` von `0 2` auf `1 2` und
+zurück auf `0 2` bei `stroke-dashoffset: -1`. **Kein Verblassen:** ein Strahl, der
+ausgeblendet wird, sieht aus wie ein Bild, das verschwindet; einer, der ausläuft, sieht
+aus wie Flüssigkeit, die alle ist.
+
+**Und das Wichtigste: das ZIELGLAS füllt sich.** Vorher war die Flüssigkeit schon da,
+bevor der Strahl losging — der Strahl zeigte auf ein Ergebnis, das es bereits gab, und
+kein noch so schöner Strahl macht daraus ein Eingießen. `Brett` reicht dem Zielglas
+`fuellt: { menge, nr }` durch; die obersten `menge` Schichten wachsen von null auf ihre
+Höhe (`.schicht-fuellt`), **nacheinander** im Abstand von 45 ms. Drei Feinheiten:
+
+- Der Schlüssel der Schicht trägt die **Gussnummer** mit. Ohne das nimmt React dasselbe
+  Element wieder her, und eine CSS-Bewegung, die schon gelaufen ist, läuft an einem
+  bestehenden Element kein zweites Mal los.
+- `animation-fill-mode: backwards`. Sonst blitzt die Schicht in voller Höhe auf, bevor
+  ihre Verzögerung abläuft.
+- Die Keyframes haben **nur ein `from`**. Die Zielhöhe ist die, die das Element ohnehin
+  hat — sie steht als Prozentwert im Stil und hängt an der Zahl der Schichten.
+
+Die **300 ms** Verzögerung stehen in `Glas.tsx` und entsprechen den 64 % in
+`guss-fliesst`, wo der Kopf des Strahls ankommt. Laufen die beiden Zahlen auseinander,
+füllt sich das Glas, bevor etwas fließt — oder erst, wenn längst nichts mehr fließt.
 
 Drei Dinge, die dabei nicht verhandelbar sind:
 
@@ -871,12 +912,21 @@ Drei Dinge, die dabei nicht verhandelbar sind:
    einer Folge schneller Züge eine Bremse — der Oberflächentest tippt im Abstand von
    45 ms, ein Mensch ist kaum langsamer.
 2. **Er verschwindet mit dem Brett.** Undo, Neustart, Levelwechsel, Tagesrätsel, Duell:
-   überall wird er gelöscht. Sonst zeigte er auf Gläser eines Bretts, das es nicht mehr
-   gibt. *Genau das ist beim Einbau passiert und vom Test gefangen worden* — der
-   Rückkauf räumte ihn weg, der normale Undo-Knopf nicht.
-3. **`pathLength="1"`.** Damit läuft die `stroke-dashoffset`-Bewegung ohne gemessene
-   Pfadlänge, und ein `key` je Guss sorgt dafür, dass zweimal derselbe Zug auch zweimal
-   fließt.
+   überall räumt `raeumeGuss()` ihn weg. Sonst zeigte er auf Gläser eines Bretts, das es
+   nicht mehr gibt. *Genau das ist beim Einbau passiert und vom Test gefangen worden* —
+   der Rückkauf räumte ihn weg, der normale Undo-Knopf nicht.
+3. **`pathLength="1"`.** Damit laufen die Dash-Werte in Anteilen der Bahn statt in
+   gemessenen Pixeln, und ein `key` je Guss sorgt dafür, dass zweimal derselbe Zug auch
+   zweimal fließt.
+
+*Eine Falle beim Aufnehmen, die zweimal zugeschnappt ist:* Ein Screenshot zeigt die
+Bewegung nicht — sie dauert 500 ms, eine Aufnahme länger. Beim ersten Anlauf wurden die
+CSS-Bewegungen über `document.getAnimations()` angehalten, **der JS-Zeitgeber für das
+Kippen aber nicht**: im Bild floss ein Strahl aus einem Glas, das längst wieder gerade
+stand. Beim zweiten summierten sich die Wartezeiten, statt absolut zu sein, und die
+Bilder lagen hinter dem Ende. Was funktioniert: alle Bewegungen per `addStyleTag` um
+denselben Faktor strecken, die Kippstellung über die auf dem Quellglas
+stehengebliebenen CSS-Variablen festhalten, und ab dem Guss **absolut** messen.
 
 **Die Geräusche** (`src/lib/klang.ts`) kommen **ohne Tondateien** aus: gefiltertes
 Rauschen für das Gießen, ein paar Sinustöne für den Rest. Drei Gründe, der dritte ist

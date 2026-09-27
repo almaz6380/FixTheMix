@@ -430,30 +430,75 @@ body {
   background: linear-gradient(180deg, rgba(255, 226, 170, 0.14), rgba(255, 226, 170, 0));
 }
 
-/* Der Giessstrahl. Er laeuft von der Quelle zum Ziel und verschwindet dann —
-   `stroke-dashoffset` von 1 auf 0 zeichnet die Kurve, und weil beide Pfade
-   `pathLength="1"` tragen, braucht es dafuer keine gemessene Pfadlaenge.
+/* Der Giessstrahl.
+
+   Er ist eine FLAECHE mit einem Verlauf quer dazu (siehe `band()` in
+   Brett.tsx), kein Strich mit fester Breite — ein Strich sah gezeichnet aus,
+   und genau das hat Josef am 27.09.2026 „billig" genannt.
+
+   Fliessen laesst ihn eine MASKE: ein Strich auf der Mittellinie, dessen
+   sichtbares Stueck erst waechst (der Kopf laeuft nach unten) und dann nach
+   vorne wegrutscht (der Schwanz hebt ab und der Rest faellt ins Glas). Weil
+   `pathLength="1"` gesetzt ist, sind die Werte Anteile der Bahn und brauchen
+   keine gemessene Laenge.
+
+   KEIN Verblassen am Ende. Ein Strahl, der ausgeblendet wird, sieht aus wie
+   ein Bild, das verschwindet; einer, der auslaeuft, sieht aus wie
+   Fluessigkeit, die alle ist.
+
+   Die ersten 40 % sind leer: so lange hebt und kippt sich das Glas (230 ms
+   Uebergang auf `.glas-koerper`). Der Strahl beginnt, wenn die Oeffnung da
+   ist, wo er ansetzt.
 
    Die Bewegung ist reine Zierde: sie haelt nichts auf, verschluckt keinen
    Klick (`pointer-events: none`) und der Spielstand ist schon weitergezogen,
    bevor sie beginnt. Ein Strahl, auf den das Spiel warten muesste, waere bei
    einer Folge schneller Zuege eine Bremse. */
-.guss path {
-  stroke-dasharray: 1;
-  animation: guss-fliesst 500ms ease-out forwards;
+.guss-maske {
+  animation: guss-fliesst 500ms linear forwards;
 }
 
-/* Die ersten 46 % sind LEER, und das ist kein Leerlauf: so lange braucht das
-   Glas, um sich anzuheben und zu kippen (230 ms Uebergang auf
-   `.glas-koerper`). Der Strahl wurde an der ENDstellung gemessen — liefe er
-   sofort los, haenge er ein paar Bilder lang neben einem Glas, das noch
-   gerade steht. Er beginnt jetzt, wenn die Oeffnung da ist, wo er anfaengt,
-   und ist weg, bevor das Glas sich aufrichtet (500 ms, `KIPP_MS`). */
 @keyframes guss-fliesst {
-  0% { stroke-dashoffset: 1; opacity: 0; }
-  46% { stroke-dashoffset: 1; opacity: 0.9; }
-  82% { stroke-dashoffset: 0; opacity: 1; }
-  100% { stroke-dashoffset: 0; opacity: 0; }
+  0%   { stroke-dasharray: 0 2; stroke-dashoffset: 0; }
+  40%  { stroke-dasharray: 0 2; stroke-dashoffset: 0; }
+  64%  { stroke-dasharray: 1 2; stroke-dashoffset: 0; }
+  78%  { stroke-dasharray: 1 2; stroke-dashoffset: 0; }
+  100% { stroke-dasharray: 0 2; stroke-dashoffset: -1; }
+}
+
+/* Der Aufschlag im Zielglas. `transform-box: fill-box` macht die eigene
+   Flaeche zum Bezug — ohne das drehte der Kreis um den Ursprung des SVG und
+   floege quer ueber das Brett. */
+.guss-platscher {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: guss-platscht 500ms ease-out forwards;
+}
+
+@keyframes guss-platscht {
+  0%, 60% { opacity: 0; transform: scale(0.3); }
+  70%     { opacity: 0.7; transform: scale(1.05); }
+  100%    { opacity: 0; transform: scale(1.9); }
+}
+
+/* Das Zielglas fuellt sich. DAS ist der Unterschied zwischen einem Strahl,
+   der ueber dem Brett laeuft, und Eingiessen: vorher war die Fluessigkeit
+   einfach schon da, und der Strahl zeigte auf ein Ergebnis, das es bereits
+   gab.
+
+   Nur ein `from`: die Zielhoehe ist die, die das Element ohnehin hat — sie
+   steht als Prozentwert im Stil und haengt an der Zahl der Schichten.
+   `backwards` sorgt dafuer, dass die Schicht auch WAEHREND ihrer Verzoegerung
+   schon auf null steht; sonst blitzte sie voll auf, bevor sie zu wachsen
+   beginnt. */
+.schicht-fuellt {
+  /* Die Verzoegerung setzt `Glas.tsx` je Schicht — sie staffelt sie. */
+  animation: schicht-fuellt 175ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+
+@keyframes schicht-fuellt {
+  from { height: 0; }
 }
 
 /* --- Knoepfe ------------------------------------------------------------- */
@@ -521,6 +566,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .glas, .knopf, .glas-koerper { transition: none; }
+  /* Die Schicht steht sofort da, statt zu wachsen. */
+  .schicht-fuellt { animation: none; }
   /* Kein Kippen: ein Glas, das ohne Bewegung einfach schraeg dasteht und
      dann wieder gerade, ist schlimmer als eines, das stehen bleibt. */
   .glas-kippt { transform: none; }

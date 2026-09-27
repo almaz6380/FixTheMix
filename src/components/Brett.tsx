@@ -77,10 +77,85 @@ interface Eigenschaften {
 }
 
 interface Strahl {
-  d: string;
-  farbe: string;
+  /** Das Band: oben breit, unten schmal. Eine Flaeche, kein Strich. */
+  flaeche: string;
+  /** Die Mittellinie — sie ist die Maske, die das Band fliessen laesst. */
+  mitte: string;
+  /** Deckung der Maske, etwas breiter als das Band. */
+  maskeBreit: number;
+  /** Bereich der Maske in Nutzerkoordinaten. */
+  kasten: { x: number; y: number; w: number; h: number };
+  /** Der Verlauf QUER zum Strahl — daher kommt die Rundung. */
+  quer: { x1: number; y1: number; x2: number; y2: number };
+  /** Wo der Strahl auftrifft, und wie gross der Spritzer wird. */
+  ziel: { x: number; y: number; r: number };
+  tief: string;
+  ton: string;
   hell: string;
+  /** Das Spitzlicht auf dem Strang — die Farbe, zu Weiss hin aufgehellt. */
+  glanz: string;
   nr: number;
+}
+
+/**
+ * Dieselbe Farbe, um `anteil` in Richtung Weiss gezogen. Gerechnet und nicht
+ * `color-mix()`: das gibt es in aelteren WebViews nicht, und ein Verlauf, der
+ * dort still auf die Grundfarbe zurueckfaellt, kostet genau das Glanzlicht,
+ * um das es hier geht.
+ */
+function heller(hex: string, anteil: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const misch = (v: number) => Math.round(v + (255 - v) * anteil);
+  const r = misch((n >> 16) & 255);
+  const g = misch((n >> 8) & 255);
+  const b = misch(n & 255);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+/**
+ * Der Strahl als FLAECHE. Eine Linie mit fester Breite sieht gezogen aus, wie
+ * mit einem Stift — das war Josefs „billig" am 27.09.2026. Fliessende
+ * Fluessigkeit ist an der Oeffnung breit und wird nach unten duenner, weil
+ * sie im Fallen schneller wird.
+ *
+ * Gebaut wird das Band, indem die Bezierkurve abgetastet und an jedem Punkt
+ * die Normale abgetragen wird: die eine Kante hin, die andere zurueck.
+ */
+function band(
+  x1: number, y1: number, cx: number, cy: number, x2: number, y2: number,
+  wOben: number, wUnten: number,
+): { d: string; minX: number; minY: number; maxX: number; maxY: number } {
+  const N = 20;
+  const links: string[] = [];
+  const rechts: string[] = [];
+  let minX = Infinity; let minY = Infinity; let maxX = -Infinity; let maxY = -Infinity;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const u = 1 - t;
+    const px = u * u * x1 + 2 * u * t * cx + t * t * x2;
+    const py = u * u * y1 + 2 * u * t * cy + t * t * y2;
+    // Ableitung der quadratischen Bezierkurve = die Richtung an dieser Stelle.
+    const rx = 2 * u * (cx - x1) + 2 * t * (x2 - cx);
+    const ry = 2 * u * (cy - y1) + 2 * t * (y2 - cy);
+    const len = Math.hypot(rx, ry) || 1;
+    const w = (wOben * u + wUnten * t) / 2;
+    // Normale zur Richtung, mal halbe Breite.
+    const ox = (-ry / len) * w;
+    const oy = (rx / len) * w;
+    for (const [qx, qy] of [[px + ox, py + oy], [px - ox, py - oy]] as const) {
+      if (qx < minX) minX = qx;
+      if (qx > maxX) maxX = qx;
+      if (qy < minY) minY = qy;
+      if (qy > maxY) maxY = qy;
+    }
+    links.push(`${(px + ox).toFixed(1)} ${(py + oy).toFixed(1)}`);
+    rechts.push(`${(px - ox).toFixed(1)} ${(py - oy).toFixed(1)}`);
+  }
+  rechts.reverse();
+  return {
+    d: `M ${links.join(' L ')} L ${rechts.join(' L ')} Z`,
+    minX, minY, maxX, maxY,
+  };
 }
 
 export default function Brett({
@@ -144,13 +219,57 @@ export default function Brett({
       + a.height * KIPP_DREHARM * (1 - Math.cos(bogen)) + KIPP_HUB;
     const x2 = b.left - kasten.left + b.width * 0.5;
     const y2 = b.top - kasten.top + b.height * 0.1;
-    // Der Bogen: der Steuerpunkt liegt ueber BEIDEN Glaesern, sonst laeuft die
-    // Kurve bei Glaesern in derselben Reihe schnurgerade.
+    // Der Bogen. Er richtet sich nach dem SEITLICHEN Abstand: steht das Glas
+    // fast senkrecht ueber dem Ziel, faellt die Fluessigkeit auch senkrecht,
+    // und ein hoher Steuerpunkt machte daraus eine unsinnige Ausbuchtung.
     const cx = (x1 + x2) / 2;
-    const cy = Math.min(y1, y2) - 26;
+    const cy = Math.min(y1, y2) - Math.min(26, Math.max(4, Math.abs(x2 - x1) * 0.35));
+
+    // Die Breite des Strahls haengt an der MENGE: vier Schichten auf einmal
+    // sind ein Schwall, eine einzelne ein Rinnsal.
+    const wOben = a.width * Math.min(0.34, 0.15 + 0.045 * guss.menge);
+    // Deutlich schmaler unten. Fallende Fluessigkeit wird schneller, und was
+    // schneller wird, wird duenner — bei nur wenig Unterschied sieht das Band
+    // wieder wie ein Rohr aus.
+    const wUnten = wOben * 0.45;
+    const b1 = band(x1, y1, cx, cy, x2, y2, wOben, wUnten);
+
+    // Der Verlauf liegt QUER zum Strahl, nicht laengs — daher kommt die
+    // Rundung: dunkel an beiden Kanten, ein Lichtstreifen etwas links der
+    // Mitte, genau wie am Glas. Die Normale wird nach links gedreht, damit
+    // das Licht immer von derselben Seite kommt wie in der ganzen Bar.
+    const sx = x2 - x1;
+    const sy = y2 - y1;
+    const sl = Math.hypot(sx, sy) || 1;
+    let nx = -sy / sl;
+    let ny = sx / sl;
+    if (nx > 0) { nx = -nx; ny = -ny; }
+    const mx = (x1 + x2) / 2;
+    const my = (y1 + y2) / 2;
+    const halb = wOben / 2;
 
     const f = farbeVon(guss.farbe);
-    setStrahl({ d: `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`, farbe: f.ton, hell: f.hell, nr: guss.nr });
+    setStrahl({
+      flaeche: b1.d,
+      mitte: `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`,
+      maskeBreit: wOben + 8,
+      kasten: {
+        x: b1.minX - wOben - 12,
+        y: b1.minY - wOben - 12,
+        w: (b1.maxX - b1.minX) + 2 * wOben + 24,
+        h: (b1.maxY - b1.minY) + 2 * wOben + 24,
+      },
+      quer: {
+        x1: mx + nx * halb, y1: my + ny * halb,
+        x2: mx - nx * halb, y2: my - ny * halb,
+      },
+      ziel: { x: x2, y: y2, r: wUnten * 0.9 },
+      tief: f.tief,
+      ton: f.ton,
+      hell: f.hell,
+      glanz: heller(f.hell, 0.62),
+      nr: guss.nr,
+    });
   }, [guss]);
 
   // Die Glaeser werden reihenweise ausgegeben, damit jede Reihe eine eigene
@@ -176,6 +295,9 @@ export default function Brett({
           onTap={() => onTap(b)}
           beschriftung={textGlas(b)}
           innerRef={(el) => { glasRefs.current[i] = el; }}
+          {...(guss && guss.nach === b
+            ? { fuellt: { menge: guss.menge, nr: guss.nr } }
+            : {})}
         />,
       );
     }
@@ -211,13 +333,63 @@ export default function Brett({
           aria-hidden="true"
           style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}
         >
-          {/* Zwei Linien uebereinander: die breite ist die Fluessigkeit, die
-              schmale die Lichtkante darauf. Ohne sie sieht der Strahl aus wie
-              ein gezogener Stift. */}
-          <path d={strahl.d} pathLength={1} fill="none" strokeLinecap="round"
-            stroke={strahl.farbe} strokeWidth={7} />
-          <path d={strahl.d} pathLength={1} fill="none" strokeLinecap="round"
-            stroke={strahl.hell} strokeWidth={2.5} opacity={0.85} />
+          <defs>
+            {/* Quer zum Strahl, nicht laengs: dunkle Kanten, ein Lichtstreifen
+                links der Mitte. Das macht aus dem flachen Band einen runden
+                Fluessigkeitsstrang. */}
+            <linearGradient
+              id={`ftm-guss-v${strahl.nr}`}
+              gradientUnits="userSpaceOnUse"
+              x1={strahl.quer.x1} y1={strahl.quer.y1}
+              x2={strahl.quer.x2} y2={strahl.quer.y2}
+            >
+              <stop offset="0%" stopColor={strahl.tief} />
+              <stop offset="20%" stopColor={strahl.ton} />
+              <stop offset="34%" stopColor={strahl.hell} />
+              <stop offset="42%" stopColor={strahl.glanz} />
+              <stop offset="52%" stopColor={strahl.hell} />
+              <stop offset="74%" stopColor={strahl.ton} />
+              <stop offset="100%" stopColor={strahl.tief} />
+            </linearGradient>
+            {/*
+              Die Maske laesst den Strahl FLIESSEN. Ein Band, das als Ganzes
+              erscheint und wieder verblasst, sieht aus wie ein Bild, das
+              ein- und ausgeblendet wird — das war der zweite Grund fuer
+              „billig". Hier laeuft erst der Kopf nach unten, dann hebt der
+              Schwanz ab und der Rest faellt ins Glas. Kein Verblassen.
+            */}
+            <mask
+              id={`ftm-guss-m${strahl.nr}`}
+              maskUnits="userSpaceOnUse"
+              x={strahl.kasten.x} y={strahl.kasten.y}
+              width={strahl.kasten.w} height={strahl.kasten.h}
+            >
+              <path
+                className="guss-maske"
+                d={strahl.mitte}
+                pathLength={1}
+                fill="none"
+                stroke="#fff"
+                strokeWidth={strahl.maskeBreit}
+                strokeLinecap="round"
+              />
+            </mask>
+          </defs>
+          <path
+            d={strahl.flaeche}
+            fill={`url(#ftm-guss-v${strahl.nr})`}
+            mask={`url(#ftm-guss-m${strahl.nr})`}
+          />
+          {/* Der Aufschlag. Ohne ihn endet der Strahl im Nichts, statt
+              irgendwo anzukommen. */}
+          <ellipse
+            className="guss-platscher"
+            cx={strahl.ziel.x}
+            cy={strahl.ziel.y}
+            rx={strahl.ziel.r}
+            ry={strahl.ziel.r * 0.42}
+            fill={strahl.hell}
+          />
         </svg>
       )}
     </div>

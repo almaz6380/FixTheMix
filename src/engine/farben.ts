@@ -21,14 +21,27 @@ export interface Farbe {
   id: FarbId;
   /** Symbol fuer den Farbenblind-Modus (Bildname, ab Tag 1 Pflicht). */
   symbol: string;
-  /** Anzeigeton. */
+  /** Anzeigeton — die Mitte der Schicht. */
   ton: string;
   /**
-   * Aufhellung desselben Tons. Die Oberflaeche zeichnet damit die gewoelbte
-   * Oberkante jeder Schicht — der Kniff, der aus einem Farbstreifen
-   * Fluessigkeit in einem Glas macht.
+   * Aufhellung desselben Tons, fuer die Oberkante einer Schicht: dort faellt
+   * Licht durch die Oberflaeche. Zusammen mit `tief` macht das aus einem
+   * Farbstreifen Fluessigkeit.
    */
   hell: string;
+  /**
+   * Verdunkelung fuer den Fuss der Schicht. Fluessigkeit ist unten tiefer und
+   * damit dunkler; ohne diesen dritten Ton bleibt jede Schicht eine flache
+   * Flaeche, und genau das sah billig aus.
+   */
+  tief: string;
+  /**
+   * Welche Tinte das Farbenblind-Zeichen traegt. NICHT nach Gefuehl gesetzt,
+   * sondern gerechnet: es gewinnt die Tinte mit dem hoeheren Kontrast, und
+   * `test-engine.mts` besteht auf mindestens 3:1. Vorher stand dafuer eine
+   * Liste von Hand in `Symbole.tsx`, und Kaffee lag darin bei 2,2:1.
+   */
+  tinte: 'dunkel' | 'hell';
   /** Fuer das Emoji-Raster beim Teilen des Tagesraetsels (Phase 4). */
   emoji: string;
   /** Schluessel in src/i18n/locales/*.json */
@@ -41,15 +54,15 @@ export interface Farbe {
  * und damit jedes gespeicherte Level und jedes Tagesraetsel der Vergangenheit.
  */
 export const FARBEN: readonly Farbe[] = [
-  { id: 'rot',    symbol: 'erdbeere',  ton: '#FF4D6D', hell: '#FF7A93', emoji: '\u{1F353}', i18n: 'farben.rot' },
-  { id: 'gelb',   symbol: 'zitrone',   ton: '#FFC93C', hell: '#FFDC7A', emoji: '\u{1F34B}', i18n: 'farben.gelb' },
-  { id: 'blau',   symbol: 'blaubeere', ton: '#3FA9F5', hell: '#86CBFA', emoji: '\u{1FAD0}', i18n: 'farben.blau' },
-  { id: 'orange', symbol: 'orange',    ton: '#FF8A3D', hell: '#FFB47E', emoji: '\u{1F34A}', i18n: 'farben.orange' },
-  { id: 'gruen',  symbol: 'apfel',     ton: '#4ED16A', hell: '#8FE3A2', emoji: '\u{1F34F}', i18n: 'farben.gruen' },
-  { id: 'lila',   symbol: 'traube',    ton: '#A26BE8', hell: '#C6A2F2', emoji: '\u{1F347}', i18n: 'farben.lila' },
-  { id: 'minze',  symbol: 'minze',     ton: '#45DDC4', hell: '#8AEBD9', emoji: '\u{1F33F}', i18n: 'farben.minze' },
-  { id: 'kokos',  symbol: 'kokos',     ton: '#F2E4CE', hell: '#FBF3E6', emoji: '\u{1F965}', i18n: 'farben.kokos' },
-  { id: 'kaffee', symbol: 'kaffee',    ton: '#8A5A3B', hell: '#B08163', emoji: '☕',    i18n: 'farben.kaffee' },
+  { id: 'rot',    symbol: 'erdbeere',  ton: '#DF646C', hell: '#F38A91', tief: '#C74A52', tinte: 'dunkel', emoji: '\u{1F353}', i18n: 'farben.rot' },
+  { id: 'gelb',   symbol: 'zitrone',   ton: '#EFCF63', hell: '#FFE387', tief: '#D7B649', tinte: 'dunkel', emoji: '\u{1F34B}', i18n: 'farben.gelb' },
+  { id: 'blau',   symbol: 'blaubeere', ton: '#476ABC', hell: '#6987CE', tief: '#2F53A7', tinte: 'hell',   emoji: '\u{1FAD0}', i18n: 'farben.blau' },
+  { id: 'orange', symbol: 'orange',    ton: '#D88C49', hell: '#F0AE75', tief: '#C17430', tinte: 'dunkel', emoji: '\u{1F34A}', i18n: 'farben.orange' },
+  { id: 'gruen',  symbol: 'apfel',     ton: '#7EBC51', hell: '#A3D87C', tief: '#63A336', tinte: 'dunkel', emoji: '\u{1F34F}', i18n: 'farben.gruen' },
+  { id: 'lila',   symbol: 'traube',    ton: '#A95ECE', hell: '#C281E2', tief: '#9245B8', tinte: 'dunkel', emoji: '\u{1F347}', i18n: 'farben.lila' },
+  { id: 'minze',  symbol: 'minze',     ton: '#58CEB8', hell: '#87ECD9', tief: '#3DB59F', tinte: 'dunkel', emoji: '\u{1F33F}', i18n: 'farben.minze' },
+  { id: 'kokos',  symbol: 'kokos',     ton: '#F1E4CD', hell: '#FBF0DC', tief: '#D8CBB4', tinte: 'dunkel', emoji: '\u{1F965}', i18n: 'farben.kokos' },
+  { id: 'kaffee', symbol: 'kaffee',    ton: '#7D4F30', hell: '#936C51', tief: '#673819', tinte: 'hell',   emoji: '☕',        i18n: 'farben.kaffee' },
 ];
 
 /** Eine Schicht Fluessigkeit, oder LEER. 0 ist bewusst „nichts“. */

@@ -158,7 +158,9 @@ Code auf seinem Rechner laufen.
       Oberflächentest zählt Konsolenfehler. Nachladen mit `node tools/fonts-holen.mjs`.
 - [x] Gezeichnete SVG-Zeichen statt Emoji (`src/components/Symbole.tsx`). Jede Farbe
       bekommt einen **anderen Umriss**, damit sie auch ohne Farbe erkennbar bleibt.
-      Kaffee ist die einzige Farbe mit hellem Zeichen — dunkel darauf sind nur 2,2:1.
+      Welche Tinte ein Zeichen trägt, steht in `farben.ts` und ist **gerechnet**:
+      es gewinnt die bessere der beiden, Mindestkontrast 3:1. Seit dem 27.09.2026
+      brauchen **Kaffee und Blaubeere** helle Tinte.
 - [x] `@media (prefers-reduced-motion: reduce)` schaltet die Bewegungen ab
 - [x] **Die Bar ist ein Ort** (27.09.2026, Josefs Entscheidung): jede Glasreihe steht auf
       einer Messingleiste, die vorderste auf einer Holztheke; die Fußzeile liegt auf der
@@ -361,7 +363,7 @@ Capacitor (iOS + Android), Supabase. Die folgenden Bausteine werden **aus
 | Datei | Inhalt |
 |---|---|
 | `typen.ts` | Nur Typen. `Spielstand`, `Zug`, `Level`, `Schwierigkeit`, Ergebnisse. |
-| `farben.ts` | Die neun Farben: Ton und Aufhellung für die Oberfläche, Symbolname fürs Farbenblind-Modus, Emoji fürs Teilen. Keine Kategorien, keine Mischtabelle mehr. |
+| `farben.ts` | Die neun Farben: **drei** Töne je Farbe (`tief`/`ton`/`hell`), die Tinte des Farbenblind-Zeichens, Symbolname, Emoji fürs Teilen. Keine Kategorien, keine Mischtabelle mehr. Siehe „Die Farben". |
 | `zufall.ts` | mulberry32 + fmix32 + getrennte Streams. Nur 32-Bit-Ganzzahlrechnung. |
 | `zustand.ts` | Aufbau, Klonen, Packen, **kanonischer Schlüssel**, Siegbedingung, Textausgabe. |
 | `zuege.ts` | Die eine Regel: `pour`, `giessenZurueck`, `legaleZuege`. Sonst nichts. |
@@ -669,6 +671,52 @@ Drei Folgen, die zusammenhängen:
   nachspielbar (`grund: 'index'`). Eine Bestenliste muss vergleichbar bleiben.
 - **Der Neustart behält das Extra-Glas.** Wer dafür ein Werbevideo gesehen hat, soll es
   nicht durch einen Neustart verlieren — sonst wird aus der Hilfe eine Falle.
+
+### Die Farben — gemessen, nicht gewählt
+
+Josefs Urteil am 27.09.2026: **„die Gläser und die Farben sehen billig aus."** Das
+ließ sich nachrechnen, und die Zahlen gaben ihm recht:
+
+| | vorher | jetzt |
+|---|---|---|
+| Chroma | 0,14–**0,76**, sieben von neun über 0,5 | 0,14–0,56 |
+| L\*-Spanne | 43–91 | 38–91 |
+| engster Abstand zweier Farben | **2,8 L\*** | 5,1 L\* |
+
+**Chroma über 0,5 ist die Neon-Palette, die jeder Gratis-Klon benutzt.** Und ein
+Abstand von 2,8 L\* heißt: in Graustufen sind die beiden Farben dasselbe. Das war der
+eigentliche Grund, warum der Farbenblind-Modus so schwer arbeiten musste.
+
+Die neue Leiter folgt dem, was der Saft **wirklich** ist — Kaffee dunkel (L\* 38),
+Kokos hell (91), und **Blaubeere ist endlich tief statt Himmelblau** (48 statt 67).
+Gesetzt wurden die Werte nicht nach Gefühl, sondern gesucht: zu Farbton, Ziel-Helligkeit
+und Ziel-Chroma den passenden Hexwert.
+
+**Drei Töne je Farbe statt zwei.** `tief` ist neu und trägt den Fuß jeder Schicht:
+Flüssigkeit ist unten tiefer und damit dunkler. Vorher war eine Schicht eine flache
+Fläche mit einem hellen Streifen obendrauf — der zweite Grund für „billig".
+
+Dazu drei Dinge in `Glas.tsx`:
+
+1. **Der Meniskus liegt nur auf der OBERSTEN Schicht.** Nur sie hat eine echte
+   Oberfläche; auf den Schichten darunter wäre er eine Kante, die es nicht gibt.
+2. **Die Grenze zwischen zwei Flüssigkeiten ist eine dunkle Linie**, keine Rasierklinge
+   (`inset 0 1px 0`).
+3. **Die Gläschen sind Hohlkugeln** — heller Rand, klarer Kern. Vorher drei satte weiße
+   Punkte, die sich als Flecken lasen.
+
+Und in `.glas-licht`: die Kanten sind **kein Schwarz** mehr, sondern ein sehr dunkles
+Blau — reines Schwarz auf farbiger Flüssigkeit liest sich als Schmutz. Außen liegt je
+eine hauchdünne **helle** Linie; eine Glaskante fängt Licht, ohne sie endet das Glas im
+Nichts. Das war der Unterschied zwischen Plastikrohr und Glas.
+
+**Vier Zusicherungen in `test-engine.mts` halten das fest**, und das ist der Punkt:
+Mindestkontrast 3:1 je Zeichen, die eingetragene Tinte muss die bessere der beiden sein,
+keine zwei Farben enger als 4 L\*, und `tief < ton < hell`. Vorher stand der
+Kontrast als **Kommentar** in dieser Datei („2,2:1") und die Tinte als Liste von Hand in
+`Symbole.tsx`. Ein Kommentar hält niemanden auf — beim Neusetzen der Töne brauchte
+plötzlich auch Blaubeere helle Tinte, und das hätte man wieder nur im Screenshot
+gesehen.
 
 ### Die Bar als Ort — `.brett-reihe`, `.brett-leiste`, `.theke`
 

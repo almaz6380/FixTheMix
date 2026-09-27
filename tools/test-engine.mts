@@ -129,5 +129,88 @@ ok(glaeserMitFarbe(stand(6, [[R], [R], [G]]), codeVon('rot')) === 2, 'glaeserMit
   ok(pruefeInvariante(z) !== '', 'pruefeInvariante() erkennt einen falschen Fuellstand');
 }
 
+/*
+  Die Farben. Sie stehen in der Engine, weil Loeser, Generator und die Edge
+  Function sie ohne CSS brauchen — geprueft wird hier aber das, woran sie
+  AUSSERHALB der Engine scheitern koennen.
+
+  Der Anlass: bis zum 27.09.2026 stand in `Symbole.tsx` eine Liste von Hand
+  mit genau einem Eintrag („Kaffee traegt helle Tinte"), und in der CLAUDE.md
+  ein Kommentar, dass dunkel darauf nur 2,2:1 erreicht. Ein Kommentar haelt
+  niemanden auf. Als die neun Toene neu gesetzt wurden, brauchte ploetzlich
+  auch Blaubeere helle Tinte — das haette man wieder nur im Screenshot
+  gesehen, und auch nur, wenn man hinsieht.
+
+  Zwei Dinge werden gerechnet:
+
+  1. KONTRAST. Das Zeichen liegt mit Deckkraft AUF der Schicht, also zaehlt
+     die Mischung und nicht die reine Tinte. Mindestens 3:1, die Schwelle fuer
+     grafische Elemente.
+  2. HELLIGKEITSABSTAND. Im Farbenblind-Modus traegt jede Farbe ein Zeichen,
+     aber der Modus ist ein Schalter — wer ihn nicht kennt, sieht nur Farben.
+     Neun Toene, die alle gleich hell sind, verschwimmen in Graustufen zu
+     Brei. Vor dem 27.09.2026 lagen zwei Farben 2,8 L* auseinander.
+*/
+{
+  const kanal = (c: number): number => {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const rgb = (h: string): [number, number, number] =>
+    [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
+  const leuchte = (h: string): number => {
+    const [r, g, b] = rgb(h).map(kanal) as [number, number, number];
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const kontrast = (a: string, b: string): number => {
+    const [x, y] = [leuchte(a), leuchte(b)].sort((p, q) => q - p) as [number, number];
+    return (x + 0.05) / (y + 0.05);
+  };
+  const misch = (vorn: string, alpha: number, hinten: string): string => {
+    const [a, b] = [rgb(vorn), rgb(hinten)];
+    return '#' + a
+      .map((v, i) => Math.round(v * alpha + b[i]! * (1 - alpha)).toString(16).padStart(2, '0'))
+      .join('');
+  };
+  // Dieselben Werte wie in `Symbole.tsx`.
+  const TINTE = { dunkel: ['#120e0a', 0.72] as const, hell: ['#f4ebde', 0.9] as const };
+
+  let schlechteste = 99;
+  let wo = '';
+  for (const f of FARBEN) {
+    const [ton, alpha] = TINTE[f.tinte];
+    const k = kontrast(misch(ton, alpha, f.ton), f.ton);
+    if (k < schlechteste) { schlechteste = k; wo = f.id; }
+  }
+  ok(schlechteste >= 3,
+     `jedes Farbenblind-Zeichen erreicht 3:1 (schlechteste: ${wo} mit ${schlechteste.toFixed(2)}:1)`);
+
+  // Und die gewaehlte Tinte muss die BESSERE der beiden sein — sonst stimmt
+  // zwar der Kontrast, aber die Angabe in `farben.ts` ist trotzdem falsch.
+  let alleBesser = true;
+  for (const f of FARBEN) {
+    const d = kontrast(misch(TINTE.dunkel[0], TINTE.dunkel[1], f.ton), f.ton);
+    const h = kontrast(misch(TINTE.hell[0], TINTE.hell[1], f.ton), f.ton);
+    if ((f.tinte === 'dunkel' ? d : h) < Math.max(d, h)) alleBesser = false;
+  }
+  ok(alleBesser, 'und es ist jeweils die bessere der beiden Tinten eingetragen');
+
+  const lStern = (h: string): number => {
+    const y = leuchte(h);
+    return y > 0.008856 ? 116 * Math.cbrt(y) - 16 : 903.3 * y;
+  };
+  const sortiert = FARBEN.map((f) => lStern(f.ton)).sort((a, b) => a - b);
+  let engste = 99;
+  for (let i = 1; i < sortiert.length; i++) engste = Math.min(engste, sortiert[i]! - sortiert[i - 1]!);
+  ok(engste >= 4,
+     `keine zwei Farben liegen enger als 4 L* beieinander (engste: ${engste.toFixed(1)})`);
+
+  // `tief` ist dunkler als `ton`, `hell` ist heller. Klingt trivial, ist aber
+  // die Bedingung dafuer, dass eine Schicht nach Fluessigkeit aussieht statt
+  // nach einem Verlauf in die falsche Richtung.
+  const reihenfolge = FARBEN.every((f) => lStern(f.tief) < lStern(f.ton) && lStern(f.ton) < lStern(f.hell));
+  ok(reihenfolge, 'bei jeder Farbe gilt tief < ton < hell');
+}
+
 console.log(fehler === 0 ? '\nAlles gruen.' : `\n${fehler} Fehler.`);
 process.exit(fehler === 0 ? 0 : 1);

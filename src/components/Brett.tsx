@@ -30,13 +30,18 @@ import type { Spielstand } from '../engine/typen.ts';
    Wanderung darf deshalb klein bleiben; grosse Werte sahen aus, als haette
    jemand das Glas hochgehoben und daneben gestellt.
 */
-/** Wie weit die Quelle zum Ziel wandert, als Anteil des Abstands. */
-const KIPP_ANTEIL = 0.22;
-/** ... hoechstens aber so viele Pixel. Sonst reist ein Glas quer durch die Bar. */
-const KIPP_MAX = 34;
+/**
+ * Die Wanderung ist der REST: sie bringt die Oeffnung genau dorthin, wo die
+ * Drehung sie nicht schon hingeschoben hat. Ziel ist die Mitte des
+ * Zielglases — das Glas haelt also wirklich ueber dem anderen, statt daneben
+ * zu stehen und zu spucken (Josef, 27.09.2026).
+ * `KIPP_MAX` deckelt das: bei einem Ziel fuenf Spalten weiter soll das Glas
+ * nicht quer durch die Bar reisen. Dann uebernimmt der Strahl den Rest.
+ */
+const KIPP_MAX = 72;
 /** Hub nach oben, in Pixeln (negativ = hoch). */
-const KIPP_HUB = -26;
-const KIPP_WINKEL = 30;
+const KIPP_HUB = -54;
+const KIPP_WINKEL = 34;
 /**
  * Abstand der Oeffnung vom Drehpunkt, in Glashoehen. Muss zum
  * `transform-origin: 50% 72%` von `.glas-koerper` passen.
@@ -48,7 +53,7 @@ const KIPP_DREHARM = 0.72;
  * genauso lange (`guss-fliesst` in index.css), und ein Glas, das vorher
  * zurueckschnellt, giesst ins Nichts.
  */
-export const KIPP_MS = 430;
+export const KIPP_MS = 500;
 
 /** Ein Guss, der gezeichnet werden soll. `nr` zaehlt hoch und startet die Bewegung neu. */
 export interface Guss {
@@ -117,9 +122,14 @@ export default function Brett({
     // von wo sie der Glaskoerper erbt — das kostet kein Neuzeichnen, und die
     // Werte stehen vor dem ersten Bild (`useLayoutEffect`).
     const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
-    const rechts = dx >= 0;
-    const kippX = Math.max(-KIPP_MAX, Math.min(KIPP_MAX, dx * KIPP_ANTEIL));
-    const winkel = rechts ? KIPP_WINKEL : -KIPP_WINKEL;
+    const winkel = dx >= 0 ? KIPP_WINKEL : -KIPP_WINKEL;
+    const bogen = (winkel * Math.PI) / 180;
+    // Was die Drehung allein schon schafft: die Oeffnung sitzt 0,72
+    // Glashoehen ueber dem Drehpunkt und beschreibt beim Kippen einen Bogen.
+    // Bei 54 x 140 px sind das rund 56 px — fast eine ganze Spalte.
+    const schwung = a.height * KIPP_DREHARM * Math.sin(bogen);
+    // Also wandert das Glas nur noch den REST bis ueber die Mitte des Ziels.
+    const kippX = Math.max(-KIPP_MAX, Math.min(KIPP_MAX, dx - schwung));
     const quelle = glasRefs.current[guss.von];
     quelle?.style.setProperty('--kipp-x', `${kippX}px`);
     quelle?.style.setProperty('--kipp-y', `${KIPP_HUB}px`);
@@ -129,11 +139,9 @@ export default function Brett({
     // Stand. Das Glas dreht um `transform-origin: 50% 72%`; die Oeffnung
     // liegt 0,72 Glashoehen darueber und beschreibt damit einen Bogen, den
     // der Strahl mitmachen muss — sonst haengt er in der Luft neben dem Glas.
-    const bog = (winkel * Math.PI) / 180;
-    const x1 = a.left - kasten.left + a.width * 0.5
-      + a.height * KIPP_DREHARM * Math.sin(bog) + kippX;
+    const x1 = a.left - kasten.left + a.width * 0.5 + schwung + kippX;
     const y1 = a.top - kasten.top
-      + a.height * KIPP_DREHARM * (1 - Math.cos(bog)) + KIPP_HUB;
+      + a.height * KIPP_DREHARM * (1 - Math.cos(bogen)) + KIPP_HUB;
     const x2 = b.left - kasten.left + b.width * 0.5;
     const y2 = b.top - kasten.top + b.height * 0.1;
     // Der Bogen: der Steuerpunkt liegt ueber BEIDEN Glaesern, sonst laeuft die

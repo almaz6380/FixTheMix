@@ -52,10 +52,18 @@ interface KoerperEigenschaften {
   saat?: number;
   /** Laeuft gerade der Giesszug (siehe `.glas-kippt`). */
   kippt?: boolean;
+  /**
+   * Es wird gerade HIER HINEIN gegossen: die obersten `menge` Schichten
+   * wachsen von null auf ihre Hoehe, eine nach der anderen. Ohne das ist die
+   * Fluessigkeit einfach da, und kein Strahl der Welt macht daraus ein
+   * Eingiessen. `nr` zaehlt je Guss hoch und startet die Bewegung neu.
+   */
+  fuellt?: { menge: number; nr: number };
 }
 
 export function GlasKoerper({
   fuellung, hoehe, laufAb, hervor = false, symbole = false, saat = 0, kippt = false,
+  fuellt,
 }: KoerperEigenschaften) {
   const fuell = fuellung.length;
   // Bei sieben oder acht Schichten (den Experten-Leveln) ist eine Schicht nur
@@ -63,16 +71,33 @@ export function GlasKoerper({
   const zeichenGroesse = hoehe >= 7 ? 12 : 16;
   const schichtHoehe = `${((1 - KOPFRAUM) / hoehe) * 100}%`;
 
+  // Ab dieser Schicht kommt gerade etwas an.
+  const abFuellt = fuellt ? Math.max(0, fuell - fuellt.menge) : fuell;
+
   const schichten = [];
   for (let i = 0; i < fuell; i++) {
     const code = fuellung[i]!;
     const f = farbeVon(code);
     const gehoben = laufAb !== undefined && i >= laufAb;
     const istOben = i === fuell - 1;
+    const kommtAn = i >= abFuellt;
     schichten.push(
       <div
-        key={i}
+        // Der Schluessel traegt die Gussnummer mit, DAMIT die Bewegung neu
+        // laeuft: React nimmt sonst dasselbe Element wieder her, und eine
+        // CSS-Bewegung, die schon gelaufen ist, laeuft an einem bestehenden
+        // Element kein zweites Mal los.
+        key={kommtAn ? `${i}-${fuellt!.nr}` : i}
+        className={kommtAn ? 'schicht-fuellt' : undefined}
         style={{
+          // Die Schichten kommen NACHEINANDER an, von unten nach oben — ein
+          // Schwall von vier Schichten, der auf einmal erscheint, ist wieder
+          // nur ein Bildwechsel.
+          // 300 ms ist der Moment, in dem der Kopf des Strahls ankommt
+          // (64 % von 500 ms). Die Zahl steht hier UND in `guss-fliesst` —
+          // laufen sie auseinander, fuellt sich das Glas, bevor etwas
+          // fliesst, oder erst danach.
+          animationDelay: kommtAn ? `${300 + (i - abFuellt) * 45}ms` : undefined,
           position: 'relative',
           height: schichtHoehe,
           // DREI Toene ueber die Hoehe, nicht eine Flaeche mit Lichtstreifen:
@@ -225,6 +250,8 @@ interface Eigenschaften {
   symbole: boolean;
   onTap: () => void;
   beschriftung: string;
+  /** Es wird gerade hier hinein gegossen — siehe `GlasKoerper`. */
+  fuellt?: { menge: number; nr: number };
   /**
    * Wird von `Brett` gesetzt, um die Lage des Glases zu messen — daraus
    * entsteht der Giessstrahl. Bewusst eine Eigenschaft statt `forwardRef`:
@@ -235,7 +262,7 @@ interface Eigenschaften {
 }
 
 export default function Glas({
-  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef,
+  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef, fuellt,
 }: Eigenschaften) {
   const hoehe = stand.hoehe;
   const fuell = stand.fuell[glas]!;
@@ -273,6 +300,7 @@ export default function Glas({
         symbole={symbole}
         saat={glas}
         kippt={kippt}
+        {...(fuellt ? { fuellt } : {})}
       />
     </button>
   );

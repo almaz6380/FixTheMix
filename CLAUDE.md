@@ -156,6 +156,15 @@ Code auf seinem Rechner laufen.
       bekommt einen **anderen Umriss**, damit sie auch ohne Farbe erkennbar bleibt.
       Kaffee ist die einzige Farbe mit hellem Zeichen — dunkel darauf sind nur 2,2:1.
 - [x] `@media (prefers-reduced-motion: reduce)` schaltet die Bewegungen ab
+- [x] **Die Bar ist ein Ort** (27.09.2026, Josefs Entscheidung): jede Glasreihe steht auf
+      einer Messingleiste, die vorderste auf einer Holztheke; die Fußzeile liegt auf der
+      Theke. Vorher schwebten die Gläser frei in der Mitte des Schirms. Siehe „Die Bar
+      als Ort" unten.
+- [x] **Das Glas ist heller als der Grund**, nicht dunkler. Der leere Teil war
+      `rgba(8,14,26,0.86)` — ein leeres Glas las sich als Loch im Hintergrund.
+- [x] **Die Fischschuppen blenden nach unten aus.** Sie liefen mit vollem Kontrast bis
+      unter die Gläser durch und stritten dort mit der Flüssigkeit. Jetzt sind sie die
+      Rückwand und verschwinden, bevor das Brett beginnt.
 
 ### M5 Levelfolge — FERTIG (26.09.2026)
 - [x] **Die Kurve ist eine Funktion** (`src/engine/kurve.ts`), keine Liste mehr. Vorher
@@ -656,6 +665,83 @@ Drei Folgen, die zusammenhängen:
   nachspielbar (`grund: 'index'`). Eine Bestenliste muss vergleichbar bleiben.
 - **Der Neustart behält das Extra-Glas.** Wer dafür ein Werbevideo gesehen hat, soll es
   nicht durch einen Neustart verlieren — sonst wird aus der Hilfe eine Falle.
+
+### Die Bar als Ort — `.brett-reihe`, `.brett-leiste`, `.theke`
+
+Bis zum 27.09.2026 stand das Brett mittig in einer leeren Fläche: oben Fischschuppen,
+unten Fischschuppen, dazwischen schwebende Gläser. Das Thema ist eine **Bar** — also
+bekommt das Brett eine.
+
+**Das Brett ist keine eine Gitterfläche mehr, sondern eine Spalte aus Reihen.** Jede
+Reihe trägt dasselbe Spaltenraster (`repeat(proReihe, minmax(0,1fr))`), damit eine halb
+gefüllte letzte Reihe weiter linksbündig steht wie vorher — und damit sie eine **eigene
+Leiste** bekommen kann, auf der sie steht.
+
+**Der Tresen hängt an der Unterkante des Bretts** (`top: 100%` auf `.theke`), nicht an
+einer festen Höhe. Das ist keine Kosmetik, sondern genau der Fall, für den er gebaut
+ist: das **Extra-Glas** kann aus zwei Reihen drei machen. Gemessen bei 390×844:
+
+| Gläser | Raster | Bretthöhe | Luft |
+|---|---|---|---|
+| 6 | 2×3 | 352 px | reichlich |
+| 10 | 2×5 | 317 px | reichlich |
+| **11 = 10 + Extra-Glas** | **3×4** | **539 px** | **63 px** |
+| 12 | 3×4 | 539 px | 63 px |
+| 13 / 14 / 15 | 3×5 | 487 px | 115 px |
+
+**539 px ist die Decke, und 332 der 999 Level stoßen heute schon dagegen.** Elf Gläser
+haben exakt dasselbe Raster wie zwölf — das Extra-Glas erzeugt also **keinen** neuen
+schlimmsten Fall. Zwei Übergänge kosten eine ganze Reihe (`reihen = ceil(n/5)`):
+10 → 11 (+222 px, 40 Level) und 5 → 6 (+210 px, 5 Level, die ersten). Überall sonst
+ändert sich nichts oder das Brett wird kürzer.
+
+**Das Brett ist unten ausgerichtet**, nicht mittig (`items-end` plus `pb-[96px]`). Die
+96 px sind die Höhe des Tresens, und sie ist **konstant** — eine Bar hat nicht bei jedem
+Level eine andere Theke. Der Platz darüber ist die Rückwand.
+
+*Eine Falle, die beim Umbau sofort zugeschnappt ist:* Der Tresen ist absolut
+positioniert und **übermalte die Fußzeile**. Ein absolut positioniertes Element zeichnet
+über den statischen Inhalt späterer Geschwister — der Tipp-Knopf war im Screenshot
+schlicht weg, ohne Fehler, ohne Konsolenzeile. Die Fußzeile trägt deshalb `relative`.
+Gefunden nur, weil ein Screenshot angesehen wurde; kein Test hätte das gemeldet, denn
+im DOM war alles da und an der richtigen Stelle (nachgemessen: alle vier Knöpfe bei
+y 774, 54 px hoch).
+
+`overflow-hidden` auf `<main>` schneidet ab, was Tresen (`left/right: -50vw`,
+`height: 100vh`) über den Rand hinaus zeichnen. Die Fenster darüber sind `fixed` und
+bleiben davon unberührt — die hängen am Bildschirm, nicht an `<main>`.
+
+### Wo Gelb erlaubt ist
+
+Die neun Säfte sind das Lauteste auf dem Schirm; alles andere hat leise zu sein. In der
+alten Kopfzeile standen **vier gelbe Dinge nebeneinander** — Münzchip, Zugzähler, drei
+Sterne, dazu Zitrone als Spielfarbe. Und die **größte Zahl auf dem ganzen Schirm war der
+Zugzähler**, die unwichtigste Angabe darauf.
+
+Jetzt: links, wo ich bin und was ich habe (Level, Münzen); rechts das Ziel (Sterne groß,
+Zugzahl klein darunter). Zwei Gelbtöne, und sie bedeuten Verschiedenes:
+
+- **`--color-zitrus` `#FFC93C` ist Licht** — Sterne, Werte, Münzen.
+- **`--color-messing` `#E8B04B` ist Metall** — Leisten, Tresenkante, der Rand der
+  runden Knöpfe. In einem Ton wären beide im selben Gelb verschwunden.
+
+Der **Hauptknopf ist der einzige gefüllte Knopf** auf dem Spielbildschirm. Vorher war er
+ein blauer Kasten mit gelber Schrift und von den beiden runden Nebenknöpfen kaum zu
+unterscheiden — welcher der drei der Hauptweg ist, stand nur in der Breite.
+
+Die runden Knöpfe der Fußzeile stehen seit dem Umbau auf **Holz** und tragen deshalb
+`knopf-bar`: warme Kante, hellere Füllung. Die blaue Kante verschwand dort fast.
+
+**Der Deckel des Extra-Glases steht jetzt während der Partie da**, nicht erst im
+Siegfenster — also nicht erst, wenn es zu spät ist, sich anders zu entscheiden.
+
+### Emoji in der Oberfläche
+
+Es gab noch zwei: 🍹 auf der Tagesrätsel-Karte und 🔥 in der Serienzeile. Beide sind
+gezeichnet ersetzt, aus demselben Grund wie die Farbzeichen in `Symbole.tsx` — ein Emoji
+sieht auf jedem Gerät anders aus, und auf manchen gar nicht.
+
+**Im geteilten Text bleiben Emoji.** Dort sind sie der Inhalt, nicht die Oberfläche.
 
 ### Gießstrahl und Bar-Geräusche
 

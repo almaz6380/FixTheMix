@@ -480,7 +480,11 @@ export default function App() {
     : zuege <= level.sterne.zwei ? 'text-creme' : 'text-rauch';
 
   return (
-    <main className="flex min-h-dvh flex-col" data-takt={takt}
+    /* `overflow-hidden`: der Tresen laeuft bewusst ueber die Brettbreite und
+       bis unter den Bildrand hinaus (siehe `.theke`) und wird hier
+       abgeschnitten. Die Fenster darueber sind `fixed` und bleiben davon
+       unberuehrt — die haengen am Bildschirm, nicht an <main>. */
+    <main className="flex min-h-dvh flex-col overflow-hidden" data-takt={takt}
       /* Die volle Duellnummer, nicht die gekuerzte aus der Kopfzeile:
          der Oberflaechentest baut daraus Brett und Gegner selbst nach
          und prueft, ob die App dasselbe Ergebnis zeigt wie die Engine. */
@@ -513,25 +517,55 @@ export default function App() {
           <span className="text-sm leading-none font-bold text-zitrus tabular-nums">{muenzen}</span>
         </div>
 
-        <div className="flex flex-col items-center">
-          <div data-zuege={zuege} className={`font-anzeige text-3xl leading-none font-semibold tabular-nums ${zugFarbe}`}>{zuege}</div>
-          <div className="text-[10.5px] font-bold tracking-[0.1em] text-rauch uppercase">
-            {partie.hatExtraGlas ? t('spiel.extraGlas') : t('spiel.vonZuegen', { n: level.optimalZuege })}
-          </div>
-        </div>
+        <div className="flex-grow" />
 
-        <div className="flex min-h-[44px] items-center gap-0.5" aria-label={t('spiel.sterne', { n: sterne })}>
-          {[0, 1, 2].map((i) => (
-            <svg key={i} width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
-              fill={i < sterne ? 'var(--color-zitrus)' : 'none'}
-              stroke={i < sterne ? 'none' : '#2F4A6B'} strokeWidth="2.2" strokeLinejoin="round">
-              <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
-            </svg>
-          ))}
+        {/*
+          Rechts steht das ZIEL: die Sterne gross, der Zugzaehler klein
+          darunter. Vorher war der Zaehler die groesste Zahl auf dem ganzen
+          Schirm — und er ist die unwichtigste Angabe darauf. Dazu stand er
+          in Zitrusgelb, neben einem gelben Muenzchip und drei gelben
+          Sternen: vier gelbe Dinge in einer Zeile, und keines davon ist
+          eine Spielfarbe gewesen.
+        */}
+        <div className="flex flex-col items-end gap-1.5">
+          <div className="flex items-center gap-0.5" aria-label={t('spiel.sterne', { n: sterne })}>
+            {[0, 1, 2].map((i) => (
+              <svg key={i} width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"
+                fill={i < sterne ? 'var(--color-zitrus)' : 'none'}
+                stroke={i < sterne ? 'none' : '#2F4A6B'} strokeWidth="2.2" strokeLinejoin="round">
+                <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
+              </svg>
+            ))}
+          </div>
+          <div
+            data-zuege={zuege}
+            className={`text-[10.5px] leading-none font-bold tracking-[0.09em] uppercase tabular-nums ${zugFarbe}`}
+          >
+            {partie.hatExtraGlas
+              ? t('spiel.extraGlas')
+              : `${zuege} ${t('spiel.vonZuegen', { n: level.optimalZuege })}`}
+          </div>
         </div>
       </header>
 
-      <div className="flex flex-grow items-center justify-center px-4 py-2">
+      {/* Dass das Extra-Glas auf zwei Sterne deckelt, stand bisher nur im
+          Siegfenster — also erst, wenn es zu spaet war, sich anders zu
+          entscheiden. Jetzt steht es waehrend der Partie da. */}
+      {partie.hatExtraGlas && (
+        <div className="mx-4 mb-1 flex flex-shrink-0 items-center gap-2 rounded-full border border-zitrus/25 bg-zitrus/10 px-3.5 py-1.5">
+          <svg width="13" height="13" viewBox="0 0 24 24" className="flex-shrink-0 text-zitrus" fill="none"
+            stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" /><path d="M12 8v5" /><path d="M12 16.2v.1" />
+          </svg>
+          <span className="text-[11px] leading-tight font-bold text-zitrus">{t('spiel.extraGlasZwei')}</span>
+        </div>
+      )}
+
+      {/* `items-end` und nicht `items-center`: die Glaeser stehen auf dem
+          Tresen, und der ist unten. Das `pb` ist seine Hoehe — konstant, damit
+          eine Bar nicht bei jedem Level eine andere Theke hat. Der Platz
+          darueber ist die Rueckwand. */}
+      <div className="flex flex-grow items-end justify-center px-4 pt-2 pb-[96px]">
         <Brett
           guss={guss}
           stand={stand}
@@ -544,16 +578,20 @@ export default function App() {
         />
       </div>
 
-      <footer className="flex flex-shrink-0 items-center gap-2.5 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+      {/* `relative`: ohne eine eigene Position wuerde der Tresen die Knoepfe
+          uebermalen — ein absolut positioniertes Element zeichnet ueber den
+          statischen Inhalt spaeterer Geschwister. Genau das ist beim Umbau
+          passiert und im Screenshot aufgefallen. */}
+      <footer className="relative flex flex-shrink-0 items-center gap-2.5 px-4 pt-2 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
         <button type="button" aria-label={t('spiel.undo')} disabled={!partie.kannUndo() || geloest}
           onClick={() => { if (partie.undo()) { setGuss(null); setGewaehlt(null); neuZeichnen(); } }}
-          className="knopf w-[54px] flex-shrink-0">
+          className="knopf knopf-bar w-[54px] flex-shrink-0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h11a5.5 5.5 0 010 11H8" /><path d="M7 4L3 8l4 4" /></svg>
         </button>
 
         <button type="button" aria-label={t('spiel.neustart')} disabled={zuege === 0}
           onClick={neustart}
-          className="knopf w-[54px] flex-shrink-0">
+          className="knopf knopf-bar w-[54px] flex-shrink-0">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 11-2.6-5.9" /><path d="M20 4v5h-5" /></svg>
         </button>
 
@@ -569,7 +607,7 @@ export default function App() {
 
         <button type="button" aria-label={t('spiel.symbole')} aria-pressed={symbole}
           onClick={() => { const n = !symbole; setSymbole(n); speichereEinstellung('symbole', n); }}
-          className={`knopf w-[54px] flex-shrink-0 ${symbole ? 'knopf-an' : ''}`}>
+          className={`knopf knopf-bar w-[54px] flex-shrink-0 ${symbole ? 'knopf-an' : ''}`}>
           <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="8.4" fill="none" stroke="currentColor" strokeWidth="2.3" />
             <path d="M12 3.6a8.4 8.4 0 000 16.8z" fill="currentColor" />
@@ -692,9 +730,16 @@ export default function App() {
                 {t('spiel.durch', { n: gesamtSterne, gesamt: FOLGE.length * 3 })}
               </p>
             )}
+            {/* Gezeichnete Flamme statt 🔥 — dasselbe wie beim Glas in der
+                Levelwahl. Im GETEILTEN Text bleiben Emoji, dort sind sie der
+                Inhalt; in der Oberflaeche haben sie nichts verloren. */}
             {imTag && (
-              <p className="mt-2 text-sm font-bold text-zitrus" data-serie={taeglich.serie}>
-                🔥 {t('spiel.serie', { n: taeglich.serie })}
+              <p className="mt-2 flex items-center justify-center gap-1.5 text-sm font-bold text-zitrus"
+                data-serie={taeglich.serie}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M12.8 2.2c.3 2.6-.7 4-2 5.3-1.4 1.4-3 2.9-3 5.9a6.2 6.2 0 1012.4 0c0-2-.8-3.6-1.9-4.9-.3 1-.9 1.8-1.7 2.2.3-2.9-1-6.2-3.8-8.5z" />
+                </svg>
+                {t('spiel.serie', { n: taeglich.serie })}
               </p>
             )}
             {imDuell ? (
@@ -712,10 +757,19 @@ export default function App() {
             ) : (
               <p className="mt-2 text-sm text-rauch">{t('spiel.bilanz', { zuege, optimum: level.optimalZuege })}</p>
             )}
+            {/* Der Muenzgewinn als eigener Chip und nicht als weitere Zeile:
+                er ist das einzige hier, was man MITNIMMT — die Zugzahl und
+                die Sterne gehoeren zum Level, die Muenzen zum Spieler. */}
             {gewinn > 0 && (
-              <p className="mt-1 text-sm font-bold text-zitrus" data-gewinn={gewinn}>
-                {t('spiel.gewinn', { n: gewinn })}
-              </p>
+              <div className="mt-3 flex justify-center" data-gewinn={gewinn}>
+                <span className="flex items-center gap-1.5 rounded-full border border-zitrus/30 bg-zitrus/10 px-3.5 py-1.5 text-sm font-bold text-zitrus tabular-nums">
+                  <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" fill="var(--color-zitrus)" />
+                    <circle cx="12" cy="12" r="5.6" fill="none" stroke="rgba(120,78,10,0.5)" strokeWidth="1.6" />
+                  </svg>
+                  {t('spiel.gewinn', { n: gewinn })}
+                </span>
+              </div>
             )}
             {!imDuell && sterne < 3 && (
               <p className="mt-1 text-xs text-rauch">
@@ -784,6 +838,7 @@ export default function App() {
           gesperrtTitel={(nr) => t('spiel.kachelGesperrt', { n: nr })}
           zurueck={t('spiel.abschnittZurueck')}
           vor={t('spiel.abschnittVor')}
+          weiter={t('spiel.weiter')}
           tagTitel={t('spiel.tagesraetsel')}
           tagZeile={
             taeglich.tage[HEUTE]

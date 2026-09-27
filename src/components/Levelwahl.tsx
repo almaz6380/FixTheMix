@@ -33,6 +33,8 @@ interface Eigenschaften {
   gesperrtTitel: (nr: number) => string;
   zurueck: string;
   vor: string;
+  /** Aufschrift der Kachel, die als naechste dran ist. */
+  weiter: string;
   /** Tagesraetsel-Karte oben. */
   tagTitel: string;
   tagZeile: string;
@@ -50,7 +52,7 @@ interface Eigenschaften {
 
 export default function Levelwahl({
   level, aktuell, sterne, hoechstes, onWahl, onZu, titel, schliessen, bilanz,
-  abschnittTitel, kachelTitel, gesperrtTitel, zurueck, vor,
+  abschnittTitel, kachelTitel, gesperrtTitel, zurueck, vor, weiter,
   tagTitel, tagZeile, tagSerie, tagSterne, onTag,
   duellTitel, duellZeile, duellBilanz, onDuell,
   einstellungen, onEinstellungen,
@@ -105,7 +107,19 @@ export default function Levelwahl({
           onClick={onTag}
           className="flex w-full touch-manipulation items-center gap-3 rounded-2xl border-[1.5px] border-zitrus/45 bg-theke-hell/70 px-4 py-3 text-left"
         >
-          <span className="text-2xl leading-none" aria-hidden="true">🍹</span>
+          {/* Gezeichnet statt Emoji — aus demselben Grund, aus dem die
+              Farbzeichen in `Symbole.tsx` gezeichnet sind: ein Emoji sieht
+              auf jedem Geraet anders aus, und auf manchen gar nicht. Hier
+              war das letzte im Spiel uebrig geblieben. */}
+          <svg width="30" height="30" viewBox="0 0 32 32" className="flex-shrink-0" aria-hidden="true">
+            <path d="M10.4 15.6h11.2l-1.3 9.6a1.6 1.6 0 01-1.6 1.4h-5.4a1.6 1.6 0 01-1.6-1.4z" fill="var(--color-zitrus)" opacity="0.4" />
+            <g fill="none" stroke="var(--color-zitrus)" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9.4 9h13.2l-1.9 16.3a1.8 1.8 0 01-1.8 1.6h-5.8a1.8 1.8 0 01-1.8-1.6z" />
+              <path d="M10.4 15.6h11.2" />
+              <path d="M19.2 9L23 3.6" />
+            </g>
+            <circle cx="23.6" cy="3.2" r="1.8" fill="#FF4D6D" />
+          </svg>
           <span className="min-w-0 flex-grow">
             <span className="font-anzeige block text-base leading-tight font-bold text-zitrus">{tagTitel}</span>
             <span className="block truncate text-[11px] leading-tight font-bold text-creme">{tagZeile}</span>
@@ -164,9 +178,20 @@ export default function Levelwahl({
           <p className="font-anzeige text-sm leading-none font-bold text-creme">
             {abschnittTitel(von + 1, bis)}
           </p>
-          <p className="mt-1 text-[10px] leading-none font-bold text-rauch tabular-nums">
-            {bloseSterne} / {(bis - von) * 3}
-          </p>
+          {/* Ein Balken statt nur „27 / 60". Die Zahl allein sagt nichts ueber
+              den Abstand zum vollen Abschnitt — der Balken zeigt ihn, ohne
+              dass man rechnen muss. */}
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="h-[5px] w-[104px] overflow-hidden rounded-full bg-kante/45">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#E0A038] to-zitrus-hell"
+                style={{ width: `${Math.round((bloseSterne / Math.max(1, (bis - von) * 3)) * 100)}%` }}
+              />
+            </div>
+            <span className="text-[10px] leading-none font-bold text-rauch tabular-nums">
+              {bloseSterne} / {(bis - von) * 3}
+            </span>
+          </div>
         </div>
         <button
           type="button"
@@ -180,7 +205,7 @@ export default function Levelwahl({
       </div>
 
       <div className="grid flex-1 grid-cols-4 content-start gap-3 overflow-y-auto px-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] sm:grid-cols-5">
-        {sichtbar.map((l, k) => {
+        {sichtbar.map((_, k) => {
           const i = von + k;
           const s = sterne[i] ?? 0;
           const jetzt = i === aktuell;
@@ -197,7 +222,7 @@ export default function Levelwahl({
               aria-label={frei ? kachelTitel(i + 1, s, experte) : gesperrtTitel(i + 1)}
               className={`flex aspect-square touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border transition ${
                 !frei
-                  ? 'border-kante/60 bg-theke/40 text-rauch'
+                  ? 'border-kante/25 bg-theke/25 text-rauch/50'
                   : jetzt
                     ? 'border-2 border-zitrus bg-theke-hell text-zitrus'
                     : 'border-kante bg-theke text-creme'
@@ -211,16 +236,30 @@ export default function Levelwahl({
                       <span className="absolute -top-0.5 -right-2.5 h-1.5 w-1.5 rounded-full bg-zitrus" aria-hidden="true" />
                     )}
                   </span>
-                  <span className="flex gap-[1.5px]" aria-hidden="true">
-                    {[0, 1, 2].map((j) => (
-                      <svg key={j} width="9" height="9" viewBox="0 0 24 24"
-                        fill={j < s ? 'var(--color-zitrus)' : 'none'}
-                        stroke={j < s ? 'none' : '#2F4A6B'} strokeWidth="2.6" strokeLinejoin="round">
-                        <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
-                      </svg>
-                    ))}
-                  </span>
-                  <span className="text-[9px] leading-none font-bold text-rauch tabular-nums">{l.optimalZuege}</span>
+                  {/*
+                    NUR verdiente Sterne. Vorher trug jede Kachel drei hohle
+                    Sterne, also 60 leere Umrisse je Abschnitt — ein Raster
+                    aus Rauschen, in dem die verdienten untergingen. Wer
+                    nichts verdient hat, sieht nichts; der naechste Level
+                    sagt stattdessen, dass er dran ist.
+
+                    Die nackte Zahl darunter ist ganz weg. Das war das
+                    Optimum, unbeschriftet, und damit fuer jeden, der es
+                    nicht wusste, ein Fehler im Raster.
+                  */}
+                  {s > 0 ? (
+                    <span className="flex gap-[1.5px]" aria-hidden="true">
+                      {Array.from({ length: s }, (_, j) => (
+                        <svg key={j} width="10" height="10" viewBox="0 0 24 24" fill="var(--color-zitrus)">
+                          <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
+                        </svg>
+                      ))}
+                    </span>
+                  ) : jetzt ? (
+                    <span className="text-[8.5px] leading-none font-bold tracking-[0.12em] text-zitrus uppercase">
+                      {weiter}
+                    </span>
+                  ) : null}
                 </>
               ) : (
                 <>

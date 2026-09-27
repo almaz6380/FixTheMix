@@ -96,32 +96,53 @@ export default function Brett({
     setStrahl({ d: `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`, farbe: f.ton, hell: f.hell, nr: guss.nr });
   }, [guss]);
 
-  const glaeser = [];
-  for (let b = 0; b < stand.glaeser; b++) {
-    const i = b;
-    glaeser.push(
-      <Glas
-        key={b}
-        stand={stand}
-        glas={b}
-        gewaehlt={gewaehlt === b}
-        kippt={kippt === b}
-        tipp={tippZiel === b}
-        symbole={symbole}
-        onTap={() => onTap(b)}
-        beschriftung={textGlas(b)}
-        innerRef={(el) => { glasRefs.current[i] = el; }}
-      />,
+  // Die Glaeser werden reihenweise ausgegeben, damit jede Reihe eine eigene
+  // Leiste bekommt, auf der sie steht. Jede Reihe traegt dasselbe
+  // Spaltenraster — eine halb gefuellte letzte Reihe bleibt damit
+  // linksbuendig, genau wie im frueheren Ein-Gitter-Aufbau.
+  const zeilen = [];
+  for (let r = 0; r < reihen; r++) {
+    const von = r * proReihe;
+    const bis = Math.min(von + proReihe, stand.glaeser);
+    const glaeser = [];
+    for (let b = von; b < bis; b++) {
+      const i = b;
+      glaeser.push(
+        <Glas
+          key={b}
+          stand={stand}
+          glas={b}
+          gewaehlt={gewaehlt === b}
+          kippt={kippt === b}
+          tipp={tippZiel === b}
+          symbole={symbole}
+          onTap={() => onTap(b)}
+          beschriftung={textGlas(b)}
+          innerRef={(el) => { glasRefs.current[i] = el; }}
+        />,
+      );
+    }
+    zeilen.push(
+      <div
+        key={r}
+        className="brett-reihe"
+        style={{ gridTemplateColumns: `repeat(${proReihe}, minmax(0, 1fr))` }}
+      >
+        {glaeser}
+        {/* Die vorderste Reihe steht auf dem Tresen, dessen Messingkante ihre
+            Leiste ist — sonst laegen dort zwei Kanten uebereinander. */}
+        {r < reihen - 1 && <div className="brett-leiste" aria-hidden="true" />}
+      </div>,
     );
   }
 
   return (
     <div style={{ position: 'relative', width: '100%', maxWidth: `${breite}px` }} ref={rahmen}>
-      <div
-        className="brett"
-        style={{ gridTemplateColumns: `repeat(${proReihe}, minmax(0, 1fr))` }}
-      >
-        {glaeser}
+      <div className="brett">
+        {/* Zuerst im DOM und damit hinter den Glaesern. Haengt an der
+            Unterkante des Bretts, nicht an einer festen Hoehe. */}
+        <div className="theke" aria-hidden="true" />
+        {zeilen}
       </div>
 
       {guss && strahl && strahl.nr === guss.nr && (

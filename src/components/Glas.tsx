@@ -69,69 +69,105 @@ export function GlasKoerper({
   // Bei sieben oder acht Schichten (den Experten-Leveln) ist eine Schicht nur
   // noch rund 16 px hoch — ein 16-px-Zeichen laege dann ueber der Kante.
   const zeichenGroesse = hoehe >= 7 ? 12 : 16;
-  const schichtHoehe = `${((1 - KOPFRAUM) / hoehe) * 100}%`;
+  /** Anteil der Glashoehe, den EINE Schicht einnimmt, in Prozent. */
+  const schichtAnteil = ((1 - KOPFRAUM) / hoehe) * 100;
 
   // Ab dieser Schicht kommt gerade etwas an.
   const abFuellt = fuellt ? Math.max(0, fuell - fuellt.menge) : fuell;
 
-  const schichten = [];
+  /*
+    LAEUFE, NICHT SCHICHTEN. Vier gleiche Schichten uebereinander wurden bis
+    zum 27.09.2026 als vier Bloecke mit drei dunklen Trennlinien gezeichnet —
+    und jeder trug denselben Verlauf hell->tief noch einmal. Das las sich als
+    Stapel Baukloetze, und genau das war Josefs „sieht noch billig aus".
+    Fluessigkeit derselben Farbe ist EIN Koerper: ein Verlauf ueber die ganze
+    Hoehe, eine Oberflaeche, keine Naht.
+
+    Zaehlen muss man sie trotzdem koennen — ob ein Glas zwei oder drei einer
+    Farbe hat, entscheidet den naechsten Zug. Dafuer traegt ein Lauf ein
+    hauchduennes helles Haerchen je Schichtgrenze (`repeating-linear-gradient`
+    mit `calc(100% / n)`, Deckkraft 0,07). Sichtbar genug zum Zaehlen, zu
+    schwach, um zu trennen.
+  */
+  const laeufe: { code: number; von: number; anzahl: number }[] = [];
   for (let i = 0; i < fuell; i++) {
     const code = fuellung[i]!;
-    const f = farbeVon(code);
-    const gehoben = laufAb !== undefined && i >= laufAb;
-    const istOben = i === fuell - 1;
-    const kommtAn = i >= abFuellt;
-    schichten.push(
+    const letzter = laeufe[laeufe.length - 1];
+    if (letzter && letzter.code === code) letzter.anzahl++;
+    else laeufe.push({ code, von: i, anzahl: 1 });
+  }
+
+  const schichten = laeufe.map((lauf, k) => {
+    const f = farbeVon(lauf.code);
+    const istOben = k === laeufe.length - 1;
+    const n = lauf.anzahl;
+    // Gehoben wird nur der OBERSTE Lauf — das ist genau der, der fliessen
+    // wuerde, und `laufAb` markiert seinen Anfang.
+    const gehoben = laufAb !== undefined && lauf.von >= laufAb;
+    // Es kommt immer nur EINE Farbe an, also waechst genau ein Lauf. Er
+    // steigt in einem Zug von seiner alten auf seine neue Hoehe — vier
+    // Schichten, die einzeln nacheinander aufpoppen, waren wieder Bloecke.
+    const kommtAn = fuellt !== undefined && lauf.von + n > abFuellt;
+    const vorher = kommtAn ? Math.max(0, abFuellt - lauf.von) : n;
+
+    return (
       <div
         // Der Schluessel traegt die Gussnummer mit, DAMIT die Bewegung neu
         // laeuft: React nimmt sonst dasselbe Element wieder her, und eine
         // CSS-Bewegung, die schon gelaufen ist, laeuft an einem bestehenden
         // Element kein zweites Mal los.
-        key={kommtAn ? `${i}-${fuellt!.nr}` : i}
+        key={kommtAn ? `${lauf.von}-${fuellt!.nr}` : lauf.von}
         className={kommtAn ? 'schicht-fuellt' : undefined}
         style={{
-          // Die Schichten kommen NACHEINANDER an, von unten nach oben — ein
-          // Schwall von vier Schichten, der auf einmal erscheint, ist wieder
-          // nur ein Bildwechsel.
-          // 300 ms ist der Moment, in dem der Kopf des Strahls ankommt
-          // (64 % von 500 ms). Die Zahl steht hier UND in `guss-fliesst` —
-          // laufen sie auseinander, fuellt sich das Glas, bevor etwas
-          // fliesst, oder erst danach.
-          animationDelay: kommtAn ? `${300 + (i - abFuellt) * 45}ms` : undefined,
           position: 'relative',
-          height: schichtHoehe,
-          // DREI Toene ueber die Hoehe, nicht eine Flaeche mit Lichtstreifen:
-          // Fluessigkeit ist unten tiefer und damit dunkler, oben faellt Licht
-          // durch. Vorher war jede Schicht ein flacher Farbbalken mit einer
-          // hellen Kante — genau das sah billig aus.
+          height: `${schichtAnteil * n}%`,
+          // Von wo aus der Lauf waechst. Steht als Variable da, weil die
+          // Keyframes nur ein `from` haben — die Zielhoehe ist die, die das
+          // Element ohnehin hat.
+          ...(kommtAn
+            ? {
+              ['--von' as string]: `${schichtAnteil * vorher}%`,
+              // 350 ms ist der Moment, in dem der Kopf des Strahls ankommt
+              // (66 % von KIPP_MS). Laufen die Zahlen auseinander, fuellt
+              // sich das Glas, bevor etwas fliesst — oder erst danach.
+              animationDelay: '350ms',
+              // Ein Schwall braucht laenger zum Steigen als ein Schluck.
+              animationDuration: `${190 + 55 * (n - vorher)}ms`,
+            }
+            : {}),
           background: [
             // QUER schattiert, und das ist der eigentliche Unterschied
             // zwischen einem Farbbalken und Fluessigkeit in einem Zylinder:
             // dunkel an beiden Raendern, ein Spitzlicht links, ein
-            // Gegenlicht rechts. Nur von oben nach unten zu verlaufen hat
-            // flach gewirkt, egal wie gut die Toene waren.
+            // Gegenlicht rechts.
             'linear-gradient(90deg, rgba(0,0,0,0.34) 0%, rgba(0,0,0,0.13) 6%,'
               + ' rgba(255,255,255,0.30) 19%, rgba(255,255,255,0.07) 33%,'
               + ' rgba(255,255,255,0) 50%, rgba(0,0,0,0.11) 73%,'
               + ' rgba(255,255,255,0.16) 87%, rgba(0,0,0,0.36) 100%)',
-            `linear-gradient(180deg, ${f.hell} 0%, ${f.ton} 28%, ${f.ton} 62%, ${f.tief} 100%)`,
+            // Die Haerchen zum Zaehlen — nur, wenn es etwas zu zaehlen gibt.
+            ...(n > 1
+              ? [`repeating-linear-gradient(180deg, rgba(255,255,255,0) 0,`
+                + ` rgba(255,255,255,0) calc(100% / ${n} - 1px),`
+                + ` rgba(255,255,255,0.07) calc(100% / ${n} - 1px),`
+                + ` rgba(255,255,255,0.07) calc(100% / ${n}))`]
+              : []),
+            // EIN Verlauf ueber den ganzen Lauf, nicht einer je Schicht:
+            // Fluessigkeit ist unten tiefer und damit dunkler.
+            `linear-gradient(180deg, ${f.hell} 0%, ${f.ton} 22%, ${f.ton} 62%, ${f.tief} 100%)`,
           ].join(', '),
-          // Die Grenze zwischen zwei Fluessigkeiten ist eine dunkle Linie,
-          // keine Rasierklinge. Die oberste Schicht hat darueber nichts mehr.
+          // Die Grenze zwischen zwei VERSCHIEDENEN Fluessigkeiten ist eine
+          // dunkle Linie. Innerhalb eines Laufes gibt es keine.
           boxShadow: istOben ? undefined : 'inset 0 1px 0 rgba(12,20,34,0.24)',
           transform: gehoben ? 'translateY(-6px)' : undefined,
           transition: 'transform 160ms ease-out',
-          display: symbole ? 'flex' : undefined,
-          alignItems: symbole ? 'center' : undefined,
-          justifyContent: symbole ? 'center' : undefined,
+          overflow: 'hidden',
         }}
       >
         {/*
-          Die Oberflaeche der obersten Schicht ist ein OVAL, kein Strich. In
+          Die Oberflaeche des obersten Laufes ist ein OVAL, kein Strich. In
           eine Roehre sieht man hinein — die hintere Kante der Fluessigkeit
           liegt hoeher als die vordere, deshalb ragt das Oval zur Haelfte
-          ueber die Schicht hinaus. Vorher war es ein heller Farbverlauf mit
-          gerader Oberkante, und genau daran sah man, dass das Glas flach ist.
+          ueber den Lauf hinaus.
         */}
         {istOben && (
           <div
@@ -150,10 +186,36 @@ export function GlasKoerper({
             }}
           />
         )}
-        {symbole && <Symbol id={idVon(code)} groesse={zeichenGroesse} />}
-      </div>,
+        {/* Das Farbenblind-Zeichen gehoert auf jede SCHICHT, nicht auf jeden
+            Lauf — sonst traegt ein Lauf aus vier Schichten nur ein Zeichen,
+            und der Modus zaehlt nicht mehr mit. */}
+        {symbole && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            {Array.from({ length: n }, (_, z) => (
+              <div
+                key={z}
+                style={{
+                  flex: '1 1 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Symbol id={idVon(lauf.code)} groesse={zeichenGroesse} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     );
-  }
+  });
 
   const blasen = [];
   if (fuell > 0) {

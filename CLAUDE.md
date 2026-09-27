@@ -696,12 +696,42 @@ und Ziel-Chroma den passenden Hexwert.
 Flüssigkeit ist unten tiefer und damit dunkler. Vorher war eine Schicht eine flache
 Fläche mit einem hellen Streifen obendrauf — der zweite Grund für „billig".
 
+### Läufe, nicht Schichten (27.09.2026)
+
+Josefs Urteil nach der dritten Runde: **„es geht in die richtige richtung aber
+sieht noch billig aus"** und **„es soll smoother sein"**. Die Bewegung war da
+schon in Ordnung — das Problem saß in der Flüssigkeit selbst.
+
+Vier gleiche Schichten übereinander wurden als **vier Blöcke mit drei dunklen
+Trennlinien** gezeichnet, und jeder trug denselben Verlauf hell→tief noch
+einmal. Das ist ein Stapel Bauklötze, kein Saft. Aufeinanderfolgende gleiche
+Farben sind jetzt **ein Körper**: ein Verlauf über die ganze Höhe, eine
+Oberfläche, keine Naht. Die dunkle Linie bleibt genau dort, wo sie hingehört —
+zwischen zwei **verschiedenen** Flüssigkeiten.
+
+*Zählen muss man sie trotzdem können* — ob ein Glas zwei oder drei einer Farbe
+hat, entscheidet den nächsten Zug. Dafür trägt ein Lauf ein hauchdünnes helles
+Härchen je Schichtgrenze (`repeating-linear-gradient` mit `calc(100% / n)`,
+Deckkraft 0,07): sichtbar genug zum Zählen, zu schwach, um zu trennen.
+
+Zwei Folgen, die daran hängen:
+
+- **Das Farbenblind-Zeichen gehört auf jede SCHICHT, nicht auf jeden Lauf.**
+  Sonst trüge ein Lauf aus vier Schichten nur ein Zeichen, und der Modus zählte
+  nicht mehr mit. Der Lauf enthält deshalb eine Spalte aus `n` gleich hohen
+  Fächern.
+- **Beim Eingießen steigt EIN Lauf**, nicht vier Schichten nacheinander.
+  Gegossen wird immer nur eine Farbe, und gleiche Farben sind ein Körper: er
+  wächst in einem Zug von seiner alten auf seine neue Höhe (`--von` im Stil,
+  Keyframes mit nur einem `from`). Goss man Lila auf Lila, fiel er vorher erst
+  auf null zusammen und baute sich neu auf.
+
 Dazu drei Dinge in `Glas.tsx`:
 
-1. **Der Meniskus liegt nur auf der OBERSTEN Schicht.** Nur sie hat eine echte
+1. **Der Meniskus liegt nur auf dem OBERSTEN Lauf.** Nur sie hat eine echte
    Oberfläche; auf den Schichten darunter wäre er eine Kante, die es nicht gibt.
 2. **Die Grenze zwischen zwei Flüssigkeiten ist eine dunkle Linie**, keine Rasierklinge
-   (`inset 0 1px 0`).
+   (`inset 0 1px 0`) — und nur zwischen **verschiedenen** Farben, siehe oben.
 3. **Die Gläschen sind Hohlkugeln** — heller Rand, klarer Kern. Vorher drei satte weiße
    Punkte, die sich als Flecken lasen.
 
@@ -847,7 +877,7 @@ Fünf Dinge daran sind Entscheidungen, keine Zahlen:
 Körper: das kippende Glas ragt weit über seinen Nachbarn, und auf dem Körper
 verschwand es hinter dem nächsten Glas.
 
-`KIPP_MS` (500 ms) steht in `Brett.tsx` **neben** der Bahn und nicht in
+`KIPP_MS` (540 ms) steht in `Brett.tsx` **neben** der Bahn und nicht in
 `App.tsx`, wo der Zeitgeber läuft: Bewegung und Zeitgeber müssen dieselbe Zahl
 sehen, sonst richtet sich das Glas auf, während der Strahl noch fließt.
 `raeumeGuss()` in `App.tsx` löscht Strahl **und** Kippung zusammen — beide
@@ -899,18 +929,18 @@ aus wie Flüssigkeit, die alle ist.
 **Und das Wichtigste: das ZIELGLAS füllt sich.** Vorher war die Flüssigkeit schon da,
 bevor der Strahl losging — der Strahl zeigte auf ein Ergebnis, das es bereits gab, und
 kein noch so schöner Strahl macht daraus ein Eingießen. `Brett` reicht dem Zielglas
-`fuellt: { menge, nr }` durch; die obersten `menge` Schichten wachsen von null auf ihre
-Höhe (`.schicht-fuellt`), **nacheinander** im Abstand von 45 ms. Drei Feinheiten:
+`fuellt: { menge, nr }` durch; der oberste **Lauf** wächst von seiner alten auf seine neue Höhe
+(`.schicht-fuellt`, siehe „Läufe, nicht Schichten"). Drei Feinheiten:
 
 - Der Schlüssel der Schicht trägt die **Gussnummer** mit. Ohne das nimmt React dasselbe
   Element wieder her, und eine CSS-Bewegung, die schon gelaufen ist, läuft an einem
   bestehenden Element kein zweites Mal los.
-- `animation-fill-mode: backwards`. Sonst blitzt die Schicht in voller Höhe auf, bevor
-  ihre Verzögerung abläuft.
+- `animation-fill-mode: backwards`. Sonst blitzt der Lauf in voller Höhe auf, bevor
+  seine Verzögerung abläuft.
 - Die Keyframes haben **nur ein `from`**. Die Zielhöhe ist die, die das Element ohnehin
   hat — sie steht als Prozentwert im Stil und hängt an der Zahl der Schichten.
 
-Die **300 ms** Verzögerung stehen in `Glas.tsx` und entsprechen den 64 % in
+Die **350 ms** Verzögerung stehen in `Glas.tsx` und entsprechen den 66 % in
 `guss-fliesst`, wo der Kopf des Strahls ankommt. Laufen die beiden Zahlen auseinander,
 füllt sich das Glas, bevor etwas fließt — oder erst, wenn längst nichts mehr fließt.
 

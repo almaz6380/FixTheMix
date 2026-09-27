@@ -152,15 +152,25 @@ body {
 .glas-licht {
   position: absolute;
   inset: 0;
+  /* Das Zylinderlicht. Zwei Dinge haben sich am 27.09.2026 geaendert, und
+     zusammen machen sie aus einem Plastikrohr ein Glas:
+
+     1. Die Kanten sind nicht mehr SCHWARZ, sondern ein sehr dunkles Blau.
+        Reines Schwarz auf farbiger Fluessigkeit liest sich als Schmutz.
+     2. Aussen liegt je eine hauchduenne HELLE Linie. Eine Glaskante faengt
+        Licht — ohne sie endet das Glas einfach im Nichts. */
   background: linear-gradient(
     90deg,
-    rgba(0, 0, 0, 0.42) 0%,
-    rgba(255, 255, 255, 0.12) 17%,
-    rgba(255, 255, 255, 0.4) 25%,
-    rgba(255, 255, 255, 0.04) 36%,
-    rgba(0, 0, 0, 0.04) 62%,
-    rgba(255, 255, 255, 0.16) 82%,
-    rgba(0, 0, 0, 0.46) 100%
+    rgba(255, 255, 255, 0.32) 0%,
+    rgba(10, 20, 36, 0.4) 3.5%,
+    rgba(255, 255, 255, 0.09) 12%,
+    rgba(255, 255, 255, 0.34) 21%,
+    rgba(255, 255, 255, 0.05) 33%,
+    rgba(10, 20, 36, 0) 54%,
+    rgba(10, 20, 36, 0.09) 72%,
+    rgba(255, 255, 255, 0.17) 84%,
+    rgba(10, 20, 36, 0.34) 96.5%,
+    rgba(255, 255, 255, 0.28) 100%
   );
   pointer-events: none;
 }

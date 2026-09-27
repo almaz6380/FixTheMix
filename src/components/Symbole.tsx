@@ -9,7 +9,9 @@
 // Bewusst gefuellte Silhouetten statt Strichzeichnungen: bei 16 Pixeln auf
 // einer farbigen Flaeche traegt nur die Flaeche.
 
-import type { FarbId } from '../engine/farben.ts';
+import { FARBEN, type FarbId } from '../engine/farben.ts';
+
+const farbeVonId = (id: FarbId) => FARBEN.find((f) => f.id === id)!;
 
 const PFADE: Record<FarbId, React.ReactNode> = {
   rot: (
@@ -61,11 +63,13 @@ const PFADE: Record<FarbId, React.ReactNode> = {
   ),
 };
 
-/**
- * Kaffee ist so dunkel, dass ein dunkles Zeichen darauf untergeht (2,2:1).
- * Es bekommt als einzige Farbe ein helles. Alle anderen tragen Tinte.
+/*
+ * Welche Tinte ein Zeichen traegt, steht in `farben.ts` und wird dort
+ * GERECHNET, nicht geschaetzt: es gewinnt die Tinte mit dem hoeheren Kontrast,
+ * und `test-engine.mts` besteht auf mindestens 3:1. Hier stand vorher eine
+ * Liste von Hand mit genau einem Eintrag — und als die Farben am 27.09.2026
+ * neu gesetzt wurden, brauchte ploetzlich auch Blaubeere helle Tinte.
  */
-const HELLE_TINTE: ReadonlySet<FarbId> = new Set<FarbId>(['kaffee']);
 
 export default function Symbol({ id, groesse }: { id: FarbId; groesse: number }) {
   return (
@@ -73,7 +77,7 @@ export default function Symbol({ id, groesse }: { id: FarbId; groesse: number })
       width={groesse}
       height={groesse}
       viewBox="0 0 24 24"
-      fill={HELLE_TINTE.has(id) ? 'rgba(244,235,222,0.88)' : 'rgba(18,14,10,0.68)'}
+      fill={farbeVonId(id).tinte === 'hell' ? 'rgba(244,235,222,0.88)' : 'rgba(18,14,10,0.68)'}
       aria-hidden="true"
       style={{ display: 'block' }}
     >

@@ -66,12 +66,29 @@ export default function Glas({
     const code = stand.zellen[glas * hoehe + i]!;
     const f = farbeVon(code);
     const gehoben = gewaehlt && i >= laufAb;
+    const istOben = i === fuell - 1;
     schichten.push(
       <div
         key={i}
         style={{
           height: schichtHoehe,
-          background: `radial-gradient(50% 9px at 50% 0, ${f.hell} 0%, ${f.hell} 66%, ${ohneDeckkraft(f.hell)} 100%), ${f.ton}`,
+          // DREI Toene ueber die Hoehe, nicht eine Flaeche mit Lichtstreifen:
+          // Fluessigkeit ist unten tiefer und damit dunkler, oben faellt Licht
+          // durch. Vorher war jede Schicht ein flacher Farbbalken mit einer
+          // hellen Kante — genau das sah billig aus.
+          background: [
+            // Die OBERSTE Schicht ist die einzige mit einer echten
+            // Oberflaeche. Nur sie bekommt den Meniskus; auf den Schichten
+            // darunter waere er eine Kante, die es gar nicht gibt.
+            ...(istOben
+              ? [`radial-gradient(62% 11px at 50% 0, rgba(255,255,255,0.5) 0%,`
+                 + ` rgba(255,255,255,0.14) 58%, rgba(255,255,255,0) 100%)`]
+              : []),
+            `linear-gradient(180deg, ${f.hell} 0%, ${f.ton} 26%, ${f.ton} 60%, ${f.tief} 100%)`,
+          ].join(', '),
+          // Die Grenze zwischen zwei Fluessigkeiten ist eine dunkle Linie,
+          // keine Rasierklinge. Die oberste Schicht hat darueber nichts mehr.
+          boxShadow: istOben ? undefined : 'inset 0 1px 0 rgba(12,20,34,0.24)',
           transform: gehoben ? 'translateY(-6px)' : undefined,
           transition: 'transform 160ms ease-out',
           display: symbole ? 'flex' : undefined,
@@ -96,10 +113,13 @@ export default function Glas({
             position: 'absolute',
             left: `${14 + (h % 60)}%`,
             bottom: `${hoch}%`,
-            width: `${4 + (k % 3)}px`,
-            height: `${4 + (k % 3)}px`,
+            width: `${2 + (k % 3)}px`,
+            height: `${2 + (k % 3)}px`,
             borderRadius: '50%',
-            background: 'rgba(255,255,255,0.45)',
+            // Ein Blaeschen ist eine Hohlkugel: heller Rand, klarer Kern.
+            // Vorher waren es drei satte weisse Punkte.
+            background: 'radial-gradient(circle at 34% 30%, rgba(255,255,255,0.75) 0%,'
+              + ' rgba(255,255,255,0.12) 55%, rgba(255,255,255,0.34) 100%)',
           }}
         />,
       );
@@ -169,9 +189,3 @@ export default function Glas({
  * Dieselbe Farbe mit Deckkraft 0. Nicht `transparent` verwenden: das ist
  * rgba(0,0,0,0) und kann im Verlauf einen dunklen Saum erzeugen.
  */
-function ohneDeckkraft(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},0)`;
-}

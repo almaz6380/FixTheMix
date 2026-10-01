@@ -57,6 +57,6 @@ export function teilText(d: TeilDaten, w: TeilWorte): string {
     balken(d.zuege, d.optimum),
   ];
   if (d.serie > 1) zeilen.push(`🔥 ${d.serie} ${w.serie}`);
-  zeilen.push('fixthemix.vercel.app');
+  zeilen.push('fixthemix.almaz6380.workers.dev');
   return zeilen.join('\n');
 }

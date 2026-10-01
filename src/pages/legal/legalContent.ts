@@ -182,10 +182,10 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
         {
           titel: 'Empfänger deiner Daten',
           text:
-            'Vercel: Auslieferung der Web-App unter fixthemix.vercel.app. Dabei fallen technisch bedingt Serverprotokolle mit IP-Adresse an.\n\n' +
+            'Cloudflare (Cloudflare, Inc., USA): Auslieferung der Web-App unter fixthemix.almaz6380.workers.dev. Dabei fallen technisch bedingt Serverprotokolle mit IP-Adresse an.\n\n' +
             'Google AdMob: Werbung in den mobilen Apps. Google kann dabei Gerätekennungen verarbeiten. Ohne deine Einwilligung wird nur nicht personalisierte Werbung ausgeliefert.\n\n' +
             'RevenueCat (Auftragsverarbeiter, USA): Abwicklung und Wiederherstellung des Kaufs „Werbung entfernen", sofern du ihn tätigst.\n\n' +
-            'Eine Übermittlung in Drittstaaten (insbesondere USA) findet bei Google und RevenueCat statt und stützt sich auf die Standardvertragsklauseln der EU-Kommission.',
+            'Eine Übermittlung in Drittstaaten (insbesondere USA) findet bei Cloudflare, Google und RevenueCat statt und stützt sich auf die Standardvertragsklauseln der EU-Kommission.',
         },
         {
           titel: 'Werbung und deine Einwilligung',
@@ -193,7 +193,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             'Die mobilen Apps zeigen Werbung. Vor der ersten Anzeige fragen wir über Googles Einwilligungsdialog (UMP), ob du personalisierte Werbung möchtest. Du kannst diese Entscheidung jederzeit in den Einstellungen der App ändern.\n\n' +
             'Lehnst du ab, siehst du weiterhin Werbung, aber ohne Personalisierung. Auf iOS fragen wir zusätzlich über Apples Dialog zur App-Tracking-Transparenz.\n\n' +
             'Wir zeigen keine Werbung mitten in einem Level. Zwischen zwei Leveln erscheint höchstens eine Anzeige, und auch das nur mit Abstand. Videos gibt es ausschließlich freiwillig — du startest sie selbst, um Münzen oder ein Extra-Glas zu erhalten.\n\n' +
-            'Die Web-App unter fixthemix.vercel.app zeigt keine Werbung.',
+            'Die Web-App unter fixthemix.almaz6380.workers.dev zeigt keine Werbung.',
         },
         {
           titel: 'In-App-Kauf',
@@ -248,10 +248,10 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
         {
           titel: 'Recipients of your data',
           text:
-            'Vercel: delivery of the web app at fixthemix.vercel.app. This technically produces server logs containing the IP address.\n\n' +
+            'Cloudflare (Cloudflare, Inc., USA): delivery of the web app at fixthemix.almaz6380.workers.dev. This technically produces server logs containing the IP address.\n\n' +
             'Google AdMob: advertising in the mobile apps. Google may process device identifiers. Without your consent, only non-personalised advertising is served.\n\n' +
             'RevenueCat (processor, USA): handling and restoring the “Remove ads” purchase, if you make it.\n\n' +
-            'Transfers to third countries (in particular the USA) take place with Google and RevenueCat and rely on the European Commission’s standard contractual clauses.',
+            'Transfers to third countries (in particular the USA) take place with Cloudflare, Google and RevenueCat and rely on the European Commission’s standard contractual clauses.',
         },
         {
           titel: 'Advertising and your consent',
@@ -259,7 +259,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             'The mobile apps show advertising. Before the first ad we ask via Google’s consent dialog (UMP) whether you want personalised advertising. You can change that decision at any time in the app’s settings.\n\n' +
             'If you decline, you still see advertising, but without personalisation. On iOS we additionally ask via Apple’s App Tracking Transparency dialog.\n\n' +
             'We show no advertising in the middle of a level. Between two levels there is at most one ad, and only with a gap. Videos are always voluntary — you start them yourself to receive coins or an extra glass.\n\n' +
-            'The web app at fixthemix.vercel.app shows no advertising.',
+            'The web app at fixthemix.almaz6380.workers.dev shows no advertising.',
         },
         {
           titel: 'In-app purchase',

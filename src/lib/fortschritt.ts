@@ -101,7 +101,7 @@ export function istFrei(f: Fortschritt, level: number): boolean {
  * neuen Speicherort, und dann bleibt etwas liegen, obwohl die App das Gegenteil
  * behauptet.
  *
- * `localStorage.clear()` waere zu grob — auf `fixthemix.vercel.app` koennte
+ * `localStorage.clear()` waere zu grob — auf `fixthemix.almaz6380.workers.dev` koennte
  * theoretisch etwas anderes liegen. Der Sprachschluessel `language` gehoert
  * ebenfalls dazu, hat aber historisch kein Praefix.
  */

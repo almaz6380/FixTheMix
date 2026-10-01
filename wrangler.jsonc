@@ -1,0 +1,14 @@
+// Web-App auf Cloudflare Workers (seit 01.10.2026; vorher Vercel, das den Account
+// pausiert hat). Nur statische Dateien aus dist/ – kein Worker-Code.
+// Gebaut und veroeffentlicht von Cloudflare selbst (Workers Builds, mit dem
+// GitHub-Repo verknuepft): Build-Befehl `npm run build`, Deploy `npx wrangler deploy`.
+{
+  "name": "fixthemix",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./dist",
+    // Routen wie /datenschutz kennt erst der Browser: alles, was keine Datei ist,
+    // bekommt index.html (frueher die Rewrite-Regel in vercel.json).
+    "not_found_handling": "single-page-application"
+  }
+}

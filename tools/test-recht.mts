@@ -94,7 +94,7 @@ console.log('\n--- Die Angaben, an denen Pflichten haengen ---');
   // Und die Datenschutzerklaerung muss jeden Empfaenger nennen, an den wirklich
   // Daten gehen. Faellt einer weg, ist die Erklaerung unvollstaendig.
   const ds = rechtsTexte.datenschutz.de.abschnitte.map((a) => a.text).join('\n');
-  for (const empfaenger of ['Vercel', 'AdMob', 'RevenueCat']) {
+  for (const empfaenger of ['Cloudflare', 'AdMob', 'RevenueCat']) {
     ok(ds.includes(empfaenger), `die Datenschutzerklaerung nennt ${empfaenger}`);
   }
   ok(ds.includes('DSGVO'), '... und die Rechtsgrundlagen');

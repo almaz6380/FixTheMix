@@ -1145,7 +1145,7 @@ Seit Phase 5 hat die App einen Router, und zwar nicht aus Schönheit: **Apple un
 verlangen eine öffentlich erreichbare Datenschutz-URL**, Google Play zusätzlich eine
 Adresse für den Weg zur Datenlöschung. Beides muss ohne App und ohne Anmeldung aufrufbar
 sein — ein Fenster über dem Spiel hat keine Adresse, die man in ein Store-Formular
-eintragen kann. Dass `vercel.json` alles auf `index.html` umschreibt, ist dafür die
+eintragen kann. Dass Cloudflare alles auf `index.html` umleitet (`wrangler.jsonc`), ist dafür die
 Voraussetzung.
 
 **Am 27.09.2026 ist daraus ein richtiger Aufbau geworden** (Josefs Entscheidung):
@@ -1444,9 +1444,10 @@ ist das einspeisbare `jetzt` im Löserbudget.
   `docs/phase4-supabase.md`.
 - **Farbenblind-Modus:** ein Screenshot in Graustufen. Jede Farbe muss am Symbol zu
   erkennen sein.
-- **Web-App:** https://fixthemix.vercel.app — Vercel-Projekt `fixthemix` im Konto
-  `almaz6380`, Vite automatisch erkannt, mit `almaz6380/FixTheMix` verknüpft.
-  Ausgeliefert wird nur `dist/`; der Quellcode bleibt im privaten Repo.
+- **Web-App:** https://fixthemix.almaz6380.workers.dev (seit 01.10.2026) — Cloudflare
+  Workers, nur statische Dateien aus `dist/`. Cloudflare baut selbst aus diesem Repo
+  (Workers Builds, Zweig `main`); Konfiguration in `wrangler.jsonc`. Bis 28.09.2026 lag
+  sie auf Vercel (`fixthemix.vercel.app`), bis Vercel den Account pausiert hat.
 - **Rechtsseiten für die Stores:** https://almaz6380.github.io/fixthemix/ (seit
   01.10.2026). `fixthemix.vercel.app` ist offline, weil Vercel am 28.09.2026 den ganzen
   Account pausiert hat. Die Seiten entstehen im öffentlichen Repo `almaz6380.github.io`
@@ -1454,10 +1455,6 @@ ist das einspeisbare `jetzt` im Löserbudget.
   an einem Rechtstext dort neu erzeugen.** Adressen: `datenschutz.html`,
   `daten-loeschen.html`, `impressum.html`, `nutzungsbedingungen.html` (englisch
   `privacy`, `delete-data`, `imprint`, `terms`). Die In-App-Routen bleiben, wie sie sind.
-- **Der Deploy-Schutz ist bewusst AUS** (25.09.2026, Josefs Entscheidung). Vercel
-  schützt neue Projekte standardmäßig mit einer Anmeldepflicht — damit wäre die
-  Adresse nicht von überall erreichbar gewesen. Wieder einschaltbar unter
-  Project → Settings → Deployment Protection.
 - **Testaufbau am Handy über claude.ai:** Der Build lässt sich auch als private Seite
   dort veröffentlichen. Zwei Fallen: die Seite darf kein eigenes `<html>`/`<head>`
   mitbringen (der Rahmen setzt das selbst), und die Sicherheitsabstände für Notch und
@@ -1475,32 +1472,16 @@ ist das einspeisbare `jetzt` im Löserbudget.
   `overrides`-Eintrag wäre möglich, hebelte aber ausgerechnet das Werkzeug aus, das
   die Xcode-Projektdatei erzeugt. Bleibt also stehen, bewusst.
 
-## Auslieferung auf Vercel
+## Auslieferung auf Cloudflare
 
-`vercel.json` schreibt alles, was nicht nach Datei aussieht, auf `index.html` um —
-ohne das gibt ein Neuladen auf einer Unterseite 404, weil die Routen erst der Browser
-kennt. Muster aus `anigosha/vercel.json`.
+`wrangler.jsonc` legt fest, dass Cloudflare für alles, was keine Datei ist,
+`index.html` ausliefert (`not_found_handling: single-page-application`) — ohne das gibt
+ein Neuladen auf einer Unterseite 404, weil die Routen erst der Browser kennt.
 
-**`npx vercel deploy` schlägt aus einer Cloud-Sitzung fehl.** Die Meldung ist
-`fetch failed`; dahinter steckt der Agent-Proxy, der die lange Verbindung zu
-`api.vercel.com` mittendrin kappt (`ws_closed_mid_exchange`). Vier Anläufe mit
-wachsendem Abstand haben nicht geholfen. Der Weg, der **funktioniert**, ist ein
-einzelner kurzer API-Aufruf — Vercel baut dann selbst aus dem Repo, es wird nichts
-hochgeladen:
-
-```bash
-curl -X POST -H "Authorization: Bearer $Vercel_CLI" -H "Content-Type: application/json" \
-  -d '{"name":"fixthemix","target":"production",
-       "gitSource":{"type":"github","repoId":1388002138,"ref":"<zweig>"}}' \
-  https://api.vercel.com/v13/deployments
-```
-
-Danach den Zustand pollen, bis `readyState` auf `READY` steht.
-
-**Der Produktionszweig ist `main`.** Ein Push auf einen Feature-Zweig erzeugt also
-höchstens eine Vorschau. `"target": "production"` im Aufruf oben hebt das auf und
-hängt `fixthemix.vercel.app` an genau diesen Stand — praktisch zum Testen, aber es
-heißt auch: was auf der Produktionsadresse liegt, muss nicht in `main` stehen.
+Gebaut wird **bei Cloudflare**, nicht in GitHub Actions (das Repo ist privat, Actions
+sind dort gesperrt): Workers & Pages → Projekt `fixthemix` → mit `almaz6380/FixTheMix`
+verknüpft, Build `npm run build`, Deploy `npx wrangler deploy`. Jeder Push auf `main`
+geht damit live. Prüfen vor dem Push: `npx wrangler deploy --dry-run` liest `dist/`.
 
 **Schriften:** `node tools/fonts-holen.mjs` lädt die `.woff2` von Google nach
 `public/fonts/` und druckt die `@font-face`-Regeln, die oben in `src/index.css` gehören.

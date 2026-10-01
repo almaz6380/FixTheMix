@@ -1447,6 +1447,13 @@ ist das einspeisbare `jetzt` im Löserbudget.
 - **Web-App:** https://fixthemix.vercel.app — Vercel-Projekt `fixthemix` im Konto
   `almaz6380`, Vite automatisch erkannt, mit `almaz6380/FixTheMix` verknüpft.
   Ausgeliefert wird nur `dist/`; der Quellcode bleibt im privaten Repo.
+- **Rechtsseiten für die Stores:** https://almaz6380.github.io/fixthemix/ (seit
+  01.10.2026). `fixthemix.vercel.app` ist offline, weil Vercel am 28.09.2026 den ganzen
+  Account pausiert hat. Die Seiten entstehen im öffentlichen Repo `almaz6380.github.io`
+  per `npm run erzeugen` aus `src/pages/legal/legalContent.ts`. **Nach jeder Änderung
+  an einem Rechtstext dort neu erzeugen.** Adressen: `datenschutz.html`,
+  `daten-loeschen.html`, `impressum.html`, `nutzungsbedingungen.html` (englisch
+  `privacy`, `delete-data`, `imprint`, `terms`). Die In-App-Routen bleiben, wie sie sind.
 - **Der Deploy-Schutz ist bewusst AUS** (25.09.2026, Josefs Entscheidung). Vercel
   schützt neue Projekte standardmäßig mit einer Anmeldepflicht — damit wäre die
   Adresse nicht von überall erreichbar gewesen. Wieder einschaltbar unter

@@ -138,12 +138,12 @@ Sie lassen sich aus keinem Workflow setzen, und ohne sie kommt die Ablehnung.
    für Werbung. Nur mit der Rolle Admin oder Account Holder änderbar. Fehlt die
    Angabe, ist es Apples Richtlinie 2.1 — genau daran ist Anigosha 1.0
    gescheitert.
-2. **Datenschutz-URL:** `https://fixthemix.vercel.app/datenschutz`
+2. **Datenschutz-URL:** `https://almaz6380.github.io/fixthemix/datenschutz.html`
 3. **Altersfreigabe:** kein Alkohol, kein Glücksspiel, keine Gewalt. Die Bar ist
    alkoholfrei, und das war der Grund für diese Entscheidung.
 
 Google Play braucht dazu die eigene Adresse für den Weg zur Datenlöschung:
-`https://fixthemix.vercel.app/daten-loeschen`
+`https://almaz6380.github.io/fixthemix/daten-loeschen.html`
 
 ## Der ATT-Text in fünf Sprachen
 

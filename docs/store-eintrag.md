@@ -18,10 +18,18 @@ Store zu nehmen.
 | Paket / Bundle | `at.gallab.fixthemix` |
 | Kategorie | Spiele → Puzzle (Play: Puzzle; Apple: Games / Puzzle, Zweitkategorie Casual) |
 | Preis | kostenlos, mit Werbung; Einmalkauf `fixthemix_no_ads` |
-| Datenschutz-URL | `https://fixthemix.vercel.app/datenschutz` |
-| Datenlöschung (nur Play) | `https://fixthemix.vercel.app/daten-loeschen` |
+| Datenschutz-URL | `https://almaz6380.github.io/fixthemix/datenschutz.html` |
+| Datenlöschung (nur Play) | `https://almaz6380.github.io/fixthemix/daten-loeschen.html` |
 | Support / Kontakt | `63almaz80@gmail.com` |
 | Sprachen der App | Deutsch, Englisch, Spanisch, Französisch, Portugiesisch |
+
+Die Rechtsseiten liegen seit dem 01.10.2026 auf GitHub Pages
+(`https://almaz6380.github.io/fixthemix/`), nicht mehr auf `fixthemix.vercel.app`:
+Vercel hat am 28.09.2026 den ganzen Account pausiert. Erzeugt werden sie im Repo
+`almaz6380.github.io` aus `src/pages/legal/legalContent.ts`. Neben den beiden Adressen
+oben gibt es `impressum.html` und `nutzungsbedingungen.html`, englisch `privacy.html`,
+`imprint.html`, `terms.html` und `delete-data.html`. **Nach jeder Änderung an einem
+Rechtstext dort `npm run erzeugen` laufen lassen**, sonst zeigt der Store den alten Text.
 
 Die Store-Texte stehen hier auf Deutsch und Englisch. Die drei anderen Sprachen
 haben in der App vollständige Übersetzungen, aber eine Store-Beschreibung will

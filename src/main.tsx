@@ -15,8 +15,8 @@ import RechtsSeite from './pages/RechtsSeite.tsx'
 // Anmeldung aufrufbar sein — ein Fenster ueber dem Spiel hat keine Adresse, die
 // man in ein Store-Formular eintragen kann.
 //
-// Damit ein Neuladen auf /datenschutz nicht 404 gibt, schreibt `vercel.json`
-// alles, was nicht nach Datei aussieht, auf index.html um.
+// Damit ein Neuladen auf /datenschutz nicht 404 gibt, liefert Cloudflare
+// (`wrangler.jsonc`, not_found_handling) fuer alles, was keine Datei ist, index.html aus.
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

@@ -32,7 +32,7 @@
 //     Scene-Manifest an, damit ruft iOS `applicationDidBecomeActive` nie auf),
 //     und in App Store Connect „Tracking: ja" (nur von Hand).
 //
-// Im Browser passiert bewusst nichts: `fixthemix.vercel.app` zeigt keine
+// Im Browser passiert bewusst nichts: `fixthemix.almaz6380.workers.dev` zeigt keine
 // Werbung, dort fehlt das Plugin.
 
 import { Capacitor } from '@capacitor/core';

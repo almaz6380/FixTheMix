@@ -280,7 +280,12 @@ Code auf seinem Rechner laufen.
       App-IDs stehen im Repo: iOS `…8860791993288062~8461231878` in der `Info.plist`,
       Android `…~4290052573` im Manifest. `TEST_ANZEIGEN` bleibt trotzdem `true` —
       warum das kein halber Zustand ist, steht unter „Die Beispiel-IDs".
-- [ ] **Die vier Anzeigenblöcke, RevenueCat-Schlüssel und die Store-Produkte fehlen** —
+- [x] **Die vier Anzeigenblöcke stehen** (Josef, 02.10.2026) unter `PROD` in
+      `src/lib/werbung.ts`: iOS `…/3646198515` (Interstitial) und `…/2333116848`
+      (Rewarded), Android `…/5015120505` und `…/3574046320`. `TEST_ANZEIGEN` bleibt
+      `true` bis unmittelbar vor dem ersten Release-Build — dann ist es der einzige
+      Punkt, den `test-release.mts --release` aus der AdMob-Ecke noch meldet.
+- [ ] **RevenueCat-Schlüssel und die Store-Produkte fehlen** —
       dafür braucht es Konten und Store-Einträge. Kommt mit Phase 6.
 - [x] **Die Kontaktadresse steht und existiert:** `63almaz80@gmail.com`
       (Josef, 26.09.2026). Der erste Entwurf trug `fixthemix@wellbooked.at`, dem
@@ -1631,7 +1636,7 @@ eine Datei, fällt die Schrift still auf `system-ui` zurück.
 **Store-Bilder:** `node tools/store-bilder.mjs` (nach `npm run build`) nimmt **fünf**
 Screenshots je Gerät auf — Startbildschirm, Spiel mit gewähltem Lauf, Farbenblind-Modus,
 Levelwahl, Tagesrätsel — in den Größen, die Apple und Google verlangen: 1290×2796,
-1242×2688 und 1080×1920. Dazu die **Feature-Grafik** 1024×500 und das 512er-Symbol für
+1242×2688 und 1080×2160 (Play, 2:1 — mit 16:9 fehlten Tresen und Fußzeile). Dazu die **Feature-Grafik** 1024×500 und das 512er-Symbol für
 Play. Das Skript fährt die Routen direkt an (`/`, `/spiel`, `/level`, `/tagesraetsel`);
 vor dem 27.09.2026 klickte es sich über den Burger durch das Fenster über dem Spiel.
 Ergebnis in `.store/<sprache>/`, gitignored; `--sprache ja` nimmt die Bilder in einer

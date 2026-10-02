@@ -32,9 +32,10 @@ node tools/test-release.mts --release  # Bereitschaft — zeigt, was fehlt
    | iOS | `ca-app-pub-8860791993288062~8461231878` | `ios/App/App/Info.plist` (`GADApplicationIdentifier`) |
    | Android | `ca-app-pub-8860791993288062~4290052573` | `android/app/src/main/AndroidManifest.xml` |
 
-   **Was noch fehlt, sind je ein Interstitial- und ein Rewarded-Block** pro
-   Plattform — vier Block-IDs, sie kommen in `src/lib/werbung.ts` unter `PROD`.
-   Dort stehen bis dahin **Googles öffentliche Test-Blöcke**.
+   **Die vier Anzeigenblöcke stehen seit dem 02.10.2026** unter `PROD` in
+   `src/lib/werbung.ts` (je Plattform ein Interstitial- und ein Rewarded-Block).
+   Ausgeliefert werden trotzdem weiter **Googles öffentliche Test-Blöcke**, bis
+   `TEST_ANZEIGEN` auf `false` steht.
 
    Das ist kein halber Zustand, sondern der richtige: eine **App-ID** (mit
    Tilde) sagt dem SDK nur, welches Konto die App ist; ausgeliefert wird nach

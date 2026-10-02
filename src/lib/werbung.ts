@@ -51,10 +51,21 @@ const TEST = {
   },
 };
 
-/** AUSFUELLEN, sobald die Anzeigenblöcke in AdMob angelegt sind (Phase 6). */
+/**
+ * Die echten Anzeigenbloecke, angelegt am 02.10.2026 (Josef, AdMob). Sie wirken
+ * erst, wenn `TEST_ANZEIGEN` auf false steht — das passiert unmittelbar vor dem
+ * ersten Release-Build, nicht vorher. Die IDs sind nicht geheim: sie stehen in
+ * jeder ausgelieferten App.
+ */
 const PROD = {
-  ios: { interstitial: '', rewarded: '' },
-  android: { interstitial: '', rewarded: '' },
+  ios: {
+    interstitial: 'ca-app-pub-8860791993288062/3646198515',
+    rewarded: 'ca-app-pub-8860791993288062/2333116848',
+  },
+  android: {
+    interstitial: 'ca-app-pub-8860791993288062/5015120505',
+    rewarded: 'ca-app-pub-8860791993288062/3574046320',
+  },
 };
 
 function ids() {

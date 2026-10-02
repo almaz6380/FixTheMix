@@ -86,7 +86,7 @@ FixTheMix — Sortierpuzzle
 **Kurzbeschreibung** (max. 80)
 
 ```
-Gieße Schicht für Schicht, bis jedes Glas sortenrein ist. 999 Level, ein Rätsel pro Tag.
+Gieße, bis jedes Glas sortenrein ist. 999 Level und jeden Tag ein neues Rätsel.
 ```
 ```
 Pour layer by layer until every glass is pure. 999 levels, one puzzle a day.
@@ -251,7 +251,7 @@ ios-6.7-3-farbenblind.png  1290×2796   Farbenblind-Modus
 ios-6.7-4-levelwahl.png    1290×2796   Levelwahl mit Sternen und Fortschritt
 ios-6.7-5-tagesraetsel.png 1290×2796   das Rätsel des Tages
 ios-6.5-*.png              1242×2688   dieselben fünf
-play-*.png                 1080×1920   dieselben fünf
+play-*.png                 1080×2160   dieselben fünf (2:1, längstes Format bei Play)
 play-feature-1024x500.png  1024×500    Feature-Grafik (Pflicht bei Play)
 play-icon-512.png           512×512    Symbol für Play, ohne Alphakanal
 ```

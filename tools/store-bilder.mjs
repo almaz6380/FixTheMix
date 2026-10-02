@@ -76,7 +76,13 @@ const browser = await chromium.launch(
 const GERAETE = [
   { name: 'ios-6.7', breite: 430, hoehe: 932, dpr: 3 }, // 1290x2796
   { name: 'ios-6.5', breite: 414, hoehe: 896, dpr: 3 }, // 1242x2688
-  { name: 'play', breite: 360, hoehe: 640, dpr: 3 }, //    1080x1920
+  // Play: 2:1, das laengste Format, das Play annimmt (laengere Kante hoechstens
+  // doppelt so lang wie die kuerzere). Vorher 360x640 (16:9) — darin fehlten
+  // Tresen und Fusszeile, und der Strohhalm der oberen Reihe stach in die Kopfzeile.
+  // 432 breit statt 360: bei 360 ist ein Brett mit drei Reihen hoeher als das
+  // Fenster, und das Bild verliert oben die Kopfzeile. 432 ist ein heutiges
+  // grosses Android-Telefon.
+  { name: 'play', breite: 432, hoehe: 864, dpr: 2.5 }, //  1080x2160
 ];
 
 /** Ein Brett aus der Mitte der Folge, halb gespielt — kein leeres Startbrett. */

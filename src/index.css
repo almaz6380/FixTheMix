@@ -192,8 +192,9 @@ body {
 
 .glas-schatten {
   position: absolute;
-  left: 12%;
-  right: 12%;
+  /* Der Fuss des Pint-Glases ist schmaler als die Oeffnung. */
+  left: 18%;
+  right: 18%;
   bottom: -6px;
   height: 12px;
   border-radius: 50%;
@@ -274,6 +275,76 @@ body {
   pointer-events: none;
 }
 
+/* Der dicke Glasboden (siehe `BODEN` in Glas.tsx): massives Glas, heller
+   als der leere Teil darueber und unten am dichtesten. Oben die flache
+   Ellipse, auf der die Fluessigkeit aufsitzt — von vorn sieht man in einen
+   Glasboden hinein, deshalb ist sie ein Oval und kein Strich. */
+.glas-boden {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, rgba(200, 228, 255, 0.3) 0%, rgba(200, 228, 255, 0.46) 70%, rgba(225, 240, 255, 0.6) 100%);
+}
+
+.glas-boden::before {
+  content: '';
+  position: absolute;
+  top: -14%;
+  right: 6%;
+  left: 6%;
+  height: 34%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(225, 240, 255, 0.75);
+  background: rgba(200, 228, 255, 0.2);
+}
+
+/* Die Huelle mit der Glasform als Maske (siehe `UMRISS` in Glas.tsx). */
+.glas-form {
+  position: absolute;
+  inset: 0;
+}
+
+.glas-umriss {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Der Strohhalm auf einem fertigen Drink (siehe Garnitur.tsx). Der
+   Kasten deckt das Glas; das Bild sitzt in Prozent davon, damit es bei
+   jeder Glasbreite gleich aussieht. Das Glas ist 2,6-mal so hoch wie breit —
+   Hoehen hier sind also in Glashoehen, Breiten in Glasbreiten. Steckt die
+   Garnitur, federt sie kurz ein. */
+.garnitur {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: garnitur-an 380ms cubic-bezier(0.3, 1.6, 0.5, 1) 420ms backwards;
+}
+
+.garnitur img {
+  position: absolute;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Der Strohhalm steht rechts im Glas; die Vorlage ist schon um rund 15 Grad
+   geneigt. Oberkante, Laenge und der Schnitt am Fluessigkeitsspiegel stehen
+   in Garnitur.tsx — der Spiegel haengt an KOPFRAUM und BODEN aus Glas.tsx. */
+.garnitur-halm {
+  right: 18%;
+  width: auto;
+}
+
+@keyframes garnitur-an {
+  from { opacity: 0; scale: 0.4; }
+}
+
 /* --- Die Bar ------------------------------------------------------------- */
 /*
    Jede Reihe steht auf einer Messingleiste, die vorderste auf dem Tresen.
@@ -292,8 +363,8 @@ body {
    Beide kommen OHNE `filter: blur` aus — die Begruendung steht unten. */
 .glas-glanz {
   position: absolute;
-  top: 5%;
-  left: 14.5%;
+  top: 8%;
+  left: 10%;
   width: 9%;
   height: 40%;
   /*
@@ -333,9 +404,9 @@ body {
 .glas-glanz-rand {
   position: absolute;
   top: 12%;
-  right: 5.5%;
+  right: 9%;
   width: 7%;
-  height: 64%;
+  height: 56%;
   background: radial-gradient(
     50% 50% at 50% 22%,
     rgba(255, 255, 255, 0.52) 0%,
@@ -768,6 +839,7 @@ body {
   .funke { display: none; }
   .lauf-leuchtet { animation: none; background: rgba(255, 255, 255, 0.16); }
   .glas-schein { animation: none; }
+  .garnitur { animation: none; }
   /* Die Schicht steht sofort da, statt zu wachsen. */
   .schicht-fuellt { animation: none; }
   /* Kein Kippen: ein Glas, das ohne Bewegung einfach schraeg dasteht und

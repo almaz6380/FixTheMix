@@ -146,8 +146,31 @@ Code auf seinem Rechner laufen.
 ### M4 Aussehen — FERTIG (25.09.2026)
 - [x] **Nachtblau mit Fischschuppen** als Grund (`repeating-radial-gradient`, 46 px),
       dazu ein warmer Schein von oben. Josefs Wahl aus acht vorgelegten Mustern.
-- [x] **Gläser mit rundem Boden** (Reagenzglas-Form, Radien in Prozent, damit die Form
-      bei jeder Breite gleich bleibt). Josefs Wahl aus vier Varianten.
+- [x] **Pint-Glas mit dickem Boden** (Josef, 02.10.2026): Nr. 3 aus vier Formen, die er
+      in Gemini hat zeichnen lassen. Davor kurz ein bauchiges Cocktailglas, davor die
+      Reagenzglas-Form vom 25.09. Oben volle Breite, unten 68 %, die Wand gerade, unten ein
+      kurzer senkrechter Fuß — die Schichten bleiben fast gleich breit und gut zählbar.
+      Der Boden (`BODEN`, 15 % der Höhe) ist massives Glas; die sechs Schichten teilen sich die Höhe darüber.
+      Die Form ist **ein SVG-Pfad** (`UMRISS` in `Glas.tsx`), gestreckt ohne
+      Seitenverhältnis — als Maske für alles im Glas, als Strich für die Kante.
+      `border-radius` kann keine schräge Wand, und `clip-path: path()` rechnet in Pixeln.
+- [x] **Fertige Drinks bekommen einen Strohhalm** (02.10.2026): randvoll und einfarbig
+      heißt Strohhalm mit Streifen im `tief`-Ton der Sorte. Schon während der Partie,
+      nicht erst beim Sieg.
+      **Der Halm endet am Flüssigkeitsspiegel** (Josef: „nur da sichtbar, wo die
+      Flüssigkeit aufhört"). Saft ist nicht durchsichtig; ein Halm, den man durch die
+      Flüssigkeit sieht, wirkt aufgeklebt. `Glas.tsx` reicht den Spiegel
+      (`KOPFRAUM · (100 − BODEN)`, ≈ 12,75 % von oben) herein, `Garnitur.tsx` schneidet
+      per `clip-path` waagrecht ab — die Zahl steht nirgends von Hand.
+      **Das Bild kommt aus Gemini** (Josef: „ich will schärfere Grafiken"): Vorlage in
+      `tools/vorlagen/`, verarbeitet mit `node tools/garnitur-bilder.mjs` zu
+      `src/assets/garnitur/halm-*.webp` (neunmal rund 7 KB, im Bundle, offline sicher).
+      Das Werkzeug stellt per **Farbschlüssel auf Magenta** frei, rechnet den rosa Saum
+      aus den Kanten und färbt die Streifen neunmal um.
+      *Dazu steckte kurz eine Frucht der Sorte an der linken Glaskante, erst von Hand
+      als SVG, dann aus Gemini. Josef hat sie am selben Tag wieder entfernt, noch bevor
+      sie committet war — es gibt sie also auch im Verlauf nicht.*
+      Der Halm ragt nur knapp über den Rand, sonst stünde er im Glas der Reihe darüber.
       *Der erste Entwurf wurde verworfen — Zitat: „zu ernst, kein Spiel". Beanstandet
       waren die Gläser und der Gesamteindruck, ausdrücklich **nicht** die Farben.*
 - [x] Jede Schicht trägt eine helle Kuppe an der Oberkante (`radial-gradient` im

@@ -2,8 +2,10 @@
 //
 // Vier Lagen machen daraus ein Gefaess statt eines Rechtecks:
 //
-//  1. WANDUNG mit rundem Boden. Die Radien sind in Prozent angegeben, damit
-//     das Glas bei jeder Breite dieselbe Form behaelt.
+//  1. WANDUNG als Pint-Glas mit dickem Boden (`UMRISS`, `BODEN`). Die Form ist EIN Pfad
+//     in einem 100x100-Feld, der ohne Seitenverhaeltnis gestreckt wird —
+//     als Maske fuer alles, was im Glas liegt, und als Strich fuer die
+//     Kante. So bleibt sie bei jeder Breite dieselbe.
 //  2. SCHICHTEN, jede mit einer hellen Kuppe an der Oberkante. Die Kuppe ist
 //     ein radial-gradient IM Hintergrund der Schicht — dadurch kostet die
 //     gewoelbte Oberflaeche kein einziges zusaetzliches Element. Sie ist das,
@@ -27,10 +29,42 @@
 import { farbeVon, idVon, LEER } from '../engine/farben.ts';
 import type { Spielstand } from '../engine/typen.ts';
 import Symbol from './Symbole.tsx';
+import Garnitur from './Garnitur.tsx';
 
 /** Anteil der Hoehe, der oben frei bleibt — ein Glas ist nie randvoll. */
 const KOPFRAUM = 0.15;
-const FORM = '13% 13% 50% 50% / 4% 4% 23% 23%';
+/*
+  Die Glasform: ein Pint-Glas mit dickem Boden — Nr. 3 aus vier Formen, die
+  Josef am 02.10.2026 in Gemini hat zeichnen lassen. Davor kurz ein bauchiges
+  Cocktailglas, davor das Reagenzglas vom 25.09.
+
+  Oben volle Breite, unten rund 68 % davon, die Wand gerade, unten ein
+  kurzer senkrechter Fuss. Weil sie gerade
+  bleibt, sind alle Schichten fast gleich breit und gut zu zaehlen — anders
+  als bei einem Glas mit Bauch.
+
+  Warum eine Maske und kein `border-radius`: eine schraege Wand laesst sich
+  mit Radien nicht zeichnen. `clip-path: path()` rechnet in Pixeln und
+  skaliert nicht mit — die Maske mit `preserveAspectRatio="none"` schon.
+*/
+// Die Wand laeuft schraeg bis 80 %, dort geht sie in einen kurzen geraden
+// Fuss ueber — genau wie in der Vorlage; ein durchgehend schraeges Glas sah
+// daneben wie ein Plastikbecher aus.
+const UMRISS = 'M2 0 L98 0 L84 79 Q83.2 83 83.6 87 L84 96 Q84 100 80 100'
+  + ' L20 100 Q16 100 16 96 L16.4 87 Q16.8 83 16 79 Z';
+const MASKE = `url("data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'>`
+  + `<path d='${UMRISS}' fill='black'/></svg>`,
+)}") 0 0 / 100% 100% no-repeat`;
+/** Wo der Rand sitzt, in Prozent der Breite von jeder Seite. */
+const HALS = 2;
+/**
+ * Der dicke Glasboden, in Prozent der Hoehe. Massives Glas, keine
+ * Fluessigkeit: die sechs Schichten teilen sich die Hoehe DARUEBER.
+ * Ohne ihn steht die Fluessigkeit direkt auf dem Tresen, und das Glas wirkt
+ * wie ein Rohr — der Boden ist das, was aus einem Becher ein Barglas macht.
+ */
+const BODEN = 15;
 /** Breite zu Hoehe. Wer den Koerper ohne Brett benutzt, gibt nur die Breite an. */
 export const GLAS_SEITEN = '60 / 156';
 
@@ -258,6 +292,10 @@ export function GlasKoerper({
   // Der Jubel leuchtet in der Farbe des Glases — ein volles Glas ist
   // einfarbig, also genuegt die unterste Schicht.
   const jubelFarbe = fertig && fuell > 0 ? farbeVon(fuellung[0]!).hell : null;
+  // Fertig gemixt: randvoll und eine Sorte. Dann ist es ein DRINK und
+  // bekommt einen Strohhalm — schon waehrend der Partie, nicht
+  // erst beim Sieg. Man sieht so auf einen Blick, was erledigt ist.
+  const drink = fuell === hoehe && laeufe.length === 1 ? farbeVon(fuellung[0]!) : null;
 
   return (
     <div
@@ -280,59 +318,72 @@ export function GlasKoerper({
           }}
         />
       )}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          borderRadius: FORM,
-          // HELLER als der Grund, nicht dunkler. Vorher war der leere Teil
-          // eines Glases fast schwarz — ein leeres Glas las sich als Loch
-          // im Hintergrund statt als Glas. Milchig durchscheinend ist es
-          // das, was es sein soll: ein Gefaess, durch das man die Bar sieht.
-          background:
-            'linear-gradient(100deg, rgba(190,220,255,0.30) 0%, rgba(190,220,255,0.15) 30%,'
-            + ' rgba(190,220,255,0.11) 62%, rgba(190,220,255,0.24) 100%)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column-reverse',
-        }}
-      >
-        {schichten}
-        {blasen}
+      {/* Alles, was IM Glas liegt, sitzt in einer Huelle mit der Form als
+          Maske: Fluessigkeit, Zylinderlicht, Glanz. Was darueber
+          hinausragte, waere neben dem Glas zu sehen. */}
+      <div className="glas-form" style={{ WebkitMask: MASKE, mask: MASKE }}>
+        <div className="glas-boden" style={{ height: `${BODEN}%` }} aria-hidden="true" />
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: `${BODEN}%`,
+            // HELLER als der Grund, nicht dunkler. Vorher war der leere Teil
+            // eines Glases fast schwarz — ein leeres Glas las sich als Loch
+            // im Hintergrund statt als Glas. Milchig durchscheinend ist es
+            // das, was es sein soll: ein Gefaess, durch das man die Bar sieht.
+            background:
+              'linear-gradient(100deg, rgba(190,220,255,0.30) 0%, rgba(190,220,255,0.15) 30%,'
+              + ' rgba(190,220,255,0.11) 62%, rgba(190,220,255,0.24) 100%)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column-reverse',
+          }}
+        >
+          {schichten}
+          {blasen}
+        </div>
+        <div className="glas-licht" />
+        {/* Der Glanz. Zwei Lichter, wie an einem echten Glas: ein schmales
+            hartes vorne links (die Lichtquelle selbst) und ein weiches am
+            rechten Rand (das Licht, das sich um den Zylinder legt). Ohne die
+            beiden bleibt das Glas eine getoente Flaeche. */}
+        <div className="glas-glanz" aria-hidden="true" />
+        <div className="glas-glanz-rand" aria-hidden="true" />
+        {/* Die dunkle Innenkante folgt der FORM, nicht dem Kasten. Das
+            Zylinderlicht oben dunkelt nur die Raender des Kastens ab — an
+            der Taille liegt das Glas aber ein Viertel weiter innen. Ein
+            breiter dunkler Strich auf dem Umriss, von der Maske halbiert,
+            gibt dem Glas dort seine Dicke. */}
+        <svg className="glas-umriss" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d={UMRISS} fill="none" stroke="rgba(10,20,36,0.42)" strokeWidth={7}
+            vectorEffect="non-scaling-stroke" />
+        </svg>
       </div>
-      <div className="glas-licht" style={{ borderRadius: FORM }} />
-      {/* Der Glanz. Zwei Lichter, wie an einem echten Glas: ein schmales
-          hartes vorne links (die Lichtquelle selbst) und ein weiches am
-          rechten Rand (das Licht, das sich um den Zylinder legt). Ohne die
-          beiden bleibt das Glas eine getoente Flaeche. */}
-      <div className="glas-glanz" aria-hidden="true" />
-      <div className="glas-glanz-rand" aria-hidden="true" />
-      {/* Gewaehlt heisst: das Glas faengt Licht. Bis zum 01.10.2026 trug es
-          einen drei Pixel dicken Zitrus-Rahmen — ein Markierungsrahmen um
-          ein Glas, kein Glas im Licht. Jetzt wird nur die Kante warm und
-          hell, den Rest macht der Schein dahinter. */}
+      {/* Die Kante. Gewaehlt heisst: das Glas faengt Licht — die Kante wird
+          warm und hell, den Rest macht der Schein dahinter (bis zum
+          01.10.2026 war es ein drei Pixel dicker Zitrus-Rahmen). */}
+      <svg className="glas-umriss" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <path d={UMRISS} fill="none"
+          stroke={hervor ? 'var(--color-glasrand-warm)' : 'var(--color-glasrand)'}
+          strokeWidth={2.5} vectorEffect="non-scaling-stroke"
+          style={{ transition: 'stroke 140ms' }} />
+      </svg>
       <div
         style={{
           position: 'absolute',
-          inset: 0,
-          borderRadius: FORM,
-          border: `2.5px solid ${hervor ? 'var(--color-glasrand-warm)' : 'var(--color-glasrand)'}`,
-          borderTopColor: 'transparent',
-          transition: 'border-color 140ms',
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
+          left: `${HALS}%`,
+          right: `${HALS}%`,
           top: '-2px',
-          height: '10%',
+          height: '7%',
           borderRadius: '50%',
           border: `2.5px solid ${hervor ? 'var(--color-glasrand-warm)' : 'var(--color-glasrand-hell)'}`,
           transition: 'border-color 140ms',
         }}
       />
+      {drink && <Garnitur farbe={drink} spiegel={KOPFRAUM * (100 - BODEN)} />}
     </div>
   );
 }

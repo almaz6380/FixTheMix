@@ -124,8 +124,10 @@ Code auf seinem Rechner laufen.
 - [x] Antippen = wählen, nochmal antippen = gießen. Bewusst kein Ziehen: mit dem
       Daumen über ein halbes Display zu ziehen ist unangenehm, und ein abgebrochener
       Zug ist schwer zu erkennen.
-- [x] Der gewählte Lauf hebt sich um 6 px an — man sieht **vor** dem Gießen, was fließen
-      würde. Ein Zug ohne diese Vorschau fühlt sich wie Raten an.
+- [x] Der gewählte Lauf **leuchtet** (ein Lichtband zieht über ihn) — man sieht **vor**
+      dem Gießen, was fließen würde. Ein Zug ohne diese Vorschau fühlt sich wie Raten an.
+      *Bis zum 01.10.2026 hob er sich um 6 px; darunter klaffte eine dunkle Lücke im
+      Glas, die wie ein Darstellungsfehler aussah.*
 - [x] Undo, Neustart, Tipp (Löser mit knappem Budget), Sterne live in der Kopfzeile
 - [x] Farbenblind-Modus mit Symbol auf jeder Schicht, Abnahme über einen
       Graustufen-Screenshot
@@ -168,6 +170,10 @@ Code auf seinem Rechner laufen.
       als Ort" unten.
 - [x] **Das Glas ist heller als der Grund**, nicht dunkler. Der leere Teil war
       `rgba(8,14,26,0.86)` — ein leeres Glas las sich als Loch im Hintergrund.
+- [x] **Feinschliff am 01.10.2026** (Josef: „noch billig"), siehe „Der Feinschliff"
+      unten: Rückwand mit Lampen und Regal, Tresen aus Holz mit Spiegelung, größere
+      Gläser auf kleinen Brettern, gewähltes Glas im Licht statt im Rahmen, Siegmoment
+      mit Welle, Funken und Karte von unten.
 - [x] **Die Fischschuppen blenden nach unten aus.** Sie liefen mit vollem Kontrast bis
       unter die Gläser durch und stritten dort mit der Flüssigkeit. Jetzt sind sie die
       Rückwand und verschwinden, bevor das Brett beginnt.
@@ -792,6 +798,37 @@ y 774, 54 px hoch).
 `overflow-hidden` auf `<main>` schneidet ab, was Tresen (`left/right: -50vw`,
 `height: 100vh`) über den Rand hinaus zeichnen. Die Fenster darüber sind `fixed` und
 bleiben davon unberührt — die hängen am Bildschirm, nicht an `<main>`.
+
+### Der Feinschliff — 01.10.2026
+
+Josefs Wahl aus vier vorgelegten Baustellen: alle vier.
+
+1. **Die Rückwand** (`src/components/Rueckwand.tsx`): zwei Hängelampen mit Lichtkegel
+   und ein Regal mit Flaschen, Karaffe, Obstschale und Beerenglas. Vorher war bei
+   kleinen Brettern zwei Drittel des Schirms leere Fischschuppen. Ein SVG, `z-index: -1`,
+   **leise** — die Formen liegen kaum heller als der Grund, Farbe nur stark abgedunkelt.
+   Die neun Säfte bleiben das Lauteste auf dem Schirm.
+2. **Größere Gläser auf kleinen Brettern:** bis zwei Reihen 88 px je Spalte statt 74
+   (Deckel weiter 340 px). Ab drei Reihen bleibt es bei 74 — dort liegt die Decke von
+   539 px.
+3. **Der Tresen ist Holz:** Platte mit Maserung und Glanz, Kante mit Lichtlinie, Front
+   aus senkrechten Brettern — alles Verläufe, keine Bilddatei. Die vorderste Glasreihe
+   **spiegelt sich** darin (`-webkit-box-reflect`, gibt es in WebKit und Chromium, also
+   auf beiden Store-Plattformen). Nicht beim Kippen: die Spiegelung dreht sich mit.
+4. **Das gewählte Glas fängt Licht** statt einen Zitrus-Rahmen zu tragen: warme Kante
+   (`--color-glasrand-warm`), weicher Schein, Federn beim Anheben (14 px).
+5. **Der Sieg in drei Takten**, alles CSS mit Verzögerung, kein Zeitgeber in JS (der
+   Oberflächentest liest das Fenster nach 500 ms — es steht sofort im DOM, nur noch
+   unsichtbar): ab 560 ms (das Ende des letzten Gusses) hebt sich jedes volle Glas
+   kurz an und leuchtet in **seiner** Farbe, als Welle; bei drei Sternen Funken in den
+   Saftfarben; ab 1000 ms kommt die Karte **von unten**, die Sterne springen einzeln.
+   Kein Unschärfe-Schleier mehr — das gelöste Brett bleibt oben sichtbar.
+
+*Eine Falle, die dabei aufgeflogen ist:* `<main>` trug `overflow: hidden`, und ein
+solches Element ist trotzdem ein **Scrollbehälter**. Beim Durchspielen stand das ganze
+Brett plötzlich 465 px höher und 63 px weiter links — ohne dass irgendwer gescrollt
+hatte. Unter dem alten Schleier fiel das nie auf. Jetzt `overflow: clip` (Klasse
+`.buehne`, mit `hidden` davor für alte WebViews): schneidet ab, scrollt nie.
 
 ### Wo Gelb erlaubt ist
 

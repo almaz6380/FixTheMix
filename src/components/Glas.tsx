@@ -40,12 +40,18 @@ interface KoerperEigenschaften {
   /** Wie viele Schichten ins Glas passen. Bestimmt die Hoehe einer Schicht. */
   hoehe: number;
   /**
-   * Ab diesem Index hebt sich der oberste Lauf um 6 px — die Vorschau, die
-   * VOR dem Giessen zeigt, was fliessen wuerde. `undefined` = keine.
+   * Ab diesem Index leuchtet der oberste Lauf auf — die Vorschau, die VOR dem
+   * Giessen zeigt, was fliessen wuerde. `undefined` = keine.
    */
   laufAb?: number;
-  /** Gewaehlt oder vom Tipp gezeigt: gelber Rand und Schein. */
+  /** Gewaehlt oder vom Tipp gezeigt: heller Rand und weicher Schein. */
   hervor?: boolean;
+  /**
+   * Das Brett ist geloest, und dieses Glas ist voll: es hebt sich kurz und
+   * leuchtet in seiner eigenen Farbe. `index` staffelt die Glaeser, damit der
+   * Jubel als Welle ueber die Bar laeuft statt als ein Schlag.
+   */
+  fertig?: { index: number };
   /** Farbenblind-Modus: ein Zeichen auf jeder Schicht. */
   symbole?: boolean;
   /** Streut die Blaeschen. Gleiche Saat heisst gleiche Stellen. */
@@ -63,7 +69,7 @@ interface KoerperEigenschaften {
 
 export function GlasKoerper({
   fuellung, hoehe, laufAb, hervor = false, symbole = false, saat = 0, kippt = false,
-  fuellt,
+  fuellt, fertig,
 }: KoerperEigenschaften) {
   const fuell = fuellung.length;
   // Bei sieben oder acht Schichten (den Experten-Leveln) ist eine Schicht nur
@@ -101,8 +107,8 @@ export function GlasKoerper({
     const f = farbeVon(lauf.code);
     const istOben = k === laeufe.length - 1;
     const n = lauf.anzahl;
-    // Gehoben wird nur der OBERSTE Lauf — das ist genau der, der fliessen
-    // wuerde, und `laufAb` markiert seinen Anfang.
+    // Hervorgehoben wird nur der OBERSTE Lauf — das ist genau der, der
+    // fliessen wuerde, und `laufAb` markiert seinen Anfang.
     const gehoben = laufAb !== undefined && lauf.von >= laufAb;
     // Es kommt immer nur EINE Farbe an, also waechst genau ein Lauf. Er
     // steigt in einem Zug von seiner alten auf seine neue Hoehe — vier
@@ -158,11 +164,18 @@ export function GlasKoerper({
           // Die Grenze zwischen zwei VERSCHIEDENEN Fluessigkeiten ist eine
           // dunkle Linie. Innerhalb eines Laufes gibt es keine.
           boxShadow: istOben ? undefined : 'inset 0 1px 0 rgba(12,20,34,0.24)',
-          transform: gehoben ? 'translateY(-6px)' : undefined,
-          transition: 'transform 160ms ease-out',
           overflow: 'hidden',
         }}
       >
+        {/*
+          Die Vorschau dessen, was fliessen wuerde. Bis zum 01.10.2026 hob
+          sich der Lauf dafuer um 6 px — darunter klaffte dann eine dunkle
+          Luecke im Glas, die sich wie ein Darstellungsfehler las. Jetzt
+          LEUCHTET er: ein Lichtband laeuft langsam ueber ihn hinweg. Man sieht
+          genauso vor dem Giessen, was fliesst, und die Fluessigkeit bleibt
+          ein Koerper.
+        */}
+        {gehoben && <div className="lauf-leuchtet" aria-hidden="true" />}
         {/*
           Die Oberflaeche des obersten Laufes ist ein OVAL, kein Strich. In
           eine Roehre sieht man hinein — die hintere Kante der Fluessigkeit
@@ -242,13 +255,31 @@ export function GlasKoerper({
     }
   }
 
+  // Der Jubel leuchtet in der Farbe des Glases — ein volles Glas ist
+  // einfarbig, also genuegt die unterste Schicht.
+  const jubelFarbe = fertig && fuell > 0 ? farbeVon(fuellung[0]!).hell : null;
+
   return (
     <div
-      className={`glas-koerper ${kippt ? 'glas-kippt' : ''}`}
-      style={{ position: 'relative', width: '100%', aspectRatio: GLAS_SEITEN }}
+      className={`glas-koerper ${kippt ? 'glas-kippt' : ''} ${jubelFarbe ? 'glas-fertig' : ''}`}
+      style={{
+        position: 'relative',
+        width: '100%',
+        aspectRatio: GLAS_SEITEN,
+        ...(jubelFarbe ? { ['--i' as string]: fertig!.index } : {}),
+      }}
     >
       <div className="glas-schatten" />
       {hervor && <div className="glas-schein" />}
+      {jubelFarbe && (
+        <div
+          className="glas-jubel"
+          aria-hidden="true"
+          style={{
+            background: `radial-gradient(56% 50% at 50% 55%, ${jubelFarbe} 0%, transparent 72%)`,
+          }}
+        />
+      )}
       <div
         style={{
           position: 'absolute',
@@ -276,12 +307,16 @@ export function GlasKoerper({
           beiden bleibt das Glas eine getoente Flaeche. */}
       <div className="glas-glanz" aria-hidden="true" />
       <div className="glas-glanz-rand" aria-hidden="true" />
+      {/* Gewaehlt heisst: das Glas faengt Licht. Bis zum 01.10.2026 trug es
+          einen drei Pixel dicken Zitrus-Rahmen — ein Markierungsrahmen um
+          ein Glas, kein Glas im Licht. Jetzt wird nur die Kante warm und
+          hell, den Rest macht der Schein dahinter. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           borderRadius: FORM,
-          border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand)'}`,
+          border: `2.5px solid ${hervor ? 'var(--color-glasrand-warm)' : 'var(--color-glasrand)'}`,
           borderTopColor: 'transparent',
           transition: 'border-color 140ms',
         }}
@@ -294,7 +329,7 @@ export function GlasKoerper({
           top: '-2px',
           height: '10%',
           borderRadius: '50%',
-          border: `${hervor ? 3 : 2.5}px solid ${hervor ? 'var(--color-zitrus)' : 'var(--color-glasrand-hell)'}`,
+          border: `2.5px solid ${hervor ? 'var(--color-glasrand-warm)' : 'var(--color-glasrand-hell)'}`,
           transition: 'border-color 140ms',
         }}
       />
@@ -314,6 +349,8 @@ interface Eigenschaften {
   beschriftung: string;
   /** Es wird gerade hier hinein gegossen — siehe `GlasKoerper`. */
   fuellt?: { menge: number; nr: number };
+  /** Das Brett ist geloest — siehe `GlasKoerper`. */
+  fertig?: { index: number };
   /**
    * Wird von `Brett` gesetzt, um die Lage des Glases zu messen — daraus
    * entsteht der Giessstrahl. Bewusst eine Eigenschaft statt `forwardRef`:
@@ -324,7 +361,7 @@ interface Eigenschaften {
 }
 
 export default function Glas({
-  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef, fuellt,
+  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef, fuellt, fertig,
 }: Eigenschaften) {
   const hoehe = stand.hoehe;
   const fuell = stand.fuell[glas]!;
@@ -363,6 +400,7 @@ export default function Glas({
         saat={glas}
         kippt={kippt}
         {...(fuellt ? { fuellt } : {})}
+        {...(fertig ? { fertig } : {})}
       />
     </button>
   );

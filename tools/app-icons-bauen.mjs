@@ -1,35 +1,52 @@
-// Macht aus public/favicon.svg die App-Symbole und Startbilder der beiden
-// nativen Projekte.
+// Macht aus tools/vorlagen/app-symbol.jpg die App-Symbole und Startbilder der
+// beiden nativen Projekte.
 //
 // WARUM ES DAS GEBEN MUSS: `npx cap add` legt die Capacitor-Logos an. Wer das
 // nicht ersetzt, laedt eine App mit fremdem Logo in den Store hoch — und merkt
 // es erst, wenn sie auf dem Homescreen liegt.
 //
-// EINE QUELLE: public/favicon.svg. Fuer den Vordergrund des Android-Symbols
-// wird daraus der Hintergrund-Rechteck entfernt, statt die Zeichnung ein
-// zweites Mal zu pflegen — zwei Fassungen desselben Logos laufen sonst
-// auseinander, und man sieht es erst am Geraet.
+// EINE QUELLE: tools/vorlagen/app-symbol.jpg, gezeichnet in Gemini (Josef,
+// 02.10.2026): zwei Glaeser, links gemischt, rechts fertig mit Strohhalm.
+// Gemini hatte einen dunkleren Kasten INS Bild gemalt; die Datei ist schon auf
+// diesen Kasten zugeschnitten (sonst stuende ein Rahmen im Symbol). Bis dahin war die Quelle ein von Hand gezeichnetes SVG
+// (public/favicon.svg) — erst das Reagenzglas in der alten Neon-Palette, dann
+// ein SVG-Entwurf der zwei Glaeser, den Josef „haesslich" fand, dann ein
+// erstes Gemini-Bild mit Barlampe, das dem moderneren weichen musste. Auch
+// tools/icons-bauen.mjs und tools/store-bilder.mjs lesen dieselbe Datei; zwei
+// Fassungen desselben Logos laufen sonst auseinander, und man sieht es erst
+// am Geraet.
 //
 // Aufruf: node tools/app-icons-bauen.mjs
 import sharp from 'sharp';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const wurzel = new URL('..', import.meta.url).pathname;
 const p = (...t) => join(wurzel, ...t);
 
-const svgText = readFileSync(p('public/favicon.svg'), 'utf8');
-const svg = Buffer.from(svgText);
+const QUELLE = p('tools/vorlagen/app-symbol.jpg');
+const svg = await sharp(QUELLE).resize(1024, 1024).png().toBuffer();
 
-// Dasselbe Logo ohne die abgerundete Grundflaeche. Android legt den
-// Vordergrund selbst auf seinen Hintergrund; bliebe das Rechteck drin, saehe
-// man auf runden Startbildschirmen ein Quadrat im Kreis.
-const nurGlas = Buffer.from(svgText.replace(/\s*<rect width="64" height="64"[^/]*\/>/, ''));
+/*
+  Dasselbe Bild mit WEICH AUSLAUFENDEM RAND, fuer alles, was das Symbol auf
+  eine Flaeche legt: den Vordergrund des adaptiven Android-Symbols und die
+  Startbilder. Der Grund des Bildes ist fast, aber nicht genau das Nachtblau
+  der App (#081525 gegen #0E1A2E) — ohne den Verlauf saehe man ein Quadrat
+  auf dem Quadrat. Ein Rechteck mit runden Ecken, weichgezeichnet, und nicht
+  ein Kreis: die Spitze des Strohhalms steht fast in der Bildecke, ein
+  runder Verlauf haette sie ausgeblendet.
+*/
+const rand = Buffer.from(
+  '<svg width="1024" height="1024"><rect x="90" y="90" width="844" height="844" rx="220" fill="#fff"/></svg>',
+);
+const randMaske = await sharp(rand).blur(70).png().toBuffer();
+const nurGlas = await sharp(svg).ensureAlpha()
+  .composite([{ input: randMaske, blend: 'dest-in' }]).png().toBuffer();
 
 /** Der Grundton der Bar — derselbe Wert wie in capacitor.config.ts. */
 const GRUND = { r: 0x0e, g: 0x1a, b: 0x2e, alpha: 1 };
 
-const rendern = (quelle, px) => sharp(quelle, { density: 1024 }).resize(px, px);
+const rendern = (quelle, px) => sharp(quelle).resize(px, px, { kernel: 'lanczos3' });
 
 console.log('--- iOS: App-Symbol ---');
 {
@@ -59,12 +76,13 @@ console.log('\n--- Android: Start-Symbole ---');
       .composite([{ input: maske, blend: 'dest-in' }])
       .png().toFile(p(ordner, 'ic_launcher_round.png'));
 
-    // Adaptives Symbol: die Flaeche ist 108dp, sichtbar sind aber nur die
-    // inneren 72dp — der Launcher darf beschneiden, wie er will. Das Glas
-    // bekommt deshalb 66 % und steht mittig; alles darueber hinaus kann auf
-    // irgendeinem Geraet abgeschnitten werden.
+    // Adaptives Symbol: die Flaeche ist 108dp, sicher sichtbar ist aber nur
+    // ein Kreis von 66dp — der Launcher darf beschneiden, wie er will. Das
+    // Bild bekommt deshalb 60 %: so liegt sein entferntester Punkt, die
+    // Spitze des Strohhalms (knapp 50 % der Bildbreite von der Mitte), noch
+    // im Kreis (0,60 · 0,496 ≈ 0,298 < 33/108 ≈ 0,306).
     const flaeche = Math.round(px * (108 / 48));
-    const innen = Math.round(flaeche * 0.66);
+    const innen = Math.round(flaeche * 0.6);
     const rand = Math.round((flaeche - innen) / 2);
     const glas = await rendern(nurGlas, innen).png().toBuffer();
     await sharp({

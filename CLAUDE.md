@@ -124,8 +124,10 @@ Code auf seinem Rechner laufen.
 - [x] Antippen = wählen, nochmal antippen = gießen. Bewusst kein Ziehen: mit dem
       Daumen über ein halbes Display zu ziehen ist unangenehm, und ein abgebrochener
       Zug ist schwer zu erkennen.
-- [x] Der gewählte Lauf hebt sich um 6 px an — man sieht **vor** dem Gießen, was fließen
-      würde. Ein Zug ohne diese Vorschau fühlt sich wie Raten an.
+- [x] Der gewählte Lauf **leuchtet** (ein Lichtband zieht über ihn) — man sieht **vor**
+      dem Gießen, was fließen würde. Ein Zug ohne diese Vorschau fühlt sich wie Raten an.
+      *Bis zum 01.10.2026 hob er sich um 6 px; darunter klaffte eine dunkle Lücke im
+      Glas, die wie ein Darstellungsfehler aussah.*
 - [x] Undo, Neustart, Tipp (Löser mit knappem Budget), Sterne live in der Kopfzeile
 - [x] Farbenblind-Modus mit Symbol auf jeder Schicht, Abnahme über einen
       Graustufen-Screenshot
@@ -144,8 +146,31 @@ Code auf seinem Rechner laufen.
 ### M4 Aussehen — FERTIG (25.09.2026)
 - [x] **Nachtblau mit Fischschuppen** als Grund (`repeating-radial-gradient`, 46 px),
       dazu ein warmer Schein von oben. Josefs Wahl aus acht vorgelegten Mustern.
-- [x] **Gläser mit rundem Boden** (Reagenzglas-Form, Radien in Prozent, damit die Form
-      bei jeder Breite gleich bleibt). Josefs Wahl aus vier Varianten.
+- [x] **Pint-Glas mit dickem Boden** (Josef, 02.10.2026): Nr. 3 aus vier Formen, die er
+      in Gemini hat zeichnen lassen. Davor kurz ein bauchiges Cocktailglas, davor die
+      Reagenzglas-Form vom 25.09. Oben volle Breite, unten 68 %, die Wand gerade, unten ein
+      kurzer senkrechter Fuß — die Schichten bleiben fast gleich breit und gut zählbar.
+      Der Boden (`BODEN`, 15 % der Höhe) ist massives Glas; die sechs Schichten teilen sich die Höhe darüber.
+      Die Form ist **ein SVG-Pfad** (`UMRISS` in `Glas.tsx`), gestreckt ohne
+      Seitenverhältnis — als Maske für alles im Glas, als Strich für die Kante.
+      `border-radius` kann keine schräge Wand, und `clip-path: path()` rechnet in Pixeln.
+- [x] **Fertige Drinks bekommen einen Strohhalm** (02.10.2026): randvoll und einfarbig
+      heißt Strohhalm mit Streifen im `tief`-Ton der Sorte. Schon während der Partie,
+      nicht erst beim Sieg.
+      **Der Halm endet am Flüssigkeitsspiegel** (Josef: „nur da sichtbar, wo die
+      Flüssigkeit aufhört"). Saft ist nicht durchsichtig; ein Halm, den man durch die
+      Flüssigkeit sieht, wirkt aufgeklebt. `Glas.tsx` reicht den Spiegel
+      (`KOPFRAUM · (100 − BODEN)`, ≈ 12,75 % von oben) herein, `Garnitur.tsx` schneidet
+      per `clip-path` waagrecht ab — die Zahl steht nirgends von Hand.
+      **Das Bild kommt aus Gemini** (Josef: „ich will schärfere Grafiken"): Vorlage in
+      `tools/vorlagen/`, verarbeitet mit `node tools/garnitur-bilder.mjs` zu
+      `src/assets/garnitur/halm-*.webp` (neunmal rund 7 KB, im Bundle, offline sicher).
+      Das Werkzeug stellt per **Farbschlüssel auf Magenta** frei, rechnet den rosa Saum
+      aus den Kanten und färbt die Streifen neunmal um.
+      *Dazu steckte kurz eine Frucht der Sorte an der linken Glaskante, erst von Hand
+      als SVG, dann aus Gemini. Josef hat sie am selben Tag wieder entfernt, noch bevor
+      sie committet war — es gibt sie also auch im Verlauf nicht.*
+      Der Halm ragt nur knapp über den Rand, sonst stünde er im Glas der Reihe darüber.
       *Der erste Entwurf wurde verworfen — Zitat: „zu ernst, kein Spiel". Beanstandet
       waren die Gläser und der Gesamteindruck, ausdrücklich **nicht** die Farben.*
 - [x] Jede Schicht trägt eine helle Kuppe an der Oberkante (`radial-gradient` im
@@ -168,6 +193,10 @@ Code auf seinem Rechner laufen.
       als Ort" unten.
 - [x] **Das Glas ist heller als der Grund**, nicht dunkler. Der leere Teil war
       `rgba(8,14,26,0.86)` — ein leeres Glas las sich als Loch im Hintergrund.
+- [x] **Feinschliff am 01.10.2026** (Josef: „noch billig"), siehe „Der Feinschliff"
+      unten: Rückwand mit Lampen und Regal, Tresen aus Holz mit Spiegelung, größere
+      Gläser auf kleinen Brettern, gewähltes Glas im Licht statt im Rahmen, Siegmoment
+      mit Welle, Funken und Karte von unten.
 - [x] **Die Fischschuppen blenden nach unten aus.** Sie liefen mit vollem Kontrast bis
       unter die Gläser durch und stritten dort mit der Flüssigkeit. Jetzt sind sie die
       Rückwand und verschwinden, bevor das Brett beginnt.
@@ -792,6 +821,37 @@ y 774, 54 px hoch).
 `overflow-hidden` auf `<main>` schneidet ab, was Tresen (`left/right: -50vw`,
 `height: 100vh`) über den Rand hinaus zeichnen. Die Fenster darüber sind `fixed` und
 bleiben davon unberührt — die hängen am Bildschirm, nicht an `<main>`.
+
+### Der Feinschliff — 01.10.2026
+
+Josefs Wahl aus vier vorgelegten Baustellen: alle vier.
+
+1. **Die Rückwand** (`src/components/Rueckwand.tsx`): zwei Hängelampen mit Lichtkegel
+   und ein Regal mit Flaschen, Karaffe, Obstschale und Beerenglas. Vorher war bei
+   kleinen Brettern zwei Drittel des Schirms leere Fischschuppen. Ein SVG, `z-index: -1`,
+   **leise** — die Formen liegen kaum heller als der Grund, Farbe nur stark abgedunkelt.
+   Die neun Säfte bleiben das Lauteste auf dem Schirm.
+2. **Größere Gläser auf kleinen Brettern:** bis zwei Reihen 88 px je Spalte statt 74
+   (Deckel weiter 340 px). Ab drei Reihen bleibt es bei 74 — dort liegt die Decke von
+   539 px.
+3. **Der Tresen ist Holz:** Platte mit Maserung und Glanz, Kante mit Lichtlinie, Front
+   aus senkrechten Brettern — alles Verläufe, keine Bilddatei. Die vorderste Glasreihe
+   **spiegelt sich** darin (`-webkit-box-reflect`, gibt es in WebKit und Chromium, also
+   auf beiden Store-Plattformen). Nicht beim Kippen: die Spiegelung dreht sich mit.
+4. **Das gewählte Glas fängt Licht** statt einen Zitrus-Rahmen zu tragen: warme Kante
+   (`--color-glasrand-warm`), weicher Schein, Federn beim Anheben (14 px).
+5. **Der Sieg in drei Takten**, alles CSS mit Verzögerung, kein Zeitgeber in JS (der
+   Oberflächentest liest das Fenster nach 500 ms — es steht sofort im DOM, nur noch
+   unsichtbar): ab 560 ms (das Ende des letzten Gusses) hebt sich jedes volle Glas
+   kurz an und leuchtet in **seiner** Farbe, als Welle; bei drei Sternen Funken in den
+   Saftfarben; ab 1000 ms kommt die Karte **von unten**, die Sterne springen einzeln.
+   Kein Unschärfe-Schleier mehr — das gelöste Brett bleibt oben sichtbar.
+
+*Eine Falle, die dabei aufgeflogen ist:* `<main>` trug `overflow: hidden`, und ein
+solches Element ist trotzdem ein **Scrollbehälter**. Beim Durchspielen stand das ganze
+Brett plötzlich 465 px höher und 63 px weiter links — ohne dass irgendwer gescrollt
+hatte. Unter dem alten Schleier fiel das nie auf. Jetzt `overflow: clip` (Klasse
+`.buehne`, mit `hidden` davor für alte WebViews): schneidet ab, scrollt nie.
 
 ### Wo Gelb erlaubt ist
 
@@ -1482,6 +1542,15 @@ Gebaut wird **bei Cloudflare**, nicht in GitHub Actions (das Repo ist privat, Ac
 sind dort gesperrt): Workers & Pages → Projekt `fixthemix` → mit `almaz6380/FixTheMix`
 verknüpft, Build `npm run build`, Deploy `npx wrangler deploy`. Jeder Push auf `main`
 geht damit live. Prüfen vor dem Push: `npx wrangler deploy --dry-run` liest `dist/`.
+
+**Zwei Fallen, aufgeflogen an PR #26 (02.10.2026):** Für jeden Zweig außer `main`
+ruft Cloudflare `npx wrangler preview` auf, und das bricht ohne einen `previews`-Block
+in `wrangler.jsonc` ab („missing a `previews` block"). Und im Dashboard stand als
+Build-Befehl **„None"** — `dist/` ist gitignored, also gäbe es nichts hochzuladen.
+Deshalb trägt `wrangler.jsonc` jetzt beides selbst: `"previews": {}` und
+`"build": { "command": "npm run build" }`. Wrangler baut damit vor `deploy` **und**
+vor `preview` selbst; das Repo hängt nicht mehr an einer Einstellung im Dashboard, die
+man nicht sieht. `npx wrangler deploy --dry-run` zeigt die Zeilen `[custom build]`.
 
 **Schriften:** `node tools/fonts-holen.mjs` lädt die `.woff2` von Google nach
 `public/fonts/` und druckt die `@font-face`-Regeln, die oben in `src/index.css` gehören.

@@ -18,6 +18,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import Glas from './Glas.tsx';
 import { farbeVon } from '../engine/farben.ts';
 import type { Spielstand } from '../engine/typen.ts';
+import { istGeloest } from '../engine/zustand.ts';
 
 /*
    Der Giesszug in Zahlen. Er ist absichtlich kein reiner Drehzug: ein Glas,
@@ -181,7 +182,17 @@ export default function Brett({
   // Zeilen als viele: bis 5 Glaeser eine Zeile, darueber gleichmaessig teilen.
   const reihen = Math.ceil(stand.glaeser / 5);
   const proReihe = Math.ceil(stand.glaeser / reihen);
-  const breite = Math.min(proReihe * 74, 340);
+  /*
+    Kleine Bretter bekommen GROESSERE Glaeser. Mit festen 74 px je Spalte
+    standen auf Level 1 vier schmale Glaeser unten auf dem Tresen, und darueber
+    war zwei Drittel des Schirms leere Wand. Bis zwei Reihen ist Platz genug
+    (gemessen: 2 x 4 bei 340 px Breite sind 410 px hoch); ab drei Reihen bleibt
+    es bei 74, denn dort liegt mit 539 px die Decke (siehe CLAUDE.md, „Die Bar
+    als Ort").
+  */
+  const breite = Math.min(proReihe * (reihen <= 2 ? 88 : 74), 340);
+  // Geloest: die vollen Glaeser jubeln, eines nach dem anderen.
+  const geloest = istGeloest(stand);
 
   const rahmen = useRef<HTMLDivElement | null>(null);
   const glasRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -334,6 +345,7 @@ export default function Brett({
     const glaeser = [];
     for (let b = von; b < bis; b++) {
       const i = b;
+      const voll = geloest && stand.fuell[b] === stand.hoehe;
       glaeser.push(
         <Glas
           key={b}
@@ -349,6 +361,7 @@ export default function Brett({
           {...(guss && guss.nach === b
             ? { fuellt: { menge: guss.menge, nr: guss.nr } }
             : {})}
+          {...(voll ? { fertig: { index: b } } : {})}
         />,
       );
     }

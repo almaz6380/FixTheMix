@@ -48,8 +48,10 @@ android/keystore.properties
 # Claude Code: persoenliche Einstellungen (nicht teilen)
 .claude/settings.local.json
 
-# Vom Icon-Werkzeug erzeugte Zwischenstaende
-assets/
+# Vom Icon-Werkzeug erzeugte Zwischenstaende — nur im Wurzelordner.
+# Ohne den fuehrenden Schraegstrich traf die Regel auch src/assets/, und die
+# Strohhalm-Bilder waeren still nicht ins Repo gekommen (Build bei Cloudflare rot).
+/assets/
 .screenshots/
 # Store-Bilder aus tools/store-bilder.mjs — Erzeugnisse, keine Quellen.
 # Sie entstehen in Sekunden neu und waeren als PNG-Paar von 1290x2796 der

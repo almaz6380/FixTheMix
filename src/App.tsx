@@ -19,11 +19,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Brett, { KIPP_MS, type Guss } from './components/Brett.tsx';
+import Rueckwand from './components/Rueckwand.tsx';
 import { Partie } from './engine/verlauf.ts';
 import { festgefahren } from './engine/loeser.ts';
 import { tagLevel, tagesNummer } from './engine/tagesraetsel.ts';
 import { botSpielt, duellLevel, duellSieger, type Ausgang, type BotPartie } from './engine/duell.ts';
 import type { Level, Zug } from './engine/typen.ts';
+import { FARBEN } from './engine/farben.ts';
 import {
   haptik, istFrei, ladeEinstellung, ladeFortschritt, merkeSterne,
   speichereEinstellung, speichereFortschritt,
@@ -534,15 +536,15 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
     : zuege <= level.sterne.zwei ? 'text-creme' : 'text-rauch';
 
   return (
-    /* `overflow-hidden`: der Tresen laeuft bewusst ueber die Brettbreite und
-       bis unter den Bildrand hinaus (siehe `.theke`) und wird hier
-       abgeschnitten. Die Fenster darueber sind `fixed` und bleiben davon
+    /* `.buehne` schneidet ab: der Tresen laeuft bewusst ueber die Brettbreite
+       und bis unter den Bildrand hinaus (siehe `.theke`). Die Fenster darueber sind `fixed` und bleiben davon
        unberuehrt — die haengen am Bildschirm, nicht an <main>. */
-    <main className="flex min-h-dvh flex-col overflow-hidden" data-takt={takt}
+    <main className="buehne flex min-h-dvh flex-col" data-takt={takt}
       /* Die volle Duellnummer, nicht die gekuerzte aus der Kopfzeile:
          der Oberflaechentest baut daraus Brett und Gegner selbst nach
          und prueft, ob die App dasselbe Ergebnis zeigt wie die Engine. */
       data-duell-nummer={imDuell ? duellNummer : undefined}>
+      <Rueckwand />
       <header className="flex flex-shrink-0 items-center justify-between gap-2 px-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] pb-2">
         <button
           type="button"
@@ -760,15 +762,25 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
       )}
 
       {(geloest || duellAusgang !== null) && (
-        <div className="fixed inset-0 z-10 flex items-center justify-center bg-nacht-tief/85 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-xs rounded-3xl border border-kante bg-theke p-7 text-center"
+        /* Unten verankert und OHNE Unschaerfe: das geloeste Brett bleibt oben
+           sichtbar. Vorher lag es mittig hinter einem dunklen, verwischten
+           Schleier, und man sah nie, was man geschafft hatte. Die Abfolge —
+           erst jubeln die Glaeser, dann kommt die Karte — steht in index.css
+           unter „Der Sieg". */
+        <div className="fixed inset-0 z-10 flex items-end justify-center px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
+          <div className="sieg-schleier absolute inset-0 bg-[linear-gradient(0deg,rgba(10,18,32,0.97)_0%,rgba(10,18,32,0.82)_36%,rgba(10,18,32,0.12)_62%,rgba(10,18,32,0)_100%)]" />
+          {geloest && !imDuell && sterne === 3 && <Funken />}
+          <div className="sieg-karte relative w-full max-w-xs rounded-3xl border border-messing/30 bg-theke p-7 text-center shadow-[0_-10px_40px_rgba(0,0,0,0.45)]"
             data-duell-ausgang={duellAusgang ?? undefined}>
-            <div className="flex justify-center gap-1.5">
+            <div className="flex items-end justify-center gap-1.5">
               {[0, 1, 2].map((i) => (
                 <svg key={i} width={i === 1 ? 54 : 40} height={i === 1 ? 54 : 40} viewBox="0 0 24 24" aria-hidden="true"
+                  className={i < sterne ? 'sieg-stern' : undefined}
                   fill={i < sterne ? 'var(--color-zitrus)' : 'none'}
                   stroke={i < sterne ? 'none' : '#2F4A6B'} strokeWidth="2.2" strokeLinejoin="round"
-                  style={i < sterne ? { filter: 'drop-shadow(0 0 14px rgba(255,201,60,0.55))' } : undefined}>
+                  style={i < sterne
+                    ? { filter: 'drop-shadow(0 0 14px rgba(255,201,60,0.55))', animationDelay: `${1250 + i * 160}ms` }
+                    : undefined}>
                   <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
                 </svg>
               ))}
@@ -888,4 +900,35 @@ function sterneFuer(level: Level, zuege: number, geloest: boolean): number {
   if (zuege <= level.sterne.drei) return 3;
   if (zuege <= level.sterne.zwei) return 2;
   return 1;
+}
+
+/**
+ * Funken beim perfekten Sieg: 28 Stueckchen in den Farben der Saefte.
+ * Nur bei drei Sternen — sonst waere der Unterschied zwischen „geschafft"
+ * und „perfekt" nur noch ein Wort.
+ *
+ * Die Bahnen sind aus einer festen Saat gerechnet, nicht `Math.random`:
+ * zwei Siege sehen gleich aus, und ein Neuzeichnen laesst sie nicht springen.
+ */
+function Funken() {
+  const stuecke = [];
+  for (let k = 0; k < 28; k++) {
+    const winkel = (k / 28) * Math.PI * 2 + ((k * 7) % 5) * 0.09;
+    const weite = 90 + ((k * 37) % 70);
+    const f = FARBEN[k % FARBEN.length]!;
+    stuecke.push(
+      <span
+        key={k}
+        className="funke"
+        style={{
+          background: f.ton,
+          ['--fx' as string]: `${Math.cos(winkel) * weite}px`,
+          ['--fy' as string]: `${Math.sin(winkel) * weite * 0.8 - 90}px`,
+          ['--dreh' as string]: `${((k * 53) % 360) - 180}deg`,
+          animationDelay: `${780 + (k % 4) * 40}ms`,
+        }}
+      />,
+    );
+  }
+  return <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">{stuecke}</div>;
 }

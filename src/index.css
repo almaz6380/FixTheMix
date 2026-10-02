@@ -70,6 +70,9 @@
 
   --color-glasrand: #9BC4E8;
   --color-glasrand-hell: #BEDCF5;
+  /* Die Kante eines GEWAEHLTEN Glases: sie faengt warmes Licht. Bewusst kein
+     Zitrus — das ist ein Markierungsrahmen, und um den ging es gerade. */
+  --color-glasrand-warm: #FFE3A3;
 
   /* Die Bar als Ort: Holz fuer den Tresen, Messing fuer die Leisten, auf
      denen die Glaeser stehen. Bewusst NICHT `zitrus`: das ist das Licht
@@ -120,11 +123,34 @@ body {
   background: transparent;
   cursor: pointer;
   touch-action: manipulation;
-  transition: transform 150ms ease-out;
+  /* Leicht federnd: das Glas kommt hoch und setzt sich, statt ruckartig
+     stehenzubleiben. */
+  transition: transform 220ms cubic-bezier(0.34, 1.5, 0.64, 1);
 }
 
 .glas-gewaehlt {
-  transform: translateY(-11px);
+  transform: translateY(-14px);
+}
+
+/*
+   Der Lauf, der fliessen wuerde. Ein Lichtband zieht langsam von unten nach
+   oben ueber ihn hinweg, dazu wird er einen Hauch heller. Er bewegt sich
+   selbst nicht — eine verschobene Schicht hinterliess im Glas eine Luecke.
+*/
+.lauf-leuchtet {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.34) 50%, rgba(255, 255, 255, 0) 100%)
+      0 0 / 100% 220% no-repeat,
+    rgba(255, 255, 255, 0.1);
+  animation: lauf-leuchtet 1300ms ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes lauf-leuchtet {
+  from { background-position: 0 -120%, 0 0; }
+  to   { background-position: 0 220%, 0 0; }
 }
 
 /*
@@ -166,8 +192,9 @@ body {
 
 .glas-schatten {
   position: absolute;
-  left: 12%;
-  right: 12%;
+  /* Der Fuss des Pint-Glases ist schmaler als die Oeffnung. */
+  left: 18%;
+  right: 18%;
   bottom: -6px;
   height: 12px;
   border-radius: 50%;
@@ -177,9 +204,49 @@ body {
 
 .glas-schein {
   position: absolute;
-  inset: -8px;
-  border-radius: 16px 16px 50% 50% / 14px 14px 44px 44px;
-  background: radial-gradient(58% 48% at 50% 50%, rgba(255, 201, 60, 0.26) 0%, rgba(255, 201, 60, 0) 74%);
+  inset: -16px -14px;
+  border-radius: 50%;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(255, 214, 120, 0.34) 0%, rgba(255, 201, 60, 0.12) 52%, rgba(255, 201, 60, 0) 76%);
+  animation: schein-an 200ms ease-out;
+}
+
+@keyframes schein-an {
+  from { opacity: 0; transform: scale(0.85); }
+}
+
+/*
+   Der Jubel. Ist das Brett geloest, hebt sich jedes volle Glas kurz an und
+   leuchtet in seiner eigenen Farbe — eines nach dem anderen, als Welle ueber
+   die Bar. `--i` setzt `Glas.tsx`.
+
+   Die 560 ms Vorlauf sind der letzte Guss (`KIPP_MS`): erst muss die
+   Fluessigkeit angekommen sein, dann jubelt das Glas. Das Siegfenster kommt
+   danach (`.sieg-karte`), damit man das geloeste Brett auch SIEHT.
+*/
+.glas-fertig {
+  animation: glas-jubelt 560ms cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
+  animation-delay: calc(560ms + var(--i, 0) * 70ms);
+}
+
+@keyframes glas-jubelt {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-18px); }
+  100% { transform: translateY(0); }
+}
+
+.glas-jubel {
+  position: absolute;
+  inset: -22px -20px;
+  pointer-events: none;
+  opacity: 0.32;
+  animation: glas-jubel 900ms ease-out backwards;
+  animation-delay: calc(560ms + var(--i, 0) * 70ms);
+}
+
+@keyframes glas-jubel {
+  0%   { opacity: 0; }
+  30%  { opacity: 0.85; }
+  100% { opacity: 0.32; }
 }
 
 .glas-licht {
@@ -208,6 +275,76 @@ body {
   pointer-events: none;
 }
 
+/* Der dicke Glasboden (siehe `BODEN` in Glas.tsx): massives Glas, heller
+   als der leere Teil darueber und unten am dichtesten. Oben die flache
+   Ellipse, auf der die Fluessigkeit aufsitzt — von vorn sieht man in einen
+   Glasboden hinein, deshalb ist sie ein Oval und kein Strich. */
+.glas-boden {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(180deg, rgba(200, 228, 255, 0.3) 0%, rgba(200, 228, 255, 0.46) 70%, rgba(225, 240, 255, 0.6) 100%);
+}
+
+.glas-boden::before {
+  content: '';
+  position: absolute;
+  top: -14%;
+  right: 6%;
+  left: 6%;
+  height: 34%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(225, 240, 255, 0.75);
+  background: rgba(200, 228, 255, 0.2);
+}
+
+/* Die Huelle mit der Glasform als Maske (siehe `UMRISS` in Glas.tsx). */
+.glas-form {
+  position: absolute;
+  inset: 0;
+}
+
+.glas-umriss {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Der Strohhalm auf einem fertigen Drink (siehe Garnitur.tsx). Der
+   Kasten deckt das Glas; das Bild sitzt in Prozent davon, damit es bei
+   jeder Glasbreite gleich aussieht. Das Glas ist 2,6-mal so hoch wie breit —
+   Hoehen hier sind also in Glashoehen, Breiten in Glasbreiten. Steckt die
+   Garnitur, federt sie kurz ein. */
+.garnitur {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: garnitur-an 380ms cubic-bezier(0.3, 1.6, 0.5, 1) 420ms backwards;
+}
+
+.garnitur img {
+  position: absolute;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Der Strohhalm steht rechts im Glas; die Vorlage ist schon um rund 15 Grad
+   geneigt. Oberkante, Laenge und der Schnitt am Fluessigkeitsspiegel stehen
+   in Garnitur.tsx — der Spiegel haengt an KOPFRAUM und BODEN aus Glas.tsx. */
+.garnitur-halm {
+  right: 18%;
+  width: auto;
+}
+
+@keyframes garnitur-an {
+  from { opacity: 0; scale: 0.4; }
+}
+
 /* --- Die Bar ------------------------------------------------------------- */
 /*
    Jede Reihe steht auf einer Messingleiste, die vorderste auf dem Tresen.
@@ -226,8 +363,8 @@ body {
    Beide kommen OHNE `filter: blur` aus — die Begruendung steht unten. */
 .glas-glanz {
   position: absolute;
-  top: 5%;
-  left: 14.5%;
+  top: 8%;
+  left: 10%;
   width: 9%;
   height: 40%;
   /*
@@ -267,9 +404,9 @@ body {
 .glas-glanz-rand {
   position: absolute;
   top: 12%;
-  right: 5.5%;
+  right: 9%;
   width: 7%;
-  height: 64%;
+  height: 56%;
   background: radial-gradient(
     50% 50% at 50% 22%,
     rgba(255, 255, 255, 0.52) 0%,
@@ -338,14 +475,54 @@ body {
   right: -50vw;
   left: -50vw;
   height: 100vh;
-  background: linear-gradient(
-    180deg,
-    var(--color-holz-hell) 0%,
-    var(--color-holz) 22%,
-    #1D1310 56%,
-    #150F0D 100%
-  );
+  /*
+    HOLZ, nicht Braun. Bis zum 01.10.2026 war der Tresen ein einziger
+    Verlauf von Braun nach Schwarz, gut 200 px hoch — eine Flaeche, kein
+    Moebel. Jetzt hat er drei Teile, von oben nach unten:
+
+     1. die PLATTE (0–34 px): heller, poliert, laengs gemasert. Auf ihr
+        spiegeln sich die Glaeser (`-webkit-box-reflect` weiter unten).
+     2. die KANTE (34–42 px): ein dunkler Absatz mit einer Lichtlinie —
+        daran sieht man, dass die Platte eine Dicke hat.
+     3. die FRONT darunter: senkrechte Bretter mit Fugen, nach unten
+        dunkler, weil das Licht von oben kommt.
+
+    Alles aus Verlaeufen, keine Bilddatei: die Maserung sind zwei
+    `repeating-linear-gradient` mit krummen Abstaenden, damit sich kein
+    sichtbares Raster ergibt.
+  */
+  background:
+    /* Platte: Lichtglanz von den Lampen */
+    radial-gradient(60% 34px at 50% 0, rgba(255, 220, 160, 0.16), rgba(255, 220, 160, 0)) 0 0 / 100% 34px no-repeat,
+    /* Platte: Maserung laengs */
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 3px, rgba(0, 0, 0, 0.09) 3px 4px, rgba(0, 0, 0, 0) 4px 7px, rgba(255, 210, 160, 0.04) 7px 8px) 0 0 / 100% 34px no-repeat,
+    /* Platte: Grundton */
+    linear-gradient(180deg, #4E3727 0%, #3E2A1F 100%) 0 0 / 100% 34px no-repeat,
+    /* Kante: Lichtlinie oben, dann dunkler Absatz */
+    linear-gradient(180deg, rgba(255, 214, 150, 0.32) 0, rgba(255, 214, 150, 0.32) 1px, #1E1410 1px, #160F0C 100%) 0 34px / 100% 8px no-repeat,
+    /* Front: Fugen zwischen den Brettern */
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 61px, rgba(0, 0, 0, 0.42) 61px 63px, rgba(255, 210, 160, 0.05) 63px 64px) 0 42px / 100% 100% no-repeat,
+    /* Front: feine Maserung quer */
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 5px, rgba(0, 0, 0, 0.06) 5px 6px, rgba(0, 0, 0, 0) 6px 13px, rgba(255, 210, 160, 0.025) 13px 14px) 0 42px / 100% 100% no-repeat,
+    /* Front: Grundton, nach unten dunkler */
+    linear-gradient(180deg, #33241B 0%, #251912 30%, #170F0C 70%, #120C0A 100%) 0 42px / 100% 100% no-repeat;
   pointer-events: none;
+}
+
+/*
+   Die Glaeser der vordersten Reihe spiegeln sich auf der polierten Platte.
+   Das ist der Unterschied zwischen „stehen auf einem Streifen" und „stehen
+   auf einem Tresen".
+
+   `-webkit-box-reflect` gibt es in WebKit (iOS) und Chromium (Android-
+   WebView) — also auf beiden Plattformen der Store-App. Ein Browser ohne es
+   zeigt einfach keine Spiegelung; nichts bricht.
+
+   NICHT beim Kippen: die Spiegelung dreht sich mit dem Glas und flöge als
+   umgedrehtes Glas durch die Luft.
+*/
+.brett-reihe:last-child > .glas:not(.glas-giesst) > .glas-koerper {
+  -webkit-box-reflect: below 3px linear-gradient(transparent 76%, rgba(255, 255, 255, 0.16));
 }
 
 /* Die Messingkante des Tresens ist zugleich die Leiste der vordersten
@@ -419,15 +596,103 @@ body {
   flex-shrink: 0;
 }
 
-/* Glanz auf der Platte. */
+/* Der Schatten, den die Platte auf die Front wirft. */
 .theke::after {
   content: '';
   position: absolute;
-  top: 0;
+  top: 42px;
   right: 0;
   left: 0;
-  height: 62px;
-  background: linear-gradient(180deg, rgba(255, 226, 170, 0.14), rgba(255, 226, 170, 0));
+  height: 22px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0));
+}
+
+/*
+   Der Spielbildschirm schneidet ab, was Tresen und kippende Glaeser ueber
+   den Rand zeichnen. `clip` und nicht nur `hidden`: ein Element mit
+   `overflow: hidden` ist trotzdem ein SCROLLBEHAELTER und laesst sich per
+   Programm verschieben — beim Durchspielen im Oberflaechentest stand das
+   ganze Brett ploetzlich 465 px weiter oben und 63 px weiter links, ohne
+   dass irgendwer gescrollt hatte. `clip` schneidet nur ab. `hidden` bleibt
+   davor stehen fuer WebViews, die `clip` noch nicht kennen.
+*/
+.buehne {
+  overflow: hidden;
+  overflow: clip;
+}
+
+/* --- Die Rueckwand (siehe Rueckwand.tsx) ---------------------------------- */
+/* `z-index: -1` legt sie hinter alles — auch hinter Kopfzeile und Brett, ohne
+   dass die eine eigene Position braeuchten. Gemalt wird sie trotzdem UEBER
+   dem Fischschuppengrund, denn der liegt auf dem Hintergrund der Seite. */
+.rueckwand {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100%;
+  max-width: 520px;
+  right: 0;
+  margin: 0 auto;
+  pointer-events: none;
+}
+
+/* --- Der Sieg -------------------------------------------------------------- */
+/*
+   Erst das Brett, dann die Karte. Bis zum 01.10.2026 verschwand das geloeste
+   Brett im selben Moment hinter einem dunklen Schleier — man sah nie, was
+   man geschafft hatte. Jetzt jubeln erst die Glaeser (`.glas-fertig`), dann
+   kommt die Karte von unten, und die Sterne springen einzeln herein.
+
+   Alles mit `backwards` und Verzoegerung, ohne Zeitgeber in JavaScript: das
+   Fenster steht sofort im DOM (der Oberflaechentest liest es nach 500 ms),
+   es ist nur noch nicht zu sehen.
+*/
+.sieg-schleier {
+  animation: sieg-schleier 400ms ease-out 900ms backwards;
+}
+
+@keyframes sieg-schleier {
+  from { opacity: 0; }
+}
+
+.sieg-karte {
+  animation: sieg-karte 420ms cubic-bezier(0.2, 1.3, 0.4, 1) 1000ms backwards;
+}
+
+@keyframes sieg-karte {
+  from { opacity: 0; transform: translateY(60px) scale(0.96); }
+}
+
+.sieg-stern {
+  animation: sieg-stern 420ms cubic-bezier(0.3, 1.8, 0.5, 1) backwards;
+}
+
+@keyframes sieg-stern {
+  0%  { opacity: 0; transform: scale(0.2) rotate(-40deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* Funken: kleine Stuecke in den Farben der Saefte, die aus der Mitte
+   aufsteigen und fallen. Wohin genau, steht als Variablen an jedem Stueck
+   (`--fx`, `--fy`, `--dreh`) — gerechnet in App.tsx aus einer festen Saat. */
+.funke {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 7px;
+  height: 11px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: funke 1250ms cubic-bezier(0.15, 0.6, 0.35, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes funke {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(0); }
+  8%   { opacity: 1; }
+  55%  { opacity: 1; transform: translate(var(--fx), var(--fy)) rotate(var(--dreh)); }
+  100% { opacity: 0; transform: translate(var(--fx), calc(var(--fy) + 160px)) rotate(calc(var(--dreh) * 2)); }
 }
 
 /* Der Giessstrahl.
@@ -569,6 +834,12 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .glas, .knopf, .glas-koerper { transition: none; }
+  /* Der Sieg kommt sofort, ohne Welle, ohne Funken. */
+  .glas-fertig, .glas-jubel, .sieg-schleier, .sieg-karte, .sieg-stern { animation: none; }
+  .funke { display: none; }
+  .lauf-leuchtet { animation: none; background: rgba(255, 255, 255, 0.16); }
+  .glas-schein { animation: none; }
+  .garnitur { animation: none; }
   /* Die Schicht steht sofort da, statt zu wachsen. */
   .schicht-fuellt { animation: none; }
   /* Kein Kippen: ein Glas, das ohne Bewegung einfach schraeg dasteht und

@@ -175,7 +175,7 @@ console.log('\n--- Feature-Grafik ---');
     document.body.innerHTML = `
       <div style="position:fixed;inset:0;display:flex;align-items:center;gap:56px;
                   padding:0 72px;overflow:hidden">
-        <img src="/favicon.svg" width="240" height="240"
+        <img src="/icons/icon-512.png" width="240" height="240"
              style="flex:0 0 auto;border-radius:52px;box-shadow:0 18px 50px rgba(0,0,0,.55)">
         <div style="min-width:0">
           <div style="font-family:Fredoka,system-ui;font-weight:700;font-size:74px;
@@ -207,8 +207,7 @@ server.close();
 // ---------------------------------------------------------------------------
 console.log('\n--- Symbol ---');
 {
-  const svg = readFileSync(join(wurzel, 'public/favicon.svg'));
-  await sharp(svg, { density: 1024 }).resize(512, 512)
+  await sharp(join(wurzel, 'tools/vorlagen/app-symbol.jpg')).resize(512, 512)
     .flatten({ background: { r: 0x0e, g: 0x1a, b: 0x2e, alpha: 1 } })
     .png().toFile(join(ziel, 'play-icon-512.png'));
   console.log('  play-icon-512.png');

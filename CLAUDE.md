@@ -299,7 +299,7 @@ Code auf seinem Rechner laufen.
 - [x] **Android:** `keystore.properties`-Signierung, AdMob-App-ID im Manifest,
       `AD_ID`-Berechtigung (ohne sie liefert das SDK ab Android 13 nur
       nicht-personalisierte Anzeigen — und nichts protokolliert es)
-- [x] **App-Symbole und Startbilder** aus `public/favicon.svg`
+- [x] **App-Symbole und Startbilder** aus `tools/vorlagen/app-symbol.jpg`
       (`tools/app-icons-bauen.mjs`): iOS 1024 ohne Alphakanal, Android fünf Dichten
       als Quadrat, rund und adaptiv. Ohne das lädt man eine App mit dem
       **Capacitor-Logo** in den Store.
@@ -308,6 +308,22 @@ Code auf seinem Rechner laufen.
       Reagenzglas-Form und die echten Töne aus `farben.ts`. Derselbe Fehler steckte in
       `capacitor.config.ts` — der native Hintergrund war braun, die App ist nachtblau,
       also hätte es beim Start gefarbblitzt.
+- [x] **Das Symbol kommt aus Gemini** (Josef, 02.10.2026): zwei Gläser, links
+      gemischt, rechts fertig mit Strohhalm, ruhig und modern auf Nachtblau. Davor
+      verworfen: ein SVG-Entwurf desselben Motivs („hässlich") und ein erstes
+      Gemini-Bild mit Barlampe. Gemini hatte einen dunkleren Kasten **ins** Bild
+      gemalt; die Vorlage ist auf diesen Kasten zugeschnitten, sonst stünde ein
+      Rahmen im Symbol. Die **eine Quelle** ist jetzt
+      `tools/vorlagen/app-symbol.jpg`; `public/favicon.svg` ist gelöscht, der
+      Browser-Tab bekommt `public/favicon.png`. Alle drei Werkzeuge
+      (`app-icons-bauen.mjs`, `icons-bauen.mjs`, `store-bilder.mjs`) lesen dieselbe
+      Datei.
+      Für das adaptive Android-Symbol und die Startbilder läuft der Rand des Bildes
+      **weich aus** — sein Grund ist #081525, nicht ganz das Nachtblau #0E1A2E der
+      App, und ohne Verlauf stünde ein Quadrat auf dem Quadrat. Es nimmt 60 % der
+      Fläche ein, damit die Spitze des Strohhalms im sicheren Kreis bleibt.
+      *Dabei aufgefallen:* `manifest.webmanifest` trug noch das Braun von vor M4
+      (`theme_color: #1b1410`) — jetzt auch dort Nachtblau.
 - [x] **Release-Workflows** `ios-release.yml` und `android-release.yml` mit der Eingabe
       `laeufer` (`github` oder Josefs Mac), Upload-Schalter standardmäßig **aus**
 - [x] **`tools/test-release.mts`** — die Store-Verkabelung als Test, siehe unten
@@ -1121,7 +1137,8 @@ ab — der Release-Workflow schreibt beide in den Arbeitsordner, und der
 Upload-Schlüssel ist unersetzlich).
 
 Nach jeder Änderung am Web-Teil: `npm run build && npx cap sync`. Nach einer
-Änderung an `public/favicon.svg`: `node tools/app-icons-bauen.mjs`.
+Änderung an `tools/vorlagen/app-symbol.jpg`: `node tools/app-icons-bauen.mjs` und
+`node tools/icons-bauen.mjs`.
 
 #### Die ATT-Falle, die Anigosha nicht hatte
 
@@ -1364,7 +1381,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
    — AdMob-Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
 6. **Stores:** **FERTIG (26.09.2026)**, soweit es ohne Konten geht. Die nativen
    Projekte für iOS und Android liegen im Repo, beide Release-Workflows stehen samt
-   der Eingabe `laeufer`, die App-Symbole kommen aus `favicon.svg` statt vom
+   der Eingabe `laeufer`, die App-Symbole kommen aus `app-symbol.jpg` statt vom
    Capacitor-Logo, und `tools/test-release.mts` bewacht die Verkabelung.
    Was fehlt, braucht **Konten und einen Mac**, und steht in `docs/release-ci.md`:
    die vier AdMob-Anzeigenblöcke plus `TEST_ANZEIGEN = false` (die beiden AdMob-Apps
@@ -1570,9 +1587,10 @@ Schriften aus `public/fonts/` zum Einsatz. Die Screenshots des Oberflächentests
 dafür **nicht**: die sind 390×844, und Apple weist zu kleine Bilder erst beim Hochladen
 ab.
 
-**Icons:** `node tools/icons-bauen.mjs` erzeugt aus `public/favicon.svg` die
-PNG-Größen. Nur SVG reicht nicht — iOS nimmt für „Zum Home-Bildschirm hinzufügen"
-ausschließlich `apple-touch-icon.png`, und der Android-Manifest will PNG.
+**Icons:** `node tools/icons-bauen.mjs` erzeugt aus `tools/vorlagen/app-symbol.jpg`
+das Favicon (`public/favicon.png`) und die PNG-Größen. iOS nimmt für „Zum
+Home-Bildschirm hinzufügen" ausschließlich `apple-touch-icon.png`, und das
+Web-Manifest will PNG.
 
 ## Regeln (wie in allen Repos)
 

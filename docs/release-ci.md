@@ -170,8 +170,8 @@ Sprachen ankreuzen.
 - Android: `versionCode` in `android/app/build.gradle` erhöhen (aktuell **1**)
 - iOS: `CURRENT_PROJECT_VERSION` im pbxproj erhöhen (**zwei** Stellen, aktuell **1**)
 - Beide `versionName`/`MARKETING_VERSION` gleich halten — `test-release.mts` prüft das
-- Symbole neu bauen, falls `public/favicon.svg` sich geändert hat:
-  `node tools/app-icons-bauen.mjs`
+- Symbole neu bauen, falls `tools/vorlagen/app-symbol.jpg` sich geändert hat:
+  `node tools/app-icons-bauen.mjs && node tools/icons-bauen.mjs`
 - DSGVO-Einwilligungsnachricht in AdMob muss **veröffentlicht** sein
 
 ## Eigener Mac als Läufer (keine GitHub-Minuten)

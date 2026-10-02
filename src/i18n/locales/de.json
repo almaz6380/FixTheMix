@@ -108,5 +108,8 @@
     "minze": "Minze",
     "kokos": "Kokos",
     "kaffee": "Kaffee"
+  },
+  "ios": {
+    "tracking": "Mit deiner Zustimmung zeigen wir dir passendere Werbung. Das Spiel bleibt davon unberührt."
   }
 }

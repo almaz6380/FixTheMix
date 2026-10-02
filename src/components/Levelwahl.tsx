@@ -71,7 +71,7 @@ export default function Levelwahl({
           aria-label={schliessen}
           className="flex h-[46px] w-[46px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl border-[1.5px] border-kante bg-theke/90 text-creme"
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
       </div>
 
@@ -87,7 +87,7 @@ export default function Levelwahl({
           aria-label={zurueck}
           className="flex h-[38px] w-[38px] flex-shrink-0 touch-manipulation items-center justify-center rounded-xl border-[1.5px] border-kante bg-theke/90 text-creme disabled:opacity-30"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
         <div className="text-center">
           <p className="font-anzeige text-sm leading-none font-bold text-creme">
@@ -115,7 +115,7 @@ export default function Levelwahl({
           aria-label={vor}
           className="flex h-[38px] w-[38px] flex-shrink-0 touch-manipulation items-center justify-center rounded-xl border-[1.5px] border-kante bg-theke/90 text-creme disabled:opacity-30"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>
 
@@ -148,7 +148,7 @@ export default function Levelwahl({
                   <span className="font-anzeige relative text-xl leading-none font-semibold">
                     {i + 1}
                     {experte && (
-                      <span className="absolute -top-0.5 -right-2.5 h-1.5 w-1.5 rounded-full bg-zitrus" aria-hidden="true" />
+                      <span className="absolute -top-0.5 -end-2.5 h-1.5 w-1.5 rounded-full bg-zitrus" aria-hidden="true" />
                     )}
                   </span>
                   {/*

@@ -12,7 +12,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { SPRACHEN, appSprache, setzeSprache } from '../i18n/index.ts';
+import { SPRACHEN, appSprache, setzeSprache, type AppSprache } from '../i18n/index.ts';
 import { ladeEinstellung, loescheAlles, speichereEinstellung } from '../lib/fortschritt.ts';
 import { klangWahl, setzeTon, tonGeladen } from '../lib/klang.ts';
 import { BELOHNUNG_VIDEO, ladeMuenzen, speichereMuenzen } from '../lib/muenzen.ts';
@@ -106,7 +106,7 @@ export default function Einstellungen() {
           aria-label={t('spiel.zurueck')}
           className="flex h-[42px] w-[42px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl border-[1.5px] border-kante bg-theke/90 text-creme"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
         <h1 className="font-anzeige text-2xl leading-tight font-bold text-creme">{t('spiel.einstellungen')}</h1>
       </div>
@@ -125,19 +125,22 @@ export default function Einstellungen() {
       <h2 className="font-anzeige mt-7 text-sm font-bold tracking-[0.08em] text-rauch uppercase">
         {t('spiel.sprache')}
       </h2>
-      <div className="mt-2 flex flex-wrap gap-2">
+      {/* Eine Auswahlliste statt Knoepfen: bei zwanzig Sprachen waeren es
+          sechs Zeilen Chips gewesen. Jede Sprache steht in ihrem eigenen
+          Namen — wer die App nicht lesen kann, sucht „日本語". `lang` je
+          Eintrag, damit das Geraet die Zeichen richtig setzt. */}
+      <select
+        value={sprache}
+        onChange={(e) => setzeSprache(e.target.value as AppSprache)}
+        aria-label={t('spiel.sprache')}
+        className="knopf sprachwahl mt-2 w-full px-4"
+      >
         {SPRACHEN.map((s) => (
-          <button
-            key={s.code}
-            type="button"
-            onClick={() => setzeSprache(s.code)}
-            aria-pressed={sprache === s.code}
-            className={`knopf px-4 ${sprache === s.code ? 'knopf-an' : ''}`}
-          >
+          <option key={s.code} value={s.code} lang={s.code}>
             {s.name}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
 
       {/* Spiel. Eigener Schluessel und NICHT `spiel.tagesraetsel`: darunter steht
           der Farbenblind-Schalter und der Muenzstand, mit dem Tagesraetsel hat

@@ -21,7 +21,7 @@ Store zu nehmen.
 | Datenschutz-URL | `https://almaz6380.github.io/fixthemix/datenschutz.html` |
 | Datenlöschung (nur Play) | `https://almaz6380.github.io/fixthemix/daten-loeschen.html` |
 | Support / Kontakt | `63almaz80@gmail.com` |
-| Sprachen der App | Deutsch, Englisch, Spanisch, Französisch, Portugiesisch |
+| Sprachen der App | 20: Deutsch, Englisch, Spanisch, Französisch, Portugiesisch, Italienisch, Niederländisch, Polnisch, Türkisch, Russisch, Ukrainisch, Arabisch, Hindi, Indonesisch, Vietnamesisch, Thai, Japanisch, Koreanisch, Chinesisch (vereinfacht, traditionell) |
 
 Die Rechtsseiten liegen seit dem 01.10.2026 auf GitHub Pages
 (`https://almaz6380.github.io/fixthemix/`), nicht mehr auf `fixthemix.vercel.app`:
@@ -31,10 +31,10 @@ oben gibt es `impressum.html` und `nutzungsbedingungen.html`, englisch `privacy.
 `imprint.html`, `terms.html` und `delete-data.html`. **Nach jeder Änderung an einem
 Rechtstext dort `npm run erzeugen` laufen lassen**, sonst zeigt der Store den alten Text.
 
-Die Store-Texte stehen hier auf Deutsch und Englisch. Die drei anderen Sprachen
-haben in der App vollständige Übersetzungen, aber eine Store-Beschreibung will
-gegengelesen werden — bis dahin sieht ein spanischer Nutzer die englische Seite,
-und das ist besser als eine schiefe Übersetzung.
+Die Store-Texte stehen hier auf Deutsch und Englisch. Für die anderen 18 Sprachen der
+App (seit 02.10.2026) stehen sie in **`docs/store-texte-sprachen.md`**, mit
+denselben Feldern und Zeichengrenzen. Sie sind maschinell übersetzt und nicht
+gegengelesen — wer eine Sprache nicht anlegt, dem zeigt der Store die Standardsprache.
 
 ## Apple: App Store Connect
 

@@ -108,5 +108,8 @@
     "minze": "Menthe",
     "kokos": "Coco",
     "kaffee": "Café"
+  },
+  "ios": {
+    "tracking": "Avec votre autorisation, nous pouvons vous montrer des publicités plus pertinentes. Le jeu lui-même reste exactement le même."
   }
 }

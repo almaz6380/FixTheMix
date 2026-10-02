@@ -1,0 +1,3 @@
+/* Erzeugt von tools/ios-sprachen.mjs aus src/i18n/locales/ar.json (ios.tracking).
+   Nicht von Hand aendern — dort aendern und das Werkzeug laufen lassen. */
+"NSUserTrackingUsageDescription" = "بإذنك يمكننا أن نعرض لك إعلانات أكثر ملاءمة. اللعبة نفسها تبقى كما هي تمامًا.";

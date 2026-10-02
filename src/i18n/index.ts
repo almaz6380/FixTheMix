@@ -1,40 +1,34 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import de from './locales/de.json';
-import en from './locales/en.json';
-import es from './locales/es.json';
-import fr from './locales/fr.json';
-import pt from './locales/pt.json';
+import { richtung, spracheFuer, type AppSprache } from './sprachen.ts';
 
-// Fuenf Sprachen seit Phase 5. Weitere: neue JSON-Datei in locales/, Eintrag in
-// `resources`, Code in `SPRACHEN` — sonst nichts.
+export { SPRACHEN, type AppSprache } from './sprachen.ts';
+
+// Zwanzig Sprachen seit dem 02.10.2026, vorher fuenf. Welche es gibt und wie
+// aus der Geraetesprache eine davon wird, steht in sprachen.ts. Eine weitere:
+// JSON-Datei in locales/ und Eintrag in `SPRACH_CODES`/`SPRACHEN` — sonst
+// nichts. Die Dateien kommen hier per Glob herein; eine Datei, die es gibt,
+// ist damit immer auch geladen.
 //
-// ALLE Dateien tragen dieselben Schluessel; `tools/test-recht.mts` prueft das.
-// Eine fehlende Zeile faellt sonst erst auf, wenn ein Spieler in dieser Sprache
-// vor einem englischen Text steht.
-export type AppSprache = 'de' | 'en' | 'es' | 'fr' | 'pt';
-
-/** Die Sprachen in der Reihenfolge, in der die Einstellungen sie zeigen. */
-export const SPRACHEN: { code: AppSprache; name: string }[] = [
-  { code: 'de', name: 'Deutsch' },
-  { code: 'en', name: 'English' },
-  { code: 'es', name: 'Español' },
-  { code: 'fr', name: 'Français' },
-  { code: 'pt', name: 'Português' },
-];
+// ALLE Dateien tragen dieselben Schluessel; `tools/test-recht.mts` prueft das,
+// und auch, dass jede Sprache in `SPRACHEN` eine Datei hat und umgekehrt.
+const dateien = import.meta.glob<{ default: Record<string, unknown> }>(
+  './locales/*.json', { eager: true },
+);
+const resources = Object.fromEntries(
+  Object.entries(dateien).map(([pfad, modul]) => [
+    pfad.replace('./locales/', '').replace('.json', ''),
+    { translation: modul.default },
+  ]),
+);
 
 /**
  * Die Sprache des Geraets, sofern wir sie bedienen — sonst Englisch.
  *
- * MUSS ueber `savedLanguage` stehen, und `SPRACHEN` muss darueber stehen. Beim
- * ersten Anlauf stand beides DARUNTER: dann greift die temporale Todeszone von
- * `const`, `SPRACHEN` ist beim Aufruf noch nicht initialisiert, der Zugriff
- * wirft — und das `catch` unten hat den Fehler stillschweigend verschluckt und
- * Englisch geliefert. Die App war damit auf jedem deutschen Geraet englisch, und
- * kein Test und keine Konsole sagte ein Wort. Der Oberflaechentest hat es
- * gefunden, weil er deutsche Knopftexte sucht.
- *
- * Das `catch` bleibt schmal: es faengt nur, dass es `navigator` ueberhaupt gibt.
+ * Das `catch` bleibt schmal: es faengt nur, dass es `navigator` ueberhaupt
+ * gibt. Beim ersten Anlauf (Phase 5) stand diese Funktion UNTER ihrer
+ * Verwendung, die temporale Todeszone von `const` warf, und ein zu weites
+ * `catch` lieferte still Englisch — auf jedem deutschen Geraet.
  */
 function geraeteSprache(): AppSprache {
   let wuensche: readonly string[] = [];
@@ -43,39 +37,44 @@ function geraeteSprache(): AppSprache {
   } catch {
     return 'en';
   }
-  for (const roh of wuensche) {
-    const kurz = roh.slice(0, 2).toLowerCase();
-    const treffer = SPRACHEN.find((s) => s.code === kurz);
-    if (treffer) return treffer.code;
-  }
-  return 'en';
+  return spracheFuer(wuensche);
 }
 
-// Beim ersten Start entscheidet die GERAETESPRACHE, nicht Deutsch. Vorher stand
-// hier `|| 'de'`, und damit sah ein Spieler in Madrid eine deutsche App, obwohl
-// es Spanisch gibt.
+// Beim ersten Start entscheidet die GERAETESPRACHE, nicht Deutsch. Ein
+// gespeicherter Wert laeuft ebenfalls durch die Weiche — ein altes `zh` oder
+// eine Sprache, die es nicht mehr gibt, landet so auf einer, die es gibt.
 let gespeichert: string | null = null;
 try {
   gespeichert = localStorage.getItem('language');
 } catch {
   // Kein Speicher — dann entscheidet das Geraet.
 }
-const savedLanguage = gespeichert || geraeteSprache();
+const savedLanguage = gespeichert ? spracheFuer([gespeichert]) : geraeteSprache();
+
+/**
+ * `lang` und `dir` auf <html>. `lang` ist keine Zierde: an ihm waehlt das
+ * Handy fuer dieselben Han-Zeichen die japanische, chinesische oder
+ * koreanische Glyphe. `dir="rtl"` spiegelt die Oberflaeche fuer Arabisch —
+ * das Brett nimmt sich davon ausdruecklich aus (siehe Brett.tsx).
+ */
+function setzeDokument(s: AppSprache): void {
+  try {
+    document.documentElement.lang = s;
+    document.documentElement.dir = richtung(s);
+  } catch {
+    // Kein Dokument (Test in node) — nichts zu tun.
+  }
+}
 
 i18n.use(initReactI18next).init({
-  resources: {
-    de: { translation: de },
-    en: { translation: en },
-    es: { translation: es },
-    fr: { translation: fr },
-    pt: { translation: pt },
-  },
+  resources,
   lng: savedLanguage,
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false,
   },
 });
+setzeDokument(savedLanguage);
 
 export default i18n;
 
@@ -90,33 +89,23 @@ export function setzeSprache(code: AppSprache): void {
   } catch {
     // Kein Speicher — die Wahl gilt dann nur fuer diese Sitzung.
   }
+  setzeDokument(code);
   void i18n.changeLanguage(code);
 }
 
-// Welche Sprachen die Datenbank wirklich bedienen kann. Bis Phase 4 gibt es
-// gar keine Datenbank — der Eintrag steht trotzdem schon hier, weil genau
-// diese Luecke (Oberflaeche kann eine Sprache, Backend noch nicht) in
-// anigosha einmal live gegangen ist und dort ein Quiz zeigte, das nicht lud.
-const DATEN_VORHANDEN: Record<AppSprache, boolean> = {
-  de: true,
-  en: true,
-  // Die Rechtstexte gibt es nur auf Deutsch und Englisch — sie muessen von
-  // einem Anwalt gegengelesen werden, und das lohnt nicht in fuenf Sprachen,
-  // solange keine Nutzer aus diesen Laendern da sind.
-  es: false,
-  fr: false,
-  pt: false,
-};
-
-// Sprache der Oberflaeche — kennt keine Sperre.
+// Sprache der Oberflaeche — kennt keine Sperre. Laeuft durch dieselbe Weiche
+// wie der Start: `i18n.language` ist hier immer einer unserer Codes, aber
+// `slice(0, 2)` haette aus „zh-Hant" ein „zh" gemacht, das es nicht gibt.
 export function appSprache(): AppSprache {
-  const l = (i18n.language ?? 'de').slice(0, 2).toLowerCase();
-  return (SPRACHEN.find((s) => s.code === l)?.code ?? 'de');
+  return spracheFuer([i18n.language ?? 'en']);
 }
 
-// Sprache fuer alles, was an die Datenbank geht. Faellt auf Englisch zurueck,
-// solange die Inhalte dort noch nicht liegen.
+// Sprache fuer alles, was an die Datenbank geht. Bis Phase 4 gibt es gar keine
+// Datenbank — die Weiche steht trotzdem schon hier, weil genau diese Luecke
+// (Oberflaeche kann eine Sprache, Backend noch nicht) in anigosha einmal live
+// gegangen ist. Inhalte gibt es nur auf Deutsch und Englisch.
 export function datenSprache(): AppSprache {
   const s = appSprache();
-  return DATEN_VORHANDEN[s] ? s : 'en';
+  return s === 'de' || s === 'en' ? s : 'en';
 }
+

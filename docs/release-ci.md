@@ -145,25 +145,27 @@ Sie lassen sich aus keinem Workflow setzen, und ohne sie kommt die Ablehnung.
 Google Play braucht dazu die eigene Adresse für den Weg zur Datenlöschung:
 `https://almaz6380.github.io/fixthemix/daten-loeschen.html`
 
-## Der ATT-Text in fünf Sprachen
+## Der ATT-Text in allen Sprachen — ohne Xcode
 
-Die `Info.plist` trägt `NSUserTrackingUsageDescription` auf Deutsch, weil Deutsch
-die Entwicklungssprache des Bundles ist (`CFBundleDevelopmentRegion`). Ein
-spanischer Spieler sieht damit einen deutschen Dialog.
+Der Text des Dialogs „Darf die App dich verfolgen?" (`NSUserTrackingUsageDescription`)
+steht seit dem 02.10.2026 in **allen zwanzig Sprachen** der App. Die `Info.plist`
+behält ihren deutschen Text nur als Rückfall.
 
-Das ist in Xcode zwei Klicks und gehört **auf dem Mac** gemacht, nicht von hier
-aus: eine Lokalisierung ändert die Projektdatei, und eine kaputte `project.pbxproj`
-merkt man erst im Release-Build. Weg: Projekt auswählen → Info → Localizations →
-`+` je Sprache → dann `Info.plist` auswählen und rechts unter „Localize…" die
-Sprachen ankreuzen.
+- **Die Texte** stehen bei den anderen Übersetzungen: `ios.tracking` in jeder
+  `src/i18n/locales/<code>.json`. `tools/test-recht.mts` prüft, dass keiner fehlt.
+- **`node tools/ios-sprachen.mjs`** schreibt daraus je Sprache
+  `ios/App/App/<code>.lproj/InfoPlist.strings` und trägt alles in die
+  `project.pbxproj` ein: Variantengruppe `InfoPlist.strings`, Ressourcen-Phase des
+  App-Targets, `knownRegions`. Es benutzt dieselbe Bibliothek wie Capacitor (`xcode`),
+  liest die Datei danach zur Probe neu ein und ändert bei einem zweiten Lauf nichts.
+- **Xcode braucht es dafür nicht** (Josef: „nein ohne xcode"). `tools/test-release.mts`
+  prüft, dass jede Sprache ihre Datei hat, dass sie im Projekt steht und dass die
+  Gruppe in der Ressourcen-Phase hängt — eine Datei, die nicht im Projekt steht, käme
+  still nicht in die App.
 
-| Sprache | Text |
-|---|---|
-| de | Mit deiner Zustimmung zeigen wir dir passendere Werbung. Das Spiel bleibt davon unberührt. |
-| en | With your permission we can show you more relevant ads. The game itself stays exactly the same. |
-| es | Con tu permiso podemos mostrarte anuncios más relevantes. El juego no cambia en nada. |
-| fr | Avec ton accord, nous pouvons t'afficher des publicités plus pertinentes. Le jeu reste inchangé. |
-| pt | Com a tua autorização podemos mostrar anúncios mais relevantes. O jogo continua igual. |
+Nach einer Textänderung oder einer neuen Sprache: `node tools/ios-sprachen.mjs`.
+*Ob der Dialog am Gerät übersetzt erscheint, zeigt erst der erste Build auf dem Mac-Runner
+bzw. in TestFlight — von hier aus lässt sich nur die Verkabelung prüfen.*
 
 ## Vor jedem Release
 

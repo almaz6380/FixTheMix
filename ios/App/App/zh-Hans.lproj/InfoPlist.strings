@@ -1,0 +1,3 @@
+/* Erzeugt von tools/ios-sprachen.mjs aus src/i18n/locales/zh-Hans.json (ios.tracking).
+   Nicht von Hand aendern — dort aendern und das Werkzeug laufen lassen. */
+"NSUserTrackingUsageDescription" = "经你允许，我们可以为你展示更相关的广告。游戏本身完全不变。";

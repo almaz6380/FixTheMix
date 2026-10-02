@@ -380,7 +380,10 @@ export default function Brett({
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: `${breite}px` }} ref={rahmen}>
+    // dir="ltr" auch unter Arabisch: Kipp-Bahn, Strahl, Spiegelung und
+    // Strohhalm sind links-rechts gerechnet, und die Reihenfolge der Glaeser
+    // ist keine Leserichtung. Gespiegelt wird nur die Oberflaeche darum herum.
+    <div dir="ltr" style={{ position: 'relative', width: '100%', maxWidth: `${breite}px` }} ref={rahmen}>
       <div className="brett">
         {/* Zuerst im DOM und damit hinter den Glaesern. Haengt an der
             Unterkante des Bretts, nicht an einer festen Hoehe. */}

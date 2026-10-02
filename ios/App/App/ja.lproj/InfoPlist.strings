@@ -1,0 +1,3 @@
+/* Erzeugt von tools/ios-sprachen.mjs aus src/i18n/locales/ja.json (ios.tracking).
+   Nicht von Hand aendern — dort aendern und das Werkzeug laufen lassen. */
+"NSUserTrackingUsageDescription" = "許可していただくと、より関心に合った広告を表示できます。ゲームの内容はまったく変わりません。";

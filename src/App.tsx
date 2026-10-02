@@ -642,7 +642,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
         <button type="button" aria-label={t('spiel.undo')} disabled={!partie.kannUndo() || geloest}
           onClick={() => { if (partie.undo()) { raeumeGuss(); setGewaehlt(null); neuZeichnen(); } }}
           className="knopf knopf-bar w-[54px] flex-shrink-0">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8h11a5.5 5.5 0 010 11H8" /><path d="M7 4L3 8l4 4" /></svg>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M3 8h11a5.5 5.5 0 010 11H8" /><path d="M7 4L3 8l4 4" /></svg>
         </button>
 
         <button type="button" aria-label={t('spiel.neustart')} disabled={zuege === 0}
@@ -661,7 +661,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
           {rechnet ? t('spiel.rechnet') : t('spiel.tippPreis', { n: KOSTEN_TIPP })}
         </button>
 
-        <button type="button" aria-label={t('spiel.symbole')} aria-pressed={symbole}
+        <button type="button" aria-label={t('spiel.symbole')} aria-pressed={symbole} data-symbole
           onClick={() => { const n = !symbole; setSymbole(n); speichereEinstellung('symbole', n); }}
           className={`knopf knopf-bar w-[54px] flex-shrink-0 ${symbole ? 'knopf-an' : ''}`}>
           <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">

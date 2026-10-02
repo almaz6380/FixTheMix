@@ -70,8 +70,11 @@ Code auf seinem Rechner laufen.
   Rettungswege aus einer Sackgasse: ein Zug zurück für Münzen, oder ein leeres Glas für
   ein freiwilliges Werbevideo. Höchstens ein Extra-Glas je Partie, und es **deckelt die
   Wertung auf zwei Sterne** — das Optimum ist für das Brett ohne dieses Glas bewiesen.
-- **Fünf Sprachen** (Josef, 26.09.2026): DE, EN, ES, FR, PT. Die Rechtstexte bleiben bei
-  DE und EN, weil sie gegengelesen werden müssen.
+- **Zwanzig Sprachen** (Josef, 02.10.2026: „alle großen Sprachen", vorher fünf seit dem
+  26.09.): DE, EN, ES, FR, PT, IT, NL, PL, TR, RU, UK, AR, HI, ID, VI, TH, JA, KO,
+  Chinesisch vereinfacht und traditionell. **Arabisch läuft von rechts nach links.** Die
+  Rechtstexte bleiben bei DE und EN, weil sie gegengelesen werden müssen. Die
+  Übersetzungen sind maschinell und **nicht** von Muttersprachlern gegengelesen.
 - **Version 1.0 geht OHNE Bestenliste in den Store** (Josef, 26.09.2026). Damit gibt es
   keine Datenbank, keine anonyme Anmeldung und keine Duelle gegen Menschen — das
   Tagesrätsel läuft auf dem Gerät, der Duellgegner ist ein Bot. Die Folge ist keine
@@ -271,8 +274,8 @@ Code auf seinem Rechner laufen.
       Wiederherstellung, Werbe-Einwilligung, Münzstand, Kennung, Daten löschen
 - [x] **Vier Rechtstexte** mit eigenen Adressen: `/impressum`, `/datenschutz`,
       `/nutzungsbedingungen`, `/daten-loeschen`
-- [x] **Fünf Sprachen**, alle 79 Schlüssel vollständig; beim ersten Start entscheidet die
-      Gerätesprache
+- [x] **Zwanzig Sprachen** (seit 02.10.2026, vorher fünf), alle Schlüssel vollständig;
+      beim ersten Start entscheidet die Gerätesprache. Siehe „Sprachen".
 - [x] **Die beiden AdMob-Apps sind angelegt** (Josef, 26.09.2026), und ihre echten
       App-IDs stehen im Repo: iOS `…8860791993288062~8461231878` in der `Info.plist`,
       Android `…~4290052573` im Manifest. `TEST_ANZEIGEN` bleibt trotzdem `true` —
@@ -1292,12 +1295,59 @@ weil der Körper sein Seitenverhältnis hält.
 
 ### Sprachen
 
-Fünf Dateien in `src/i18n/locales/`, alle mit demselben Schlüsselsatz;
-`tools/test-recht.mts` prüft das, samt der Platzhalter (`{{n}}`) und daran, dass keine
-Zeile unübersetzt deutsch in einer fremden Datei steht.
+**Zwanzig Sprachen seit dem 02.10.2026** (vorher fünf): Dateien in
+`src/i18n/locales/`, alle mit demselben Schlüsselsatz. Welche es gibt und wie aus einer
+Gerätesprache eine davon wird, steht in **`src/i18n/sprachen.ts`** — eine eigene Datei
+ohne DOM, damit `tools/test-recht.mts` die Weiche in node prüfen kann. `index.ts` lädt
+die Dateien per `import.meta.glob`; eine Datei, die es gibt, ist damit auch geladen.
+`test-recht.mts` prüft Schlüssel, Platzhalter, unübersetzte Zeilen **und** dass Codes und
+Dateien zusammenpassen (keine Sprache ohne Datei, keine Datei ohne Code).
 
 **Beim ersten Start entscheidet die Gerätesprache**, nicht Deutsch — ein Spieler in
 Madrid sah vorher eine deutsche App, obwohl es Spanisch gibt.
+
+**Chinesisch ist die Falle der Weiche.** `slice(0, 2)` machte aus jedem Tag ein `zh`,
+das es nicht gibt. `spracheFuer()` liest die Schrift (`zh-Hant…`/`zh-Hans…`) und sonst
+die Region: Taiwan, Hongkong und Macau → traditionell, alles andere → vereinfacht. Ein
+Spieler in Taipeh, der vereinfachte Zeichen bekommt, meldet das nicht — er löscht die
+App. Der Test geht jede Variante einzeln durch.
+
+**`<html lang>` wird gesetzt**, und das ist keine Zierde: an `lang` wählt das Gerät für
+dieselben Han-Zeichen die japanische, chinesische oder koreanische Glyphe.
+
+**Arabisch: die Oberfläche spiegelt sich, das Brett nicht.** `dir="rtl"` auf `<html>`;
+Kopfzeile, Karten und Einstellungen drehen sich über Flex/Grid von selbst. **`Brett`
+trägt `dir="ltr"`**: Kipp-Bahn, Strahl, Spiegelung und Strohhalm sind links-rechts
+gerechnet, und die Reihenfolge der Gläser ist keine Leserichtung. Pfeile mit Richtung
+(zurück, Abschnitt vor/zurück, Undo) tragen die Klasse `pfeil` und werden unter
+`[dir=rtl]` gespiegelt; Symbole ohne Richtung bleiben.
+
+**Mengen ohne Pluralfalle.** Die App hat keine Pluralschlüssel. Russisch, Ukrainisch,
+Polnisch und Arabisch haben mehrere Pluralformen, darum stehen dort Formen wie
+„Монеты: {{n}}" statt „{{n}} монет", und nach einer Zahl Abkürzungen („ход.").
+
+**Schriften:** Fredoka und Nunito lagen nur als Latin-Grundblock vor — Polnisch (ł),
+Türkisch (ş ğ ı) und Vietnamesisch fielen mitten im Wort auf die Systemschrift zurück.
+`tools/fonts-holen.mjs` holt jetzt auch `latin-ext`, `vietnamese` und `cyrillic(-ext)`,
+jede Datei mit `unicode-range`. Japanisch, Koreanisch, Chinesisch, Thai, Hindi und
+Arabisch nehmen **bewusst die Systemschrift**: eine CJK-Schrift wäre mehrere MB.
+
+**Die Sprachwahl ist ein `<select>`** mit dem Eigennamen jeder Sprache („日本語", nicht
+„Japanisch") — wer die App nicht lesen kann, sucht seine Sprache in seiner Schrift.
+
+**Die Übersetzungen sind nicht gegengelesen.** Die Store-Texte für alle Sprachen stehen
+in `docs/store-texte-sprachen.md`, ebenfalls ungeprüft.
+
+**Der iOS-Tracking-Dialog (ATT) spricht alle zwanzig Sprachen — ohne Xcode** (Josef,
+02.10.2026: „nein ohne xcode!!!! du machst es alles!"). Der Text steht als `ios.tracking`
+in jeder `locales/*.json`; `node tools/ios-sprachen.mjs` schreibt daraus
+`ios/App/App/<code>.lproj/InfoPlist.strings` und trägt sie mit der Bibliothek `xcode`
+(dieselbe, die Capacitor benutzt) in die `project.pbxproj` ein: Variantengruppe,
+Ressourcen-Phase, `knownRegions`. Idempotent, mit Gegenprobe. Eine Falle der Bibliothek:
+sie schreibt `LastUpgradeCheck = 0920` als `920` zurück — das Werkzeug setzt den alten
+Wortlaut wieder ein, damit der Diff nur aus Ergänzungen besteht. `test-release.mts`
+prüft Dateien, Projekteinträge und Ressourcen-Phase; ob der Dialog am Gerät übersetzt
+erscheint, zeigt erst ein Build auf dem Mac.
 
 *Hier ist ein Fehler aufgeflogen, der es wert ist, aufgeschrieben zu werden:* Die
 Funktion `geraeteSprache()` stand zunächst **unter** ihrer Verwendung. Bei `const` greift
@@ -1377,7 +1427,7 @@ ist das einspeisbare `jetzt` im Löserbudget.
    der Oberfläche, Fortschritt und Münzen in die Datenbank.
 5. **Werbung, Kauf, Rechtstexte, Sprachen.** **FERTIG (26.09.2026)**, soweit es ohne
    Store-Konten geht: Werbung läuft mit Test-IDs, der Kauf bleibt ohne Schlüssel stumm,
-   die vier Rechtstexte stehen, fünf Sprachen sind vollständig. Was fehlt, braucht Konten
+   die vier Rechtstexte stehen, zwanzig Sprachen sind vollständig (seit 02.10.2026). Was fehlt, braucht Konten
    — AdMob-Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
 6. **Stores:** **FERTIG (26.09.2026)**, soweit es ohne Konten geht. Die nativen
    Projekte für iOS und Android liegen im Repo, beide Release-Workflows stehen samt
@@ -1502,6 +1552,10 @@ ist das einspeisbare `jetzt` im Löserbudget.
     ihre Überschrift geprüft, und „Daten löschen" muss den Speicher wirklich leeren.
     Der Test läuft mit `locale: 'de-DE'`, weil die App seit Phase 5 die Gerätesprache
     wählt; ohne das prüfte er plötzlich die englische Oberfläche.
+    Dazu **fünf weitere Sprachen** in je einer frischen Seite (ar, ja, ru, hi, zh-TW):
+    dass die Gerätesprache greift (auch zh-TW → traditionell), dass `<html>` `lang` und
+    `dir` trägt, dass Arabisch `rtl` ist, das Brett aber `ltr`, und dass keine Sprache
+    einen Konsolenfehler wirft. Screenshots `sprache-<code>-start/spiel.png`.
     Läuft gegen **`dist/`**, also vorher `npm run build`; ist nicht in `npm test`, weil
     es einen Build voraussetzt. Legt Screenshots in `.screenshots/` ab, darunter
     `03-graustufen.png` — das ist die Abnahme für den Farbenblind-Modus.
@@ -1580,7 +1634,10 @@ Levelwahl, Tagesrätsel — in den Größen, die Apple und Google verlangen: 129
 1242×2688 und 1080×1920. Dazu die **Feature-Grafik** 1024×500 und das 512er-Symbol für
 Play. Das Skript fährt die Routen direkt an (`/`, `/spiel`, `/level`, `/tagesraetsel`);
 vor dem 27.09.2026 klickte es sich über den Burger durch das Fenster über dem Spiel.
-Ergebnis in `.store/`, gitignored. Aufgenommen wird aus dem **echten Bundle**, nicht aus
+Ergebnis in `.store/<sprache>/`, gitignored; `--sprache ja` nimmt die Bilder in einer
+anderen Sprache auf (ohne Angabe Deutsch). Die Feature-Grafik gibt es nur auf Deutsch.
+Gläser und Symbolknopf findet das Skript über `data-glas`/`data-symbole`, nicht über
+deutsche Beschriftungen — sonst lief es in jeder anderen Sprache in eine Zeitüberschreitung. Aufgenommen wird aus dem **echten Bundle**, nicht aus
 einem Entwurf: ein aufgehübschter Store-Screenshot ist bei Apple ein Ablehnungsgrund.
 Die Feature-Grafik entsteht im Browser und nicht mit sharp — nur so kommen die echten
 Schriften aus `public/fonts/` zum Einsatz. Die Screenshots des Oberflächentests taugen

@@ -1,10 +1,20 @@
 // Web-App auf Cloudflare Workers (seit 01.10.2026; vorher Vercel, das den Account
 // pausiert hat). Nur statische Dateien aus dist/ – kein Worker-Code.
 // Gebaut und veroeffentlicht von Cloudflare selbst (Workers Builds, mit dem
-// GitHub-Repo verknuepft): Build-Befehl `npm run build`, Deploy `npx wrangler deploy`.
+// GitHub-Repo verknuepft): `main` mit `npx wrangler deploy`, jeder andere Zweig
+// mit `npx wrangler preview`. Gebaut wird in beiden Faellen ueber `build` unten.
 {
   "name": "fixthemix",
   "compatibility_date": "2026-09-01",
+  // Wrangler baut SELBST, bevor es hochlaedt. Im Cloudflare-Dashboard stand als
+  // Build-Befehl „None", und dist/ ist gitignored — ohne diese Zeile laedt
+  // wrangler einen Ordner hoch, den es nicht gibt. So haengt der Build nicht
+  // an einer Einstellung im Dashboard, die man nicht sieht.
+  "build": { "command": "npm run build" },
+  // Fuer Zweige ausser main ruft Cloudflare `npx wrangler preview` auf, und das
+  // verweigert ohne diesen Block mit „missing a 'previews' block" (PR #26).
+  // Leer heisst: alles wie oben, Assets inklusive.
+  "previews": {},
   "assets": {
     "directory": "./dist",
     // Routen wie /datenschutz kennt erst der Browser: alles, was keine Datei ist,

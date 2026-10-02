@@ -1520,6 +1520,15 @@ sind dort gesperrt): Workers & Pages → Projekt `fixthemix` → mit `almaz6380/
 verknüpft, Build `npm run build`, Deploy `npx wrangler deploy`. Jeder Push auf `main`
 geht damit live. Prüfen vor dem Push: `npx wrangler deploy --dry-run` liest `dist/`.
 
+**Zwei Fallen, aufgeflogen an PR #26 (02.10.2026):** Für jeden Zweig außer `main`
+ruft Cloudflare `npx wrangler preview` auf, und das bricht ohne einen `previews`-Block
+in `wrangler.jsonc` ab („missing a `previews` block"). Und im Dashboard stand als
+Build-Befehl **„None"** — `dist/` ist gitignored, also gäbe es nichts hochzuladen.
+Deshalb trägt `wrangler.jsonc` jetzt beides selbst: `"previews": {}` und
+`"build": { "command": "npm run build" }`. Wrangler baut damit vor `deploy` **und**
+vor `preview` selbst; das Repo hängt nicht mehr an einer Einstellung im Dashboard, die
+man nicht sieht. `npx wrangler deploy --dry-run` zeigt die Zeilen `[custom build]`.
+
 **Schriften:** `node tools/fonts-holen.mjs` lädt die `.woff2` von Google nach
 `public/fonts/` und druckt die `@font-face`-Regeln, die oben in `src/index.css` gehören.
 Einmalig gelaufen; das Ergebnis liegt im Repo. Es gibt **keinen** Netz-Fallback — fehlt

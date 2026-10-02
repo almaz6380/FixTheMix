@@ -432,6 +432,7 @@ export default function Glas({
       ref={innerRef}
       onClick={onTap}
       aria-label={beschriftung}
+      data-glas
       className={`glas ${gewaehlt ? 'glas-gewaehlt' : ''} ${kippt ? 'glas-giesst' : ''}`}
     >
       {/*

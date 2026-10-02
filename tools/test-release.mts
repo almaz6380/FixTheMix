@@ -23,6 +23,8 @@
 //     fehl, und ihre Ausgabe ist die Liste dessen, was Josef noch anlegen muss.
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { SPRACH_CODES } from '../src/i18n/sprachen.ts';
 
 const wurzel = new URL('..', import.meta.url).pathname;
 const lies = (...t: string[]) => readFileSync(join(wurzel, ...t), 'utf8');
@@ -165,6 +167,57 @@ console.log('\n--- iOS: die drei Dinge, an denen Apples Ablehnung 2.1 haengt ---
   // nicht pruefen — sie steht deshalb in docs/release-ci.md.
   ok(lies('docs/release-ci.md').includes('Tracking'),
      '3. die Angabe in App Store Connect steht in der Anleitung');
+}
+
+console.log('\n--- iOS: der Tracking-Dialog in jeder Sprache ---');
+{
+  // Ohne diese Dateien zeigt iOS den Dialog in jeder Sprache auf Deutsch (dem
+  // Text aus der Info.plist). Erzeugt und ins Projekt eingetragen werden sie
+  // von tools/ios-sprachen.mjs — ohne Xcode (Josef, 02.10.2026). Eine Datei,
+  // die nicht in der project.pbxproj steht, kommt nicht in die App, und das
+  // merkt man erst am Geraet. Darum hier beides.
+  const pbx = lies('ios/App/App.xcodeproj/project.pbxproj');
+  const fehlen: string[] = [];
+  const leer: string[] = [];
+  const nichtImProjekt: string[] = [];
+  for (const code of SPRACH_CODES) {
+    const pfad = `ios/App/App/${code}.lproj/InfoPlist.strings`;
+    if (!existsSync(join(wurzel, pfad))) { fehlen.push(code); continue; }
+    const m = lies(pfad).match(/"NSUserTrackingUsageDescription"\s*=\s*"((?:[^"\\]|\\.)*)";/);
+    if (!m || !m[1]!.trim()) leer.push(code);
+    const q = code.includes('-') ? `"${code}.lproj/InfoPlist.strings"` : `${code}.lproj/InfoPlist.strings`;
+    if (!pbx.includes(`path = ${q};`)) nichtImProjekt.push(code);
+  }
+  ok(fehlen.length === 0, `jede der ${SPRACH_CODES.length} Sprachen hat ein InfoPlist.strings (${fehlen.join(', ') || 'alle da'})`);
+  ok(leer.length === 0, `... mit einem Tracking-Text (${leer.join(', ') || 'keiner leer'})`);
+  ok(nichtImProjekt.length === 0, `... und steht in der project.pbxproj (${nichtImProjekt.join(', ') || 'alle'})`);
+
+  // Mit der Bibliothek lesen, die auch Capacitor benutzt: laesst sich die Datei
+  // parsen, und haengt die Variantengruppe in der Ressourcen-Phase des Targets?
+  const xcode = createRequire(import.meta.url)('xcode');
+  let gelesen = false;
+  let inPhase = false;
+  let regionen: string[] = [];
+  try {
+    const projekt = xcode.project(join(wurzel, 'ios/App/App.xcodeproj/project.pbxproj'));
+    projekt.parseSync();
+    gelesen = true;
+    const objekte = projekt.hash.project.objects;
+    const vg = Object.keys(objekte.PBXVariantGroup ?? {})
+      .find((k) => objekte.PBXVariantGroup[k]?.name === 'InfoPlist.strings');
+    const phase = projekt.getFirstTarget().firstTarget.buildPhases
+      .find((p: { comment: string }) => p.comment === 'Resources');
+    const dateien = objekte.PBXResourcesBuildPhase[phase.value].files as { value: string }[];
+    inPhase = !!vg && dateien.some((f) => objekte.PBXBuildFile[f.value]?.fileRef === vg);
+    regionen = (projekt.pbxProjectSection()[projekt.getFirstProject().uuid].knownRegions as string[])
+      .map((r) => r.replace(/"/g, ''));
+  } catch (e) {
+    console.log(`        ${String(e)}`);
+  }
+  ok(gelesen, 'die project.pbxproj laesst sich parsen');
+  ok(inPhase, 'InfoPlist.strings haengt in der Ressourcen-Phase des App-Targets');
+  const ohneRegion = SPRACH_CODES.filter((c) => !regionen.includes(c));
+  ok(ohneRegion.length === 0, `jede Sprache steht in knownRegions (${ohneRegion.join(', ') || 'alle'})`);
 }
 
 console.log('\n--- iOS: Info.plist und Signierung ---');

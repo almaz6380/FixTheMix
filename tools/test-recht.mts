@@ -11,6 +11,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { BETREIBER, RECHTS_PFADE, STAND, rechtsTexte } from '../src/pages/legal/legalContent.ts';
 import type { RechtsSchluessel } from '../src/pages/legal/legalContent.ts';
+import { RTL, SPRACHEN, SPRACH_CODES, richtung, spracheFuer } from '../src/i18n/sprachen.ts';
 
 let fehler = 0;
 const ok = (b: boolean, msg: string) => {
@@ -141,11 +142,43 @@ console.log('\n--- Die Adressen fuer die Store-Formulare ---');
      `die Loeschseite hat eine eigene Adresse (${RECHTS_PFADE.loeschen})`);
 }
 
-console.log('\n--- Die fuenf Sprachdateien ---');
+console.log('\n--- Die Sprachweiche ---');
+{
+  // Die Weiche wird still falsch: wer in Taipeh vereinfachtes Chinesisch
+  // bekommt, meldet das nicht, er loescht die App. Darum hier jede Falle.
+  const faelle: [string[], string][] = [
+    [['de-AT'], 'de'], [['pt-BR'], 'pt'], [['ar-EG'], 'ar'], [['uk-UA'], 'uk'],
+    [['zh-CN'], 'zh-Hans'], [['zh-SG'], 'zh-Hans'], [['zh'], 'zh-Hans'],
+    [['zh-TW'], 'zh-Hant'], [['zh-HK'], 'zh-Hant'], [['zh-MO'], 'zh-Hant'],
+    [['zh-Hant-HK'], 'zh-Hant'], [['zh-Hans-HK'], 'zh-Hans'], [['zh_TW'], 'zh-Hant'],
+    // Gespeichert ist der Code selbst — er muss durch die Weiche unverletzt durch.
+    [['zh-Hant'], 'zh-Hant'], [['zh-Hans'], 'zh-Hans'],
+    [['xx-YY', 'sv-SE'], 'en'], [['xx', 'ja-JP'], 'ja'], [[], 'en'], [[''], 'en'],
+  ];
+  for (const [ein, soll] of faelle) {
+    const ist = spracheFuer(ein);
+    ok(ist === soll, `${JSON.stringify(ein)} → ${soll} (${ist})`);
+  }
+  ok(SPRACHEN.length === SPRACH_CODES.length
+     && SPRACH_CODES.every((c) => SPRACHEN.some((s) => s.code === c)),
+     `jeder Code steht in SPRACHEN (${SPRACHEN.length}/${SPRACH_CODES.length})`);
+  ok(new Set(SPRACHEN.map((s) => s.name)).size === SPRACHEN.length, 'kein Sprachname doppelt');
+  ok(richtung('ar') === 'rtl' && richtung('de') === 'ltr' && RTL.length === 1,
+     'nur Arabisch laeuft von rechts nach links');
+}
+
+console.log('\n--- Die Sprachdateien ---');
 {
   const ordner = new URL('../src/i18n/locales/', import.meta.url);
   const dateien = readdirSync(ordner).filter((d) => d.endsWith('.json')).sort();
-  ok(dateien.length === 5, `fuenf Sprachen (${dateien.join(', ')})`);
+  // Datei und Code gehoeren zusammen: eine Datei ohne Code laedt der Glob in
+  // i18n/index.ts zwar, waehlbar ist sie aber nie; ein Code ohne Datei zeigt
+  // dem Spieler Englisch, ohne dass es jemand merkt.
+  const ohneDatei = SPRACH_CODES.filter((c) => !dateien.includes(`${c}.json`));
+  const ohneCode = dateien.filter((d) => !(SPRACH_CODES as readonly string[]).includes(d.replace('.json', '')));
+  ok(ohneDatei.length === 0, `jede Sprache hat eine Datei (${ohneDatei.join(', ') || 'alle da'})`);
+  ok(ohneCode.length === 0, `jede Datei ist eine Sprache (${ohneCode.join(', ') || 'keine uebrig'})`);
+  ok(dateien.length === 20, `zwanzig Sprachen (${dateien.length})`);
 
   type Baum = Record<string, Record<string, string>>;
   const geladen: Record<string, Baum> = {};
@@ -200,7 +233,11 @@ console.log('\n--- Die fuenf Sprachdateien ---');
       const hier = geladen[code]!.spiel![k] ?? '';
       if (hier.trim() === '') leer++;
       // Kurze und rein technische Zeilen duerfen gleich sein („…", „Level {{n}}").
-      if (hier === de && de.length > 12 && !/^[^a-zA-Z]*$/.test(de)) unuebersetzt++;
+      // Gezaehlt wird, was nach Abzug von Platzhaltern und dem Wort „Level"
+      // noch an Buchstaben bleibt: „Level {{von}}–{{bis}}" heisst auf
+      // Englisch, Niederlaendisch und Indonesisch wirklich so.
+      const rest = de.replace(/{{\s*\w+\s*}}/g, '').replace(/\bLevel\b/g, '');
+      if (hier === de && de.length > 12 && /[a-zA-Z]/.test(rest)) unuebersetzt++;
     }
   }
   ok(leer === 0, `keine leeren Texte (${leer})`);

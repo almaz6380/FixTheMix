@@ -501,7 +501,12 @@ console.log('\n--- Einstellungen und Rechtstexte ---');
   await seite.getByRole('link', { name: 'Einstellungen' }).click();
   await seite.waitForTimeout(400);
   ok(seite.url().endsWith('/einstellungen'), `die Einstellungen haben eine Adresse (${new URL(seite.url()).pathname})`);
-  ok(await seite.getByRole('button', { name: 'Deutsch' }).count() === 1, 'die Sprachwahl ist da');
+  // Seit dem 02.10.2026 eine Auswahlliste mit zwanzig Sprachen, jede in ihrem
+  // eigenen Namen, und die aktuelle (Deutsch, siehe `locale`) ist gewaehlt.
+  const sprachwahl = seite.getByRole('combobox', { name: 'Sprache' });
+  ok(await sprachwahl.count() === 1, 'die Sprachwahl ist da');
+  ok(await sprachwahl.inputValue() === 'de', `Deutsch ist gewaehlt (${await sprachwahl.inputValue()})`);
+  ok(await sprachwahl.locator('option').count() === 20, `zwanzig Sprachen (${await sprachwahl.locator('option').count()})`);
   const stand = await seite.locator('[data-muenzstand]').getAttribute('data-muenzstand');
   ok(Number(stand) >= 0, `der Muenzstand steht drin (${stand})`);
   // Der Ton-Schalter. Er steht auf AN und bleibt aus, wenn man ihn ausschaltet
@@ -575,6 +580,47 @@ console.log('\n--- Einstellungen und Rechtstexte ---');
   // nur die Anzeige.
   ok((await seite.locator('button[data-weiter]').innerText()).trim() === 'Spielen',
      '... und die App steht wieder am Anfang');
+}
+
+console.log('\n--- Andere Sprachen ---');
+{
+  // Seit dem 02.10.2026 zwanzig Sprachen. Die Texte prueft test-recht.mts;
+  // hier geht es um das, was nur im Browser auffaellt: dass die Geraetesprache
+  // greift (auch die Chinesisch-Weiche), dass <html> lang und dir traegt, dass
+  // Arabisch die Oberflaeche spiegelt, das BRETT aber nicht — und dass keine
+  // Sprache einen Konsolenfehler wirft. Jede Sprache in einer frischen Seite,
+  // damit kein gespeicherter Wert mitspielt.
+  const FAELLE = [
+    { locale: 'ar-EG', lang: 'ar', dir: 'rtl' },
+    { locale: 'ja-JP', lang: 'ja', dir: 'ltr' },
+    { locale: 'ru-RU', lang: 'ru', dir: 'ltr' },
+    { locale: 'hi-IN', lang: 'hi', dir: 'ltr' },
+    { locale: 'zh-TW', lang: 'zh-Hant', dir: 'ltr' },
+  ];
+  for (const f of FAELLE) {
+    const s2 = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, locale: f.locale });
+    const fehler2 = [];
+    s2.on('pageerror', (e) => fehler2.push(String(e)));
+    s2.on('console', (m) => { if (m.type() === 'error') fehler2.push(m.text()); });
+    await s2.goto('http://localhost:4602/', { waitUntil: 'networkidle' });
+    await s2.waitForTimeout(300);
+    const html = await s2.evaluate(() => ({ lang: document.documentElement.lang, dir: document.documentElement.dir }));
+    ok(html.lang === f.lang && html.dir === f.dir,
+       `${f.locale}: <html lang="${html.lang}" dir="${html.dir}"> (soll ${f.lang}/${f.dir})`);
+    const knopf = (await s2.locator('button[data-weiter]').innerText()).trim();
+    ok(knopf !== 'Spielen' && knopf !== 'Play', `${f.locale}: der Startknopf ist uebersetzt („${knopf}")`);
+    await s2.screenshot({ path: join(bilder, `sprache-${f.lang}-start.png`) });
+    await s2.locator('button[data-weiter]').click();
+    await s2.waitForTimeout(500);
+    const brettDir = await s2.evaluate(() => {
+      const b = document.querySelector('.brett');
+      return b ? getComputedStyle(b).direction : 'fehlt';
+    });
+    ok(brettDir === 'ltr', `${f.locale}: das Brett laeuft links nach rechts (${brettDir})`);
+    await s2.screenshot({ path: join(bilder, `sprache-${f.lang}-spiel.png`) });
+    ok(fehler2.length === 0, `${f.locale}: keine Konsolenfehler${fehler2.length ? `: ${fehler2.join(' | ')}` : ''}`);
+    await s2.close();
+  }
 }
 
 ok(konsole.length === 0, `keine Konsolenfehler im ganzen Durchlauf${konsole.length ? `: ${konsole.join(' | ')}` : ''}`);

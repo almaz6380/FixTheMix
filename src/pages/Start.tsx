@@ -161,7 +161,7 @@ export default function Start() {
               lagen sie in der Levelwahl und damit hinter dem Spiel. */}
           <Link
             to="/tagesraetsel"
-            className="flex min-h-[74px] touch-manipulation items-center gap-3.5 rounded-2xl border-[1.5px] border-zitrus/45 bg-theke-hell/70 px-4 py-3 text-left"
+            className="flex min-h-[74px] touch-manipulation items-center gap-3.5 rounded-2xl border-[1.5px] border-zitrus/45 bg-theke-hell/70 px-4 py-3 text-start"
           >
             <svg width="30" height="30" viewBox="0 0 32 32" className="flex-shrink-0" aria-hidden="true">
               <path d="M10.4 15.6h11.2l-1.3 9.6a1.6 1.6 0 01-1.6 1.4h-5.4a1.6 1.6 0 01-1.6-1.4z" fill="var(--color-zitrus)" opacity="0.4" />
@@ -202,7 +202,7 @@ export default function Start() {
           <Link
             to="/duell"
             data-duell
-            className="flex min-h-[70px] touch-manipulation items-center gap-3.5 rounded-2xl border-[1.5px] border-glasrand/40 bg-theke-hell/60 px-4 py-3 text-left"
+            className="flex min-h-[70px] touch-manipulation items-center gap-3.5 rounded-2xl border-[1.5px] border-glasrand/40 bg-theke-hell/60 px-4 py-3 text-start"
           >
             <svg width="27" height="27" viewBox="0 0 24 24" className="flex-shrink-0 text-glasrand" fill="none"
               stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" aria-hidden="true">
@@ -220,7 +220,7 @@ export default function Start() {
                   : t('spiel.duellBilanz', { s: bilanz.siege, n: bilanz.niederlagen, r: bilanz.remis })}
               </span>
             </span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(147,170,205,0.55)" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(147,170,205,0.55)" strokeWidth="2.4" strokeLinecap="round" className="pfeil" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
           </Link>
 
           <p className="mt-2.5 text-center text-[11.5px] font-bold text-rauch tabular-nums">

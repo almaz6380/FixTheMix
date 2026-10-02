@@ -11,7 +11,7 @@
 // aufgehuebschter Store-Screenshot ist bei Apple ausserdem ein Ablehnungsgrund.
 //
 // Aufruf: npm run build && node tools/store-bilder.mjs
-// Ergebnis: .store/ (gitignored — das sind Erzeugnisse, keine Quellen)
+// Ergebnis: .store/<sprache>/ (gitignored — das sind Erzeugnisse, keine Quellen)
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
 import { readFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
@@ -32,7 +32,18 @@ if (!existsSync(join(dist, 'index.html'))) {
 // dazukommt: der Lauf vom 26.09. hiess `1-spiel`, der vom 27.09. `2-spiel`.
 // Ein blosses Ueberschreiben liess damit beide liegen, und Josef haette ein
 // Gemisch aus zwei Staenden in den Store geladen — ohne dass etwas warnt.
-const ziel = join(wurzel, '.store');
+//
+// Je Sprache ein eigener Ordner (`.store/de/`, `.store/ja/` …), seit es
+// zwanzig Sprachen gibt: `node tools/store-bilder.mjs --sprache ja`. Ohne
+// Angabe Deutsch. Der Wert geht als `locale` an den Browser, und die App
+// waehlt daraus ihre Sprache wie auf einem Geraet.
+const argIndex = process.argv.indexOf('--sprache');
+const SPRACHE = argIndex > 0 ? process.argv[argIndex + 1] : 'de';
+if (!SPRACHE) {
+  console.log('--sprache braucht einen Code, z. B. --sprache ja');
+  process.exit(1);
+}
+const ziel = join(wurzel, '.store', SPRACHE);
 rmSync(ziel, { recursive: true, force: true });
 mkdirSync(ziel, { recursive: true });
 
@@ -75,10 +86,9 @@ async function bilderFuer(geraet) {
   const seite = await browser.newPage({
     viewport: { width: geraet.breite, height: geraet.hoehe },
     deviceScaleFactor: geraet.dpr,
-    // Deutsch festnageln: die App waehlt sonst die Geraetesprache, und
-    // Chromium meldet en-US. Fuer die englischen Store-Seiten laesst sich das
-    // hier auf 'en-US' stellen.
-    locale: 'de-DE',
+    // Die Sprache festnageln: die App waehlt sonst die Geraetesprache, und
+    // Chromium meldet en-US. Siehe `--sprache` oben.
+    locale: SPRACHE,
   });
   const schuss = async (nummer, name) => {
     await seite.screenshot({ path: join(ziel, `${geraet.name}-${nummer}-${name}.png`) });
@@ -116,7 +126,7 @@ async function bilderFuer(geraet) {
   await seite.waitForTimeout(500);
   const level = folge[NR];
   const loesung = solve(standAusLevel(level));
-  const glaeser = seite.locator('button[aria-label^="Glas"]');
+  const glaeser = seite.locator('button[data-glas]');
   for (const zug of loesung.zuege.slice(0, Math.floor(loesung.zuege.length / 2))) {
     await glaeser.nth(zug.von).click();
     await seite.waitForTimeout(30);
@@ -131,10 +141,10 @@ async function bilderFuer(geraet) {
   await schuss(2, 'spiel');
 
   // 3 — Farbenblind-Modus. Ein Verkaufsargument, das man sehen muss.
-  await seite.getByRole('button', { name: 'Symbole für Farbenblinde ein- oder ausschalten' }).click();
+  await seite.locator('button[data-symbole]').click();
   await seite.waitForTimeout(450);
   await schuss(3, 'farbenblind');
-  await seite.getByRole('button', { name: 'Symbole für Farbenblinde ein- oder ausschalten' }).click();
+  await seite.locator('button[data-symbole]').click();
   await seite.waitForTimeout(250);
 
   // 4 — die Levelwahl mit Sternen. Sie zeigt den Umfang: 999 Level.
@@ -163,7 +173,9 @@ for (const g of GERAETE) await bilderFuer(g);
 // haengt an den Schriften des Systems und saehe auf jedem Rechner anders aus.
 // ---------------------------------------------------------------------------
 console.log('\n--- Feature-Grafik ---');
-{
+// Ihr Text ist deutsch und von Hand gesetzt — fuer andere Sprachen gibt es
+// sie noch nicht; Play zeigt dort die deutsche (bzw. die Standardsprache).
+if (SPRACHE === 'de') {
   const seite = await browser.newPage({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 });
   // Auf der App-Seite laden, damit Schriften und Farbtoken schon da sind.
   await seite.goto('http://localhost:4620/', { waitUntil: 'networkidle' });
@@ -213,5 +225,5 @@ console.log('\n--- Symbol ---');
   console.log('  play-icon-512.png');
 }
 
-console.log('\nFertig — alles in .store/');
+console.log(`\nFertig — alles in .store/${SPRACHE}/`);
 console.log('Die Texte fuer die Store-Formulare stehen in docs/store-eintrag.md.');

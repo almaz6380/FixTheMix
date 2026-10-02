@@ -28,8 +28,19 @@ const WUNSCH = [
 
 const ZIEL = new URL('../public/fonts/', import.meta.url);
 
-/** Nur der Latin-Block. Die anderen Unterschnitte braucht DE/EN nicht. */
-const LATIN = 'U+0000-00FF';
+/**
+ * Welche Unterschnitte. Bis zum 02.10.2026 nur `latin` (U+0000-00FF) — fuer
+ * DE/EN/ES/FR/PT genug. Mit zwanzig Sprachen fielen Polnisch (ł), Tuerkisch
+ * (ş ğ ı) und Vietnamesisch mitten im Wort auf die Systemschrift zurueck, und
+ * Russisch/Ukrainisch ganz. Jede Datei bekommt ihre `unicode-range`; der
+ * Browser laedt nur, was eine Seite wirklich braucht.
+ *
+ * Japanisch, Koreanisch, Chinesisch, Thai, Hindi und Arabisch bleiben bewusst
+ * bei der Systemschrift: eine CJK-Schrift waere mehrere MB im Bundle, und
+ * die Geraete bringen gute mit. Fredoka hat kein Kyrillisch — dort greift
+ * ueber `--font-anzeige` Nunito.
+ */
+const UNTERSCHNITTE = ['latin', 'latin-ext', 'vietnamese', 'cyrillic', 'cyrillic-ext'];
 
 async function css(familie, gewichte) {
   const url =
@@ -43,9 +54,11 @@ async function css(familie, gewichte) {
   return antwort.text();
 }
 
-/** Zerlegt die Google-CSS in ihre @font-face-Bloecke. */
+/** Zerlegt die Google-CSS in ihre @font-face-Bloecke samt Unterschnitt —
+    der steht bei Google als Kommentar davor (`/* latin-ext *\/`). */
 function bloecke(text) {
-  return [...text.matchAll(/@font-face\s*\{([^}]*)\}/g)].map((m) => m[1]);
+  return [...text.matchAll(/\/\*\s*([\w-]+)\s*\*\/\s*@font-face\s*\{([^}]*)\}/g)]
+    .map((m) => ({ schnitt: m[1], block: m[2] }));
 }
 
 function feld(block, name) {
@@ -59,15 +72,19 @@ async function main() {
 
   for (const { familie, gewichte } of WUNSCH) {
     const text = await css(familie, gewichte);
-    for (const block of bloecke(text)) {
+    for (const { schnitt, block } of bloecke(text)) {
+      if (!UNTERSCHNITTE.includes(schnitt)) continue;
       const bereich = feld(block, 'unicode-range');
-      if (!bereich.startsWith(LATIN)) continue;
       const gewicht = Number(feld(block, 'font-weight'));
       if (!gewichte.includes(gewicht)) continue;
       const quelle = feld(block, 'src').match(/url\((https:[^)]+\.woff2)\)/);
       if (!quelle) continue;
 
-      const datei = `${familie.toLowerCase()}-${gewicht}.woff2`;
+      // Latin behaelt den alten Namen (fredoka-600.woff2), die anderen
+      // tragen den Unterschnitt im Namen.
+      const datei = schnitt === 'latin'
+        ? `${familie.toLowerCase()}-${gewicht}.woff2`
+        : `${familie.toLowerCase()}-${gewicht}-${schnitt}.woff2`;
       const roh = await fetch(quelle[1], { headers: { 'User-Agent': UA } });
       if (!roh.ok) throw new Error(`${datei}: HTTP ${roh.status}`);
       const bytes = new Uint8Array(await roh.arrayBuffer());

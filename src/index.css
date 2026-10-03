@@ -207,6 +207,12 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Unterster Holzton des Tresens. Hat <html> einen eigenen Grund, malt der
+     Nachtgrund des <body> nur noch seine eigene Box. Was darunter frei bleibt,
+     ist dann Holz und nicht Nachtblau. Am iPhone blieb unter dem Tresen ein
+     blauer Streifen (Josef, 03.10.2026): `100dvh` reichte dort nicht bis
+     ganz nach unten. */
+  background-color: #1d1310;
 }
 
 body {

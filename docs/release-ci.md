@@ -34,17 +34,14 @@ node tools/test-release.mts --release  # Bereitschaft — zeigt, was fehlt
 
    **Die vier Anzeigenblöcke stehen seit dem 02.10.2026** unter `PROD` in
    `src/lib/werbung.ts` (je Plattform ein Interstitial- und ein Rewarded-Block).
-   Ausgeliefert werden trotzdem weiter **Googles öffentliche Test-Blöcke**, bis
-   `TEST_ANZEIGEN` auf `false` steht.
+   **Seit dem 03.10.2026 steht `TEST_ANZEIGEN` auf `false`**, die App liefert
+   also echte Anzeigen aus. Zum Ausprobieren am Gerät das Gerät in AdMob als
+   Testgerät eintragen — eigene Live-Anzeigen nie antippen.
 
-   Das ist kein halber Zustand, sondern der richtige: eine **App-ID** (mit
-   Tilde) sagt dem SDK nur, welches Konto die App ist; ausgeliefert wird nach
-   den **Blöcken** (mit Schrägstrich), und die gehören solange Google. Deshalb
-   bleibt `TEST_ANZEIGEN` auf `true`, und es wird nichts verrechnet. Die vier
-   Block-IDs und `TEST_ANZEIGEN = false` gehören dagegen **zusammen** und
-   kommen unmittelbar vor dem ersten Release-Build — eine echte App-ID mit
-   Test-Blöcken ist harmlos, eine Beispiel-App-ID mit echten Blöcken liefert
-   nichts aus.
+   Eine **App-ID** (mit Tilde) sagt dem SDK nur, welches Konto die App ist;
+   ausgeliefert wird nach den **Blöcken** (mit Schrägstrich). Eine echte
+   App-ID mit Test-Blöcken ist harmlos, eine Beispiel-App-ID mit echten
+   Blöcken liefert nichts aus.
 
    **Die AdMob-App lässt sich anlegen, bevor die App in einem Store ist** — bei
    „Ist die App in einem unterstützten App Store veröffentlicht?" wählt man *nein*

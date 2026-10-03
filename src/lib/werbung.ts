@@ -4,28 +4,27 @@
 // durch eine Apple-Ablehnung (Richtlinie 2.1) und zehn Builds hindurchgegangen;
 // die Kommentare, die davon erzaehlen, stehen bewusst mit hier drin.
 //
-// ES LAUFEN NUR TEST-ANZEIGEN (`TEST_ANZEIGEN = true`), und das bleibt so, bis
-// die vier Anzeigenbloecke unten unter PROD stehen. Eigene Live-Anzeigen
-// anzusehen oder anzuklicken ist ein Richtlinienverstoss und kann das
-// AdMob-Konto sperren — an Josefs Konto haengen auch Anigosha, MyPeak und
-// WELLbooked.
+// SEIT DEM 03.10.2026 LAUFEN ECHTE ANZEIGEN (`TEST_ANZEIGEN = false`), direkt
+// vor dem ersten Release-Build. Eigene Live-Anzeigen anzusehen oder anzuklicken
+// ist ein Richtlinienverstoss und kann das AdMob-Konto sperren — an Josefs Konto
+// haengen auch Anigosha, MyPeak und WELLbooked. Zum Ausprobieren am Geraet:
+// in AdMob das Geraet als Testgeraet eintragen oder hier kurz auf true stellen.
 //
-// Die beiden AdMob-APPS gibt es seit dem 26.09.2026, und ihre echten App-IDs
-// stehen schon in `Info.plist` und `AndroidManifest.xml`. Das ist kein
-// Widerspruch zu `TEST_ANZEIGEN = true`: eine App-ID (mit Tilde) sagt dem SDK
-// nur, welches Konto die App ist, ausgeliefert wird nach den BLOECKEN (mit
-// Schraegstrich). Solange die Bloecke Googles Testbloecke sind, kommen keine
-// echten Anzeigen und es wird nichts verrechnet.
+// Die beiden AdMob-APPS gibt es seit dem 26.09.2026, ihre echten App-IDs
+// stehen in `Info.plist` und `AndroidManifest.xml`. Eine App-ID (mit Tilde)
+// sagt dem SDK nur, welches Konto die App ist; ausgeliefert wird nach den
+// BLOECKEN (mit Schraegstrich). Steht `TEST_ANZEIGEN` wieder auf true, kommen
+// Googles Testbloecke, und es wird nichts verrechnet.
 //
 // VOR DEM ERSTEN RELEASE-BUILD (Phase 6):
 //  1. ~~In AdMob je eine App „FixTheMix" fuer iOS und Android anlegen.~~
 //     ERLEDIGT am 26.09.2026; die App-IDs stehen in ios/App/App/Info.plist
 //     (GADApplicationIdentifier) und android/.../AndroidManifest.xml.
-//  2. Je einen Interstitial- und einen Rewarded-Block anlegen, die IDs unten
-//     unter PROD eintragen.
-//  3. `TEST_ANZEIGEN` auf false setzen — zusammen mit Schritt 2, nie einzeln.
-//  4. In AdMob unter „Datenschutz & Mitteilungen" eine DSGVO-Nachricht
-//     erstellen UND veroeffentlichen — ohne sie erscheint gar kein Dialog.
+//  2. ~~Je einen Interstitial- und einen Rewarded-Block anlegen.~~ ERLEDIGT
+//     am 02.10.2026, siehe PROD.
+//  3. ~~`TEST_ANZEIGEN` auf false setzen.~~ ERLEDIGT am 03.10.2026.
+//  4. ~~In AdMob eine DSGVO-Nachricht erstellen UND veroeffentlichen.~~
+//     ERLEDIGT am 02.10.2026 — ohne sie erschiene gar kein Dialog.
 //  5. Fuer iOS muessen DREI Dinge zusammenstimmen, sonst kommt die Ablehnung:
 //     NSUserTrackingUsageDescription in der Info.plist, die native ATT-Abfrage
 //     im SceneDelegate (NICHT im AppDelegate — Capacitor 8 legt ein
@@ -37,7 +36,7 @@
 
 import { Capacitor } from '@capacitor/core';
 
-const TEST_ANZEIGEN = true;
+const TEST_ANZEIGEN = false;
 
 /** Offizielle Test-IDs von Google, oeffentlich dokumentiert. */
 const TEST = {
@@ -53,8 +52,8 @@ const TEST = {
 
 /**
  * Die echten Anzeigenbloecke, angelegt am 02.10.2026 (Josef, AdMob). Sie wirken
- * erst, wenn `TEST_ANZEIGEN` auf false steht — das passiert unmittelbar vor dem
- * ersten Release-Build, nicht vorher. Die IDs sind nicht geheim: sie stehen in
+ * erst, wenn `TEST_ANZEIGEN` auf false steht — seit dem 03.10.2026, direkt vor
+ * dem ersten Release-Build. Die IDs sind nicht geheim: sie stehen in
  * jeder ausgelieferten App.
  */
 const PROD = {

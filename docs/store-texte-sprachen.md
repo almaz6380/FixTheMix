@@ -58,7 +58,7 @@ ordenar,puzzle,agua,vaso,colores,lógica,mente,relax,offline,zumo,jugo,bar,tubos
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Puzzle de ordenar
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -124,7 +124,7 @@ tri,puzzle,eau,verre,couleurs,logique,cerveau,détente,offline,jus,bar,tubes,quo
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Puzzle de tri
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -190,7 +190,7 @@ ordenar,puzzle,água,copo,cores,lógica,cérebro,relaxar,offline,suco,sumo,bar,t
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Puzzle de ordenar
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -256,7 +256,7 @@ ordina,puzzle,acqua,bicchiere,colori,logica,cervello,relax,offline,succo,bar,pro
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Puzzle a colori
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -322,7 +322,7 @@ sorteren,puzzel,water,glas,kleuren,logica,brein,ontspannen,offline,sap,bar,buisj
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Sorteerpuzzel
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -388,7 +388,7 @@ sortowanie,puzzle,woda,szklanka,kolory,logika,łamigłówka,relaks,offline,sok,b
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Sortowanie kolorów
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -454,7 +454,7 @@ sıralama,bulmaca,su,bardak,renk,mantık,zeka,rahatla,offline,meyvesuyu,bar,tüp
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Renk Sıralama
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -520,7 +520,7 @@ Meyve suları, smoothie'ler, şuruplar. Kokteyl havası yok, böylece uygulama d
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Сортировка цветов
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -586,7 +586,7 @@ FixTheMix — Сортировка цветов
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Сортування
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -652,7 +652,7 @@ FixTheMix — Сортування
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — لغز الترتيب
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -718,7 +718,7 @@ FixTheMix — لغز الترتيب
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — सॉर्ट पहेली
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -784,7 +784,7 @@ sortir,puzzle,air,gelas,warna,logika,otak,santai,offline,jus,bar,tabung,harian,t
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Puzzle Sortir
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -850,7 +850,7 @@ xếp,màu,sắp,đố,ly,nước,ép,logic,trí,tuệ,thư,giãn,offline,bar,�
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — Đố xếp màu
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -916,7 +916,7 @@ Nếu bạn cho phép, chúng tôi có thể hiển thị quảng cáo phù hợ
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — เกมเรียงสี
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -982,7 +982,7 @@ FixTheMix — เกมเรียงสี
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — 色分けパズル
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -1048,7 +1048,7 @@ FixTheMix — 色分けパズル
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — 색깔 정렬 퍼즐
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -1114,7 +1114,7 @@ FixTheMix — 색깔 정렬 퍼즐
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — 倒水排序
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -1180,7 +1180,7 @@ FixTheMix — 倒水排序
 **Play Titel** (max. 30)
 
 ```
-FixTheMix — 倒水排序
+FixTheMix
 ```
 
 **Play Kurzbeschreibung** (max. 80)
@@ -1229,21 +1229,21 @@ Gezählt mit `[...text].length` auf dem Inhalt des Codeblocks (getrimmt). Grenze
 
 | Sprache | Untertitel | Werbetext | Keywords | Titel | Kurz | Beschreibung |
 |---|---|---|---|---|---|---|
-| Spanisch (`es`) | 25 | 147 | 86 | 29 | 80 | 1824 |
-| Französisch (`fr`) | 26 | 162 | 96 | 25 | 78 | 1913 |
-| Portugiesisch (`pt`) | 24 | 149 | 88 | 29 | 70 | 1786 |
-| Italienisch (`it`) | 26 | 143 | 97 | 27 | 78 | 1770 |
-| Niederländisch (`nl`) | 26 | 151 | 92 | 25 | 78 | 1717 |
-| Polnisch (`pl`) | 24 | 159 | 88 | 30 | 80 | 1770 |
-| Türkisch (`tr`) | 27 | 138 | 84 | 25 | 76 | 1672 |
-| Russisch (`ru`) | 20 | 145 | 83 | 29 | 80 | 1728 |
-| Ukrainisch (`uk`) | 18 | 133 | 87 | 22 | 79 | 1679 |
-| Arabisch (`ar`) | 26 | 106 | 72 | 23 | 70 | 1460 |
-| Hindi (`hi`) | 21 | 116 | 71 | 23 | 71 | 1666 |
-| Indonesisch (`id`) | 24 | 155 | 87 | 25 | 80 | 1815 |
-| Vietnamesisch (`vi`) | 28 | 154 | 81 | 22 | 74 | 1713 |
-| Thailändisch (`th`) | 24 | 137 | 83 | 22 | 57 | 1482 |
-| Japanisch (`ja`) | 13 | 56 | 57 | 18 | 37 | 798 |
-| Koreanisch (`ko`) | 13 | 67 | 45 | 20 | 44 | 904 |
-| Chinesisch, vereinfacht (`zh-Hans`) | 11 | 51 | 42 | 16 | 33 | 587 |
-| Chinesisch, traditionell (`zh-Hant`) | 11 | 51 | 42 | 16 | 33 | 593 |
+| Spanisch (`es`) | 25 | 147 | 86 | 9 | 80 | 1824 |
+| Französisch (`fr`) | 26 | 162 | 96 | 9 | 78 | 1913 |
+| Portugiesisch (`pt`) | 24 | 149 | 88 | 9 | 70 | 1786 |
+| Italienisch (`it`) | 26 | 143 | 97 | 9 | 78 | 1770 |
+| Niederländisch (`nl`) | 26 | 151 | 92 | 9 | 78 | 1717 |
+| Polnisch (`pl`) | 24 | 159 | 88 | 9 | 80 | 1770 |
+| Türkisch (`tr`) | 27 | 138 | 84 | 9 | 76 | 1672 |
+| Russisch (`ru`) | 20 | 145 | 83 | 9 | 80 | 1728 |
+| Ukrainisch (`uk`) | 18 | 133 | 87 | 9 | 79 | 1679 |
+| Arabisch (`ar`) | 26 | 106 | 72 | 9 | 70 | 1460 |
+| Hindi (`hi`) | 21 | 116 | 71 | 9 | 71 | 1666 |
+| Indonesisch (`id`) | 24 | 155 | 87 | 9 | 80 | 1815 |
+| Vietnamesisch (`vi`) | 28 | 154 | 81 | 9 | 74 | 1713 |
+| Thailändisch (`th`) | 24 | 137 | 83 | 9 | 57 | 1482 |
+| Japanisch (`ja`) | 13 | 56 | 57 | 9 | 37 | 798 |
+| Koreanisch (`ko`) | 13 | 67 | 45 | 9 | 44 | 904 |
+| Chinesisch, vereinfacht (`zh-Hans`) | 11 | 51 | 42 | 9 | 33 | 587 |
+| Chinesisch, traditionell (`zh-Hant`) | 11 | 51 | 42 | 9 | 33 | 593 |

@@ -17,7 +17,7 @@ Store zu nehmen.
 | Name | FixTheMix |
 | Paket / Bundle | `at.gallab.fixthemix` |
 | Kategorie | Spiele → Puzzle (Play: Puzzle; Apple: Games / Puzzle, Zweitkategorie Casual) |
-| Preis | kostenlos, mit Werbung; Einmalkauf `fixthemix_no_ads` |
+| Preis | kostenlos, mit Werbung; Einmalkauf `fixthemix_no_ads` für 2,99 € (beide Stores) |
 | Datenschutz-URL | `https://almaz6380.github.io/fixthemix/datenschutz.html` |
 | Datenlöschung (nur Play) | `https://almaz6380.github.io/fixthemix/daten-loeschen.html` |
 | Support / Kontakt | `63almaz80@gmail.com` |
@@ -98,7 +98,7 @@ sort,puzzle,water,glass,color,logic,brain,relax,offline,juice,bar,tubes,daily
 **Titel** (max. 30)
 
 ```
-FixTheMix — Sortierpuzzle
+FixTheMix
 ```
 
 **Kurzbeschreibung** (max. 80)

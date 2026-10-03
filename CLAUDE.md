@@ -259,8 +259,8 @@ Code auf seinem Rechner laufen.
 
 ### M8 Werbung, Kauf, Recht, Sprachen — FERTIG bis auf die Store-Konten (26.09.2026)
 - [x] **`src/lib/werbung.ts`** (aus `anigosha/src/lib/ads.ts`): AdMob mit UMP-Einwilligung
-      und ATT-Warteschleife. **Nur Test-Anzeigen** (`TEST_ANZEIGEN = true`) — für
-      FixTheMix gibt es noch keine AdMob-App.
+      und ATT-Warteschleife. **Echte Anzeigen seit dem 03.10.2026**
+      (`TEST_ANZEIGEN = false`), direkt vor dem ersten Release-Build.
 - [x] **Die Bremse als reine Funktion** (`darfInterstitial`): jedes dritte Level, nie
       öfter als alle zwei Minuten. Dreißig Level in einer Stunde ergeben zehn Anzeigen,
       dreißig Level in zehn Minuten nur fünf — beides im Test nachgerechnet.
@@ -282,9 +282,9 @@ Code auf seinem Rechner laufen.
       warum das kein halber Zustand ist, steht unter „Die Beispiel-IDs".
 - [x] **Die vier Anzeigenblöcke stehen** (Josef, 02.10.2026) unter `PROD` in
       `src/lib/werbung.ts`: iOS `…/3646198515` (Interstitial) und `…/2333116848`
-      (Rewarded), Android `…/5015120505` und `…/3574046320`. `TEST_ANZEIGEN` bleibt
-      `true` bis unmittelbar vor dem ersten Release-Build — dann ist es der einzige
-      Punkt, den `test-release.mts --release` aus der AdMob-Ecke noch meldet.
+      (Rewarded), Android `…/5015120505` und `…/3574046320`. Seit dem
+      03.10.2026 steht `TEST_ANZEIGEN` auf `false`, und `test-release.mts --release`
+      ist grün.
 - [ ] **RevenueCat-Schlüssel und die Store-Produkte fehlen** —
       dafür braucht es Konten und Store-Einträge. Kommt mit Phase 6.
 - [x] **Die Kontaktadresse steht und existiert:** `63almaz80@gmail.com`
@@ -678,10 +678,9 @@ Function ist nur Verkabelung.
 
 ### Werbung, Kauf und Extra-Glas
 
-**Alle Anzeigen sind Test-Anzeigen** (`TEST_ANZEIGEN = true` in `src/lib/werbung.ts`).
-Das bleibt so, bis die vier Anzeigenblöcke unter `PROD` stehen — die beiden AdMob-**Apps**
-gibt es seit dem 26.09.2026, und ihre App-IDs stehen schon in den nativen Projekten.
-Eigene Live-Anzeigen anzusehen
+**Seit dem 03.10.2026 sind die Anzeigen echt** (`TEST_ANZEIGEN = false` in
+`src/lib/werbung.ts`), direkt vor dem ersten Release-Build. Im Browser zeigt die App
+weiter nichts — dort fehlt das Plugin. Eigene Live-Anzeigen anzusehen
 oder anzuklicken ist ein Richtlinienverstoß — an Josefs AdMob-Konto hängen auch Anigosha,
 MyPeak und WELLbooked. Die fünf Schritte vor dem ersten Release-Build stehen im Kopf der
 Datei.
@@ -1178,11 +1177,10 @@ sind angelegt:
 | iOS | `ca-app-pub-8860791993288062~8461231878` | `ios/App/App/Info.plist` |
 | Android | `ca-app-pub-8860791993288062~4290052573` | `android/app/src/main/AndroidManifest.xml` |
 
-Die **Anzeigenblöcke** in `src/lib/werbung.ts` sind weiter Googles Test-Blöcke, und
-`TEST_ANZEIGEN` bleibt `true`. Das ist kein halber Zustand: eine **App-ID** (mit
-Tilde) sagt dem SDK nur, welches Konto die App ist, ausgeliefert wird nach den
-**Blöcken** (mit Schrägstrich). Die vier echten Block-IDs und `TEST_ANZEIGEN = false`
-gehören dagegen **zusammen** und kommen unmittelbar vor dem ersten Release-Build.
+Seit dem 03.10.2026 stehen auch die vier echten **Anzeigenblöcke** im Spiel
+(`TEST_ANZEIGEN = false`). Bis dahin liefen Googles Test-Blöcke neben den echten
+App-IDs — kein halber Zustand: eine **App-ID** (mit Tilde) sagt dem SDK nur, welches
+Konto die App ist, ausgeliefert wird nach den **Blöcken** (mit Schrägstrich).
 
 Weglassen ging in keinem Zustand: fehlt die App-ID, stürzt das AdMob-SDK beim Start
 ab, mit einer Meldung, die nicht nach AdMob klingt. Deshalb standen dort bis heute
@@ -1210,7 +1208,7 @@ wirklich schadet — und dass bei Test-Anzeigen alle vier Blöcke Googles Test-I
 | Aufruf | Prüft | Heute |
 |---|---|---|
 | `node tools/test-release.mts` | **Stimmigkeit**: Bundle-ID an sieben Stellen, Versionen gleich, Test/Produktion passen zusammen, ATT an der richtigen Stelle, Symbolgrößen, Schlüssel im `.gitignore`, jedes Secret der Workflows in der Anleitung | grün |
-| `node tools/test-release.mts --release` | zusätzlich die **Bereitschaft**: `TEST_ANZEIGEN = false`, echte App-IDs, vier gefüllte Anzeigenblöcke | schlägt fehl — und die Ausgabe ist die Liste dessen, was noch fehlt |
+| `node tools/test-release.mts --release` | zusätzlich die **Bereitschaft**: `TEST_ANZEIGEN = false`, echte App-IDs, vier gefüllte Anzeigenblöcke | grün seit dem 03.10.2026; vorher war die Ausgabe die Liste dessen, was noch fehlte |
 
 Die zweite Fassung ruft `npm run test:release` auf, und das ist der erste Schritt
 beider Release-Workflows. Ein Build mit Test-Anzeigen kommt damit gar nicht erst
@@ -1439,8 +1437,8 @@ ist das einspeisbare `jetzt` im Löserbudget.
    der Eingabe `laeufer`, die App-Symbole kommen aus `app-symbol.jpg` statt vom
    Capacitor-Logo, und `tools/test-release.mts` bewacht die Verkabelung.
    Was fehlt, braucht **Konten und einen Mac**, und steht in `docs/release-ci.md`:
-   die vier AdMob-Anzeigenblöcke plus `TEST_ANZEIGEN = false` (die beiden AdMob-Apps
-   stehen seit dem 26.09.2026), RevenueCat-Schlüssel, Produkt
+   ~~die AdMob-Anzeigenblöcke plus `TEST_ANZEIGEN = false`~~ (erledigt 03.10.2026),
+   RevenueCat-Schlüssel, Produkt
    `fixthemix_no_ads` in beiden Stores, Upload-Keystore, Distributions-Zertifikat und
    Provisioning-Profil `FixTheMix AppStore`, der Self-hosted Runner auf Josefs Mac,
    und die Store-Einträge nach `docs/store-eintrag.md`.

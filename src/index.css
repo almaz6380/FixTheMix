@@ -213,10 +213,16 @@ html {
      blauer Streifen (Josef, 03.10.2026): `100dvh` reichte dort nicht bis
      ganz nach unten. */
   background-color: #1d1310;
+  /* Kein Nachfedern am Seitenrand. Zieht man am iPhone ueber den Rand hinaus,
+     zeigt iOS darunter seine eigene Farbe, und die ist Nachtblau, egal was hier
+     steht. Am Bildschirm-App-Symbol sah das aus wie ein dunkler Balken unter
+     dem Tresen (Josef, 03.10.2026). Gescrollt wird weiter, nur ohne Federn. */
+  overscroll-behavior: none;
 }
 
 body {
   margin: 0;
+  overscroll-behavior: none;
   color: var(--color-creme);
   font-family: var(--font-sans);
   font-weight: 600;

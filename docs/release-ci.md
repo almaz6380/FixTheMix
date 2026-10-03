@@ -75,6 +75,15 @@ node tools/test-release.mts --release  # Bereitschaft — zeigt, was fehlt
    **`FixTheMix AppStore`** heißen — so steht es im `PROVISIONING_PROFILE_SPECIFIER`
    des Xcode-Projekts und in den `ExportOptions` des Workflows, und `test-release.mts`
    prüft, dass beide dasselbe sagen.
+
+   **Das Profil muss das Zertifikat enthalten, das als `.p12` im Secret liegt.** Gibt
+   es am Konto mehrere Distributions-Zertifikate, wählt man leicht das falsche. Dann
+   bricht das Archivieren ab mit „Provisioning profile … doesn't include signing
+   certificate“ (so geschehen am 03.10.2026). Gegenprobe am Mac: die SHA-1 aus
+   `security find-identity -v -p codesigning` mit der aus dem Profil vergleichen:
+   ```bash
+   security cms -D -i FixTheMix_AppStore.mobileprovision | plutil -extract DeveloperCertificates.0 raw -o - - | base64 -d | shasum
+   ```
 7. ~~Die E-Mail-Adresse anlegen~~ — **erledigt (Josef, 26.09.2026).** Die
    Rechtstexte nennen jetzt `63almaz80@gmail.com`, eine Adresse, die es wirklich
    gibt. Das war der letzte Punkt dieser Liste, der ohne Konto scheiterte: eine

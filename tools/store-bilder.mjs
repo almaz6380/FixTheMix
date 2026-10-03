@@ -77,6 +77,9 @@ const browser = await chromium.launch(
 const GERAETE = [
   { name: 'ios-6.7', breite: 430, hoehe: 932, dpr: 3 }, // 1290x2796
   { name: 'ios-6.5', breite: 414, hoehe: 896, dpr: 3 }, // 1242x2688
+  // iPad 13": Pflicht, weil die App auch auf dem iPad laeuft (TARGETED_DEVICE_FAMILY
+  // 1,2). Ohne diese Bilder nimmt App Store Connect die Version nicht zur Pruefung an.
+  { name: 'ipad-13', breite: 1032, hoehe: 1376, dpr: 2 }, // 2064x2752
   // Play: 2:1, das laengste Format, das Play annimmt (laengere Kante hoechstens
   // doppelt so lang wie die kuerzere). Vorher 360x640 (16:9) — darin fehlten
   // Tresen und Fusszeile, und der Strohhalm der oberen Reihe stach in die Kopfzeile.

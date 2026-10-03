@@ -337,10 +337,30 @@ Code auf seinem Rechner laufen.
 - [x] **`tools/test-release.mts`** — die Store-Verkabelung als Test, siehe unten
 - [x] **`docs/release-ci.md`** (Secrets, Mac-Runner, die drei Angaben von Hand) und
       **`docs/store-eintrag.md`** (Texte, Altersfreigabe, Datensicherheit, Bilder)
-- [ ] **Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte, Keystore, Zertifikat** —
-      alles, was ein Konto braucht. Die beiden AdMob-**Apps** stehen seit dem
-      26.09.2026, ihre App-IDs sind eingetragen.
-      `node tools/test-release.mts --release` listet den Rest auf.
+- [x] **Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte, Keystore, Zertifikat** —
+      alles erledigt (02./03.10.2026). Siehe „Erste Einreichung“ unten.
+- [x] **Eingereicht am 03.10.2026:** iOS 1.0 (Build 1) samt In-App-Kauf
+      `fixthemix_no_ads` (2,99 €) wartet auf Apples Prüfung, Android 1.0 (vc1) liegt
+      in Produktion zur Prüfung bei Google, derselbe Kauf ist dort aktiv.
+- [ ] **RevenueCat Android:** Die Dienstkonto-JSON (`revenuecat@wellbooked-501311`)
+      ist hinterlegt. Google braucht bis zu 36 Stunden, bis sie gilt. Vorher geht
+      „Werbung entfernen“ auf Android nicht; danach in RevenueCat „Check again“.
+
+#### Erste Einreichung — vier Fallen (03.10.2026)
+
+1. **Fehler 90474 beim Upload:** Eine App nur im Hochformat muss auf dem iPad
+   `UIRequiresFullScreen` setzen, sonst verlangt Apple alle vier Ausrichtungen
+   (iPad-Multitasking). Steht jetzt in der `Info.plist`, `test-release.mts` prüft es.
+2. **Profil und Zertifikat müssen zusammenpassen.** Am Konto gibt es zwei
+   Distributions-Zertifikate. Das auf Josefs Mac läuft am **22.06.2027** ab (SHA-1
+   beginnt mit `81C6A157`), und genau dieses muss im Profil `FixTheMix AppStore`
+   stecken. Die Fehlermeldung beim Archivieren ist „Provisioning profile … doesn't
+   include signing certificate“. Prüfbefehl siehe `docs/release-ci.md`.
+3. **iPad-Screenshots sind Pflicht** (13″, 2064×2752), weil die App auch aufs iPad
+   geht. `store-bilder.mjs` nimmt sie seitdem mit auf. Englisch reicht, die anderen
+   Sprachen übernehmen die Bilder der Primärsprache.
+4. **Die Datenschutz-URL gilt je Lokalisierung.** In App Store Connect unter
+   „App-Datenschutz“ muss sie in jeder Sprache einzeln eingetragen sein.
 
 ### M10 Duelle (Version 1.1) — FERTIG gegen Bots (26.09.2026)
 - [x] **`src/engine/duell.ts`**: `duellLevel(nummer)` als der **eine** Weg zum Brett,
@@ -1432,17 +1452,10 @@ ist das einspeisbare `jetzt` im Löserbudget.
    Store-Konten geht: Werbung läuft mit Test-IDs, der Kauf bleibt ohne Schlüssel stumm,
    die vier Rechtstexte stehen, zwanzig Sprachen sind vollständig (seit 02.10.2026). Was fehlt, braucht Konten
    — AdMob-Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
-6. **Stores:** **FERTIG (26.09.2026)**, soweit es ohne Konten geht. Die nativen
-   Projekte für iOS und Android liegen im Repo, beide Release-Workflows stehen samt
-   der Eingabe `laeufer`, die App-Symbole kommen aus `app-symbol.jpg` statt vom
-   Capacitor-Logo, und `tools/test-release.mts` bewacht die Verkabelung.
-   Was fehlt, braucht **Konten und einen Mac**, und steht in `docs/release-ci.md`:
-   ~~die AdMob-Anzeigenblöcke plus `TEST_ANZEIGEN = false`~~ (erledigt 03.10.2026),
-   RevenueCat-Schlüssel, Produkt
-   `fixthemix_no_ads` in beiden Stores, Upload-Keystore, Distributions-Zertifikat und
-   Provisioning-Profil `FixTheMix AppStore`, der Self-hosted Runner auf Josefs Mac,
-   und die Store-Einträge nach `docs/store-eintrag.md`.
-   `node tools/test-release.mts --release` sagt jederzeit, was davon noch offen ist.
+6. **Stores:** **EINGEREICHT (03.10.2026)**, iOS und Android, beide mit dem Kauf
+   „Werbung entfernen“ (2,99 €). Gebaut wird über die Release-Workflows auf Josefs
+   Mac (`laeufer: mac`). Offen ist nur noch die RevenueCat-Validierung der
+   Android-JSON. Die Fallen der ersten Einreichung stehen unter M9.
 7. **Version 1.1: Duelle.** **FERTIG gegen Bots (26.09.2026).** Gleiches Brett,
    weniger Züge gewinnt, gleich viele sind ein Remis. Der Gegner spielt das Brett
    wirklich durch und passt sich an. Migration und Edge Function für menschliche
@@ -1634,7 +1647,8 @@ eine Datei, fällt die Schrift still auf `system-ui` zurück.
 **Store-Bilder:** `node tools/store-bilder.mjs` (nach `npm run build`) nimmt **fünf**
 Screenshots je Gerät auf — Startbildschirm, Spiel mit gewähltem Lauf, Farbenblind-Modus,
 Levelwahl, Tagesrätsel — in den Größen, die Apple und Google verlangen: 1290×2796,
-1242×2688 und 1080×2160 (Play, 2:1 — mit 16:9 fehlten Tresen und Fußzeile). Dazu die **Feature-Grafik** 1024×500 und das 512er-Symbol für
+1242×2688, **2064×2752 (iPad 13″, seit 03.10.2026 Pflicht)** und 1080×2160 (Play,
+2:1 — mit 16:9 fehlten Tresen und Fußzeile). Dazu die **Feature-Grafik** 1024×500 und das 512er-Symbol für
 Play. Das Skript fährt die Routen direkt an (`/`, `/spiel`, `/level`, `/tagesraetsel`);
 vor dem 27.09.2026 klickte es sich über den Burger durch das Fenster über dem Spiel.
 Ergebnis in `.store/<sprache>/`, gitignored; `--sprache ja` nimmt die Bilder in einer

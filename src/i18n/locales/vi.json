@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Nếu bạn cho phép, chúng tôi có thể hiển thị quảng cáo phù hợp hơn với bạn. Bản thân trò chơi vẫn giữ nguyên hoàn toàn."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Xếp màu tại quầy nước ép",
+      "zeile1": "999 màn chơi với lời giải ngắn nhất đã chứng minh",
+      "zeile2": "Câu đố mỗi ngày · Chế độ mù màu"
+    }
   }
 }

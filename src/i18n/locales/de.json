@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Mit deiner Zustimmung zeigen wir dir passendere Werbung. Das Spiel bleibt davon unberührt."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Sortieren an der Saftbar",
+      "zeile1": "999 Level mit bewiesen kürzester Lösung",
+      "zeile2": "Tagesrätsel · Farbenblind-Modus"
+    }
   }
 }

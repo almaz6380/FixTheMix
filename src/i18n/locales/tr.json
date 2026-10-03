@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "İznin olursa sana daha ilgili reklamlar gösterebiliriz. Oyunun kendisi tamamen aynı kalır."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Meyve suyu barında sıralama",
+      "zeile1": "En kısa çözümü kanıtlanmış 999 bölüm",
+      "zeile2": "Günlük bulmaca · Renk körü modu"
+    }
   }
 }

@@ -36,6 +36,24 @@ App (seit 02.10.2026) stehen sie in **`docs/store-texte-sprachen.md`**, mit
 denselben Feldern und Zeichengrenzen. Sie sind maschinell übersetzt und nicht
 gegengelesen — wer eine Sprache nicht anlegt, dem zeigt der Store die Standardsprache.
 
+**Standardsprache in Play ist Englisch (en-US)**, nicht Deutsch (Josef, 03.10.2026).
+Jedes Land ohne eigenen Eintrag — Schweden, Dänemark, Griechenland … — sieht die
+Standardsprache, und Englisch versteht dort fast jeder. Deutsch bleibt als Übersetzung.
+
+Die Sprachcodes der App und die von Play passen nicht überall eins zu eins:
+
+| App | Play |
+|---|---|
+| `en` | en-US (Standard) |
+| `es` | es-ES, dazu es-419 (Lateinamerika) mit denselben Texten |
+| `pt` | pt-BR, dazu pt-PT mit denselben Texten |
+| `zh-Hans` | zh-CN |
+| `zh-Hant` | zh-TW, dazu zh-HK mit denselben Texten |
+| alle anderen | gleicher Code (`de-DE`, `fr-FR`, `ja-JP` …) |
+
+Bilder je Sprache: `node tools/store-bilder.mjs --sprache <code>` legt in `.store/<code>/`
+fünf Screenshots, die Feature-Grafik und das Symbol ab.
+
 ## Apple: App Store Connect
 
 **Name** (max. 30)

@@ -1640,7 +1640,12 @@ Levelwahl, Tagesrätsel — in den Größen, die Apple und Google verlangen: 129
 Play. Das Skript fährt die Routen direkt an (`/`, `/spiel`, `/level`, `/tagesraetsel`);
 vor dem 27.09.2026 klickte es sich über den Burger durch das Fenster über dem Spiel.
 Ergebnis in `.store/<sprache>/`, gitignored; `--sprache ja` nimmt die Bilder in einer
-anderen Sprache auf (ohne Angabe Deutsch). Die Feature-Grafik gibt es nur auf Deutsch.
+anderen Sprache auf (ohne Angabe Deutsch). **Die Feature-Grafik gibt es seit dem 03.10.2026 in
+jeder Sprache**: ihr Text steht als `store.feature` in jeder `locales/<code>.json` und wird
+damit von `test-recht.mts` mitgeprüft; unter Arabisch steht das Symbol rechts. *Für die
+Aufnahme* braucht der Container Noto-Schriften (`apt-get install fonts-noto-core
+fonts-noto-cjk`), sonst landen Hindi und Arabisch in FreeSans/DejaVu — am Handy sähe das
+anders aus. Die App selbst bleibt bei der Systemschrift.
 Gläser und Symbolknopf findet das Skript über `data-glas`/`data-symbole`, nicht über
 deutsche Beschriftungen — sonst lief es in jeder anderen Sprache in eine Zeitüberschreitung. Aufgenommen wird aus dem **echten Bundle**, nicht aus
 einem Entwurf: ein aufgehübschter Store-Screenshot ist bei Apple ein Ablehnungsgrund.

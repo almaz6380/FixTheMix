@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "With your permission we can show you more relevant ads. The game itself stays exactly the same."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Sorting at the juice bar",
+      "zeile1": "999 levels, each with a proven shortest solution",
+      "zeile2": "Daily puzzle · Colourblind mode"
+    }
   }
 }

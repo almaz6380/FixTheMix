@@ -19,7 +19,12 @@
 //     (`pointer-events: none`). Gezeichnet als SVG statt Bilddatei: null
 //     Bytes Ladezeit, auf jedem Display scharf, offline sicher.
 
-export default function Rueckwand() {
+/**
+ * `lampenX`: wo die beiden Lampen haengen, in Einheiten der 390 breiten
+ * Zeichnung. Im Spiel ueber dem Brett (92/298), auf dem Startbildschirm ganz
+ * aussen neben dem Titel — dort waeren sie sonst mitten im Schriftzug.
+ */
+export default function Rueckwand({ lampenX = [92, 298] }: { lampenX?: readonly number[] }) {
   return (
     <svg
       className="rueckwand"
@@ -67,8 +72,9 @@ export default function Rueckwand() {
       </defs>
 
       {/* Lichtkegel zuerst — sie liegen hinter allem anderen. */}
-      <path d="M 92 92 L 18 330 L 166 330 Z" fill="url(#ftm-lampe-kegel)" />
-      <path d="M 298 92 L 224 330 L 372 330 Z" fill="url(#ftm-lampe-kegel)" />
+      {lampenX.map((x) => (
+        <path key={x} d={`M ${x} 92 L ${x - 74} 330 L ${x + 74} 330 Z`} fill="url(#ftm-lampe-kegel)" />
+      ))}
 
       {/* --- Das Regal --- */}
       <g>
@@ -138,7 +144,7 @@ export default function Rueckwand() {
       <rect x="10" y="247" width="370" height="10" fill="#000" opacity="0.22" />
 
       {/* --- Die Lampen, zuletzt: sie haengen vor dem Regal --- */}
-      {[92, 298].map((x) => (
+      {lampenX.map((x) => (
         <g key={x}>
           <line x1={x} y1="0" x2={x} y2="70" stroke="#2A2218" strokeWidth="1.6" />
           <circle cx={x} cy="96" r="30" fill="url(#ftm-lampe-gluehen)" />

@@ -223,6 +223,11 @@ html {
 body {
   margin: 0;
   overscroll-behavior: none;
+  /* Eigener Stapelkontext. Seit <html> einen eigenen Grund hat, malt der
+     <body> seinen Nachtgrund selbst — und ohne das hier UEBER alles mit
+     `z-index: -1`. Die Rueckwand mit Lampen und Regal war damit im Spiel
+     unsichtbar (03.10.2026, nach PR #34). */
+  isolation: isolate;
   color: var(--color-creme);
   font-family: var(--font-sans);
   font-weight: 600;
@@ -724,6 +729,79 @@ body {
 .start-glas {
   position: relative;
   flex-shrink: 0;
+  /* Steht auf der polierten Platte des Tresens und spiegelt sich darin,
+     wie die vorderste Reihe im Spiel. Die Platte beginnt 4 px darunter. */
+  margin-bottom: -6px;
+}
+
+.start-glas > .glas-koerper {
+  -webkit-box-reflect: below 2px linear-gradient(transparent 72%, rgba(255, 255, 255, 0.18));
+}
+
+/* Der Titel leuchtet warm, als haenge er im Licht der Lampen. */
+.start-titel {
+  text-shadow: 0 0 22px rgba(255, 201, 60, 0.28), 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+/*
+   Der Tresen des Startbildschirms (Josef, 03.10.2026: Entwurf „oben links").
+   Anders als `.theke-fest` ist er kein Streifen am Rand, sondern die ganze
+   untere Haelfte: oben die Platte, auf der die Drinks stehen, darunter die
+   Front aus Brettern mit einer Messingreling — und darauf das Menue. Dieselben
+   Holzlagen wie `.theke`, damit Start und Spiel dieselbe Bar sind.
+*/
+.start-tresen {
+  background:
+    radial-gradient(60% 34px at 50% 0, rgba(255, 220, 160, 0.18), rgba(255, 220, 160, 0)) 0 0 / 100% 34px no-repeat,
+    repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 3px, rgba(0, 0, 0, 0.09) 3px 4px, rgba(0, 0, 0, 0) 4px 7px, rgba(255, 210, 160, 0.04) 7px 8px) 0 0 / 100% 34px no-repeat,
+    linear-gradient(180deg, #5A4030 0%, #3E2A1F 100%) 0 0 / 100% 34px no-repeat,
+    linear-gradient(180deg, rgba(255, 214, 150, 0.32) 0, rgba(255, 214, 150, 0.32) 1px, #1E1410 1px, #160F0C 100%) 0 34px / 100% 8px no-repeat,
+    linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0)) 0 42px / 100% 22px no-repeat,
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 61px, rgba(0, 0, 0, 0.42) 61px 63px, rgba(255, 210, 160, 0.05) 63px 64px) 0 42px / 100% 100% no-repeat,
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 5px, rgba(0, 0, 0, 0.06) 5px 6px, rgba(0, 0, 0, 0) 6px 13px, rgba(255, 210, 160, 0.025) 13px 14px) 0 42px / 100% 100% no-repeat,
+    linear-gradient(180deg, #3A291F 0%, #2A1C14 35%, #1D1310 100%) 0 42px / 100% 100% no-repeat;
+}
+
+/* Die Messingreling vor der Front: ein Rohr mit Lichtkante und zwei Halter. */
+.start-reling {
+  position: absolute;
+  top: 54px;
+  right: 0;
+  left: 0;
+  height: 7px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #FFE3A3 0%, #E8B04B 35%, #9C6B22 80%, #6E4A16 100%);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.45);
+}
+
+.start-reling::before,
+.start-reling::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  width: 12px;
+  height: 13px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #FFE3A3, #B07A28 60%, #5E3F12);
+}
+
+.start-reling::before { left: 16%; }
+.start-reling::after { right: 16%; }
+
+/* Die Kacheln des Menues: dunkles Glas auf Holz, Messingkante. */
+.start-kachel {
+  display: flex;
+  align-items: center;
+  touch-action: manipulation;
+  border: 1.5px solid rgba(232, 176, 75, 0.38);
+  background: linear-gradient(180deg, rgba(255, 230, 190, 0.07), rgba(0, 0, 0, 0.22)), rgba(22, 14, 10, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 230, 190, 0.08), 0 2px 6px rgba(0, 0, 0, 0.35);
+  color: var(--color-creme);
+  font-weight: 700;
+}
+
+.start-kachel:active {
+  transform: translateY(1px);
 }
 
 /* Der Schatten, den die Platte auf die Front wirft. */

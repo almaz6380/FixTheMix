@@ -20,6 +20,7 @@ import sharp from 'sharp';
 import { solve } from '../src/engine/loeser.ts';
 import { standAusLevel } from '../src/engine/zustand.ts';
 import { FOLGE_VERSION } from '../src/lib/fortschritt.ts';
+import { RTL, SPRACH_CODES } from '../src/i18n/sprachen.ts';
 
 const wurzel = new URL('..', import.meta.url).pathname;
 const dist = join(wurzel, 'dist');
@@ -39,8 +40,8 @@ if (!existsSync(join(dist, 'index.html'))) {
 // waehlt daraus ihre Sprache wie auf einem Geraet.
 const argIndex = process.argv.indexOf('--sprache');
 const SPRACHE = argIndex > 0 ? process.argv[argIndex + 1] : 'de';
-if (!SPRACHE) {
-  console.log('--sprache braucht einen Code, z. B. --sprache ja');
+if (!SPRACHE || !SPRACH_CODES.includes(SPRACHE)) {
+  console.log(`--sprache braucht einen dieser Codes: ${SPRACH_CODES.join(', ')}`);
   process.exit(1);
 }
 const ziel = join(wurzel, '.store', SPRACHE);
@@ -179,13 +180,24 @@ for (const g of GERAETE) await bilderFuer(g);
 // haengt an den Schriften des Systems und saehe auf jedem Rechner anders aus.
 // ---------------------------------------------------------------------------
 console.log('\n--- Feature-Grafik ---');
-// Ihr Text ist deutsch und von Hand gesetzt — fuer andere Sprachen gibt es
-// sie noch nicht; Play zeigt dort die deutsche (bzw. die Standardsprache).
-if (SPRACHE === 'de') {
+// Ihr Text kommt aus der Sprachdatei (`store.feature` in
+// src/i18n/locales/<code>.json), damit test-recht.mts ihn in allen zwanzig
+// Sprachen mitprueft. Bis zum 03.10.2026 stand er hier deutsch von Hand, und
+// Play haette jedem Land die deutsche Grafik gezeigt. „FixTheMix" bleibt in
+// jeder Sprache lateinisch — es ist der Name, kein Text.
+{
+  const texte = JSON.parse(
+    readFileSync(join(wurzel, `src/i18n/locales/${SPRACHE}.json`), 'utf8'),
+  ).store.feature;
+  const rtl = RTL.includes(SPRACHE);
   const seite = await browser.newPage({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 });
   // Auf der App-Seite laden, damit Schriften und Farbtoken schon da sind.
   await seite.goto('http://localhost:4620/', { waitUntil: 'networkidle' });
-  await seite.evaluate(() => {
+  await seite.evaluate(({ texte, rtl, sprache }) => {
+    // `lang` waehlt fuer dieselben Han-Zeichen die japanische, chinesische oder
+    // koreanische Glyphe; `dir` stellt unter Arabisch das Symbol nach rechts.
+    document.documentElement.lang = sprache;
+    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
     // Der Hintergrund bleibt DURCHSICHTIG, damit die Fischschuppen des `body`
     // durchscheinen — dasselbe Muster wie im Spiel. Ein flaches Nachtblau sah
     // im ersten Anlauf aus wie eine leere Folie, und das Symbol verschwand
@@ -196,20 +208,23 @@ if (SPRACHE === 'de') {
         <img src="/icons/icon-512.png" width="240" height="240"
              style="flex:0 0 auto;border-radius:52px;box-shadow:0 18px 50px rgba(0,0,0,.55)">
         <div style="min-width:0">
-          <div style="font-family:Fredoka,system-ui;font-weight:700;font-size:74px;
+          <div dir="ltr" style="font-family:Fredoka,system-ui;font-weight:700;font-size:74px;
                       line-height:1.02;color:var(--color-creme)">FixTheMix</div>
-          <div style="font-family:Nunito,system-ui;font-weight:700;font-size:29px;
-                      line-height:1.3;margin-top:16px;color:var(--color-zitrus)">
-            Sortieren an der Saftbar
-          </div>
+          <div data-feld="untertitel" style="font-family:Nunito,system-ui;font-weight:700;
+                      font-size:29px;line-height:1.3;margin-top:16px;color:var(--color-zitrus)"></div>
           <div style="font-family:Nunito,system-ui;font-weight:600;font-size:22px;
                       line-height:1.45;margin-top:14px;color:var(--color-rauch)">
-            999 Level mit bewiesen kürzester Lösung ·<br>
-            Tagesrätsel · Farbenblind-Modus
+            <div data-feld="zeile1"></div>
+            <div data-feld="zeile2"></div>
           </div>
         </div>
       </div>`;
-  });
+    // Als Text gesetzt, nicht ins HTML geschrieben: die Uebersetzungen sind
+    // Daten, und ein „<" darin soll ein Zeichen bleiben.
+    for (const feld of ['untertitel', 'zeile1', 'zeile2']) {
+      document.querySelector(`[data-feld="${feld}"]`).textContent = texte[feld];
+    }
+  }, { texte, rtl, sprache: SPRACHE });
   await seite.waitForTimeout(600);
   await seite.screenshot({ path: join(ziel, 'play-feature-1024x500.png') });
   await seite.close();

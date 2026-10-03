@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Met je toestemming kunnen we je relevantere advertenties tonen. Het spel zelf blijft precies hetzelfde."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Sorteren in de sapbar",
+      "zeile1": "999 levels met bewezen kortste oplossing",
+      "zeile2": "Dagpuzzel · Kleurenblindmodus"
+    }
   }
 }

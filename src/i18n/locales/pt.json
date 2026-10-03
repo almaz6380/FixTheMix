@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Com a sua permissão, podemos mostrar anúncios mais relevantes. O jogo em si continua exatamente igual."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Ordene no bar de sucos",
+      "zeile1": "999 níveis com a solução mais curta comprovada",
+      "zeile2": "Desafio diário · Modo daltônico"
+    }
   }
 }

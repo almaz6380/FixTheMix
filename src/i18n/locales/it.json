@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Con il tuo permesso possiamo mostrarti annunci più pertinenti. Il gioco resta esattamente lo stesso."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Ordina i succhi al bancone",
+      "zeile1": "999 livelli con la soluzione più breve dimostrata",
+      "zeile2": "Sfida del giorno · Modalità daltonici"
+    }
   }
 }

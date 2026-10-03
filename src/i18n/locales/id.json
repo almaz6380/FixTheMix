@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Dengan izinmu, kami bisa menampilkan iklan yang lebih relevan. Game-nya sendiri tetap sama persis."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Menyortir di bar jus",
+      "zeile1": "999 level dengan solusi terpendek yang terbukti",
+      "zeile2": "Teka-teki harian · Mode buta warna"
+    }
   }
 }

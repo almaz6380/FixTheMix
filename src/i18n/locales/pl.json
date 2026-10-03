@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Za twoją zgodą możemy wyświetlać ci trafniejsze reklamy. Sama gra pozostaje dokładnie taka sama."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Sortowanie soków w barze",
+      "zeile1": "999 poziomów z udowodnionym najkrótszym rozwiązaniem",
+      "zeile2": "Zagadka dnia · Tryb dla daltonistów"
+    }
   }
 }

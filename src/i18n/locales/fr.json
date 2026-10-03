@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Avec votre autorisation, nous pouvons vous montrer des publicités plus pertinentes. Le jeu lui-même reste exactement le même."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Le tri au bar à jus",
+      "zeile1": "999 niveaux à la solution la plus courte prouvée",
+      "zeile2": "Énigme du jour · Mode daltonien"
+    }
   }
 }

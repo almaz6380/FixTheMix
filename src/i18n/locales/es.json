@@ -111,5 +111,12 @@
   },
   "ios": {
     "tracking": "Con tu permiso podemos mostrarte anuncios más relevantes. El juego en sí sigue exactamente igual."
+  },
+  "store": {
+    "feature": {
+      "untertitel": "Ordena colores en el bar de zumos",
+      "zeile1": "999 niveles con la solución más corta demostrada",
+      "zeile2": "Reto diario · Modo daltónico"
+    }
   }
 }

@@ -10,6 +10,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <!-- Startwert; die Oberflaeche setzt ihn ab Phase 2 zur Laufzeit -->
     <meta name="theme-color" content="#0E1A2E" />
+    <!-- Am Home-Bildschirm faerbt iOS die Flaeche unter der Seite mit der
+         theme-color, nicht mit dem Seitengrund: dort liegt der Holztresen. -->
+    <meta name="theme-color" media="(display-mode: standalone)" content="#1D1310" />
     <!-- Nach „Zum Home-Bildschirm hinzufuegen“ zeichnet die App bis unter die Statusleiste -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

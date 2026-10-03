@@ -233,6 +233,9 @@ console.log('\n--- iOS: Info.plist und Signierung ---');
   const hoch = /<key>UISupportedInterfaceOrientations<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(infoPlist)?.[1] ?? '';
   ok(!hoch.includes('Landscape'), 'iPhone laeuft nur im Hochformat');
   ok(manifest.includes('android:screenOrientation="portrait"'), 'Android ebenso');
+  // Ohne UIRequiresFullScreen verlangt Apple fuer iPad-Multitasking alle vier
+  // Ausrichtungen und lehnt den Upload ab (Fehler 90474, gesehen am 03.10.2026).
+  ok(/<key>UIRequiresFullScreen<\/key>\s*<true\/>/.test(infoPlist), 'iPad: Vollbild, sonst lehnt Apple Hochformat ab (90474)');
 
   // Die Signierung steht in der Release-Konfiguration des App-Targets und
   // nicht auf der Kommandozeile — sonst brechen die Swift-Pakete ab.

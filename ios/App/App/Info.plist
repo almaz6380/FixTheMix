@@ -317,6 +317,8 @@
 	<!-- Nur Hochformat, auf iPhone wie iPad. Das Brett ist eine Spalte aus
 	     hoechstens fuenf Glaesern je Reihe; quer stuenden die Glaeser entweder
 	     winzig oder halb ausserhalb. -->
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

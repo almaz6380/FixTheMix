@@ -44,10 +44,11 @@ import {
 import {
   ausgangZaehlen, ladeBilanz, naechsteNummer, speichereBilanz,
 } from './lib/duell.ts';
-import { BELOHNUNG_VIDEO } from './lib/muenzen.ts';
 import { werbefreiPruefen } from './lib/kauf.ts';
+import { vielleichtBewerten } from './lib/bewertung.ts';
 import {
   belohnungMoeglich, starteWerbung, vielleichtInterstitial, zeigeBelohnungsVideo,
+  type VideoErgebnis,
 } from './lib/werbung.ts';
 import roheFolge from './levels/folge.json';
 
@@ -122,7 +123,12 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const [tagLaedt, setTagLaedt] = useState(false);
   const [kopiert, setKopiert] = useState(false);
   const [videoLaeuft, setVideoLaeuft] = useState(false);
-  const [videoLeer, setVideoLeer] = useState(false);
+  // Was nach einem Video ohne Belohnung gesagt wird — abgebrochen oder gar
+  // keins da. Ein i18n-Schluessel, kein fertiger Text.
+  const [videoHinweis, setVideoHinweis] = useState<string | null>(null);
+  // Ob die Werbung fertig gestartet ist. Nur, damit die Video-Knoepfe nach dem
+  // Start neu gezeichnet werden — `belohnungMoeglich()` ist keine React-Groesse.
+  const [, setWerbungGestartet] = useState(false);
   const [partie, setPartie] = useState(() => new Partie(FOLGE[startLevel(ladeFortschritt())]!));
   const [symbole, setSymbole] = useState(() => ladeEinstellung('symbole', false));
   // Der Giessstrahl. `nr` zaehlt hoch, damit zweimal derselbe Zug auch zweimal
@@ -174,9 +180,13 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   // Werbung und Kaufstatus einmal beim Start. Im Browser tut beides nichts —
   // die Funktionen pruefen das selbst und kehren still zurueck.
   useEffect(() => {
+    // Erst der Kaufstatus, dann die Werbung: wer „Werbung entfernen" gekauft
+    // hat, bekommt beim Start weder Einwilligungsdialog noch SDK. Das SDK
+    // startet fuer ihn erst, wenn er selbst ein Video haben will.
     void (async () => {
-      await starteWerbung();
-      await werbefreiPruefen();
+      const frei = await werbefreiPruefen();
+      if (!frei) await starteWerbung();
+      setWerbungGestartet(true);
     })();
     // Der gespeicherte Ton-Schalter. Gelesen wird er hier und nicht im
     // Klangmodul selbst: `localStorage` gehoert nicht in eine Datei, die sonst
@@ -390,7 +400,12 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
         // Level und nie oefter als alle zwei Minuten. Das Tagesraetsel zaehlt
         // MIT, bekommt aber keine eigene Gelegenheit — nach dem einen Raetsel
         // am Tag zuverlaessig Werbung waere die unangenehmste Stelle im Spiel.
-        if (!imTag) void vielleichtInterstitial();
+        // Danach, und nie im selben Moment wie eine Anzeige, vielleicht die
+        // Bitte um eine Bewertung (lib/bewertung.ts, ab dem zehnten Sieg).
+        void (async () => {
+          const anzeige = imTag ? false : await vielleichtInterstitial();
+          await vielleichtBewerten(anzeige);
+        })();
         if (imDuell) {
           duellEnde(partie.zugzahl);
         } else if (imTag) {
@@ -423,8 +438,34 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
     }
   };
 
+  /** Sagt, warum es keine Belohnung gab. */
+  const videoMelden = (e: VideoErgebnis) => {
+    setVideoHinweis(e === 'aborted' ? 'spiel.videoNichts' : 'spiel.videoKeins');
+    window.setTimeout(() => setVideoHinweis(null), 2500);
+  };
+
+  /** Einen freiwilligen Videolauf um eine Aktion legen. Belohnt wird NUR bei 'earned'. */
+  const mitVideo = (belohnung: () => void) => {
+    setVideoLaeuft(true);
+    window.setTimeout(() => {
+      void (async () => {
+        const e = await zeigeBelohnungsVideo();
+        setVideoLaeuft(false);
+        if (e !== 'earned') { videoMelden(e); return; }
+        belohnung();
+      })();
+    }, 30);
+  };
+
+  /**
+   * Der Tipp — gegen Muenzen oder, wenn die nicht reichen, gegen ein
+   * freiwilliges Video (seit 1.1.0). Beide Wege fragen ERST den Loeser und
+   * verlangen den Preis nur, wenn er etwas liefert: fuer einen Tipp, der
+   * nichts sagt, ein Video zu verlangen, waere genauso unfair wie Muenzen.
+   */
   const tipp = () => {
-    if (!reichtFuer(muenzen, KOSTEN_TIPP)) return;
+    const perMuenzen = reichtFuer(muenzen, KOSTEN_TIPP);
+    if (!perMuenzen && !belohnungMoeglich()) return;
     setRechnet(true);
     // Erst zeichnen lassen, dann rechnen — sonst haengt der Knopf, ohne dass
     // man sieht, dass ueberhaupt etwas passiert.
@@ -444,12 +485,19 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
         }
         return;
       }
-      const rest = muenzen - KOSTEN_TIPP;
-      setMuenzen(rest);
-      speichereMuenzen(rest);
-      setGewaehlt(zug.von);
-      setTippZiel(zug.nach);
-      window.setTimeout(() => setTippZiel(null), 3000);
+      const zeige = () => {
+        setGewaehlt(zug.von);
+        setTippZiel(zug.nach);
+        window.setTimeout(() => setTippZiel(null), 3000);
+      };
+      if (perMuenzen) {
+        const rest = muenzen - KOSTEN_TIPP;
+        setMuenzen(rest);
+        speichereMuenzen(rest);
+        zeige();
+      } else {
+        mitVideo(zeige);
+      }
     }, 30);
   };
 
@@ -459,7 +507,17 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
     const rest = muenzen - KOSTEN_RUECKKAUF;
     setMuenzen(rest);
     speichereMuenzen(rest);
-    partie.undo();
+    zugZurueck();
+  };
+
+  /** Ein Zug zurueck gegen ein freiwilliges Video (seit 1.1.0). */
+  const rueckkaufPerVideo = () => {
+    if (!partie.kannUndo()) return;
+    mitVideo(zugZurueck);
+  };
+
+  const zugZurueck = () => {
+    if (!partie.undo()) return;
     raeumeGuss();
     setGewaehlt(null);
     setTippZiel(null);
@@ -478,46 +536,15 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
    * kuerzeste Loesung" hinfaellig, und die ist der Kern der ganzen Wertung.
    */
   const holeExtraGlas = () => {
-    setVideoLaeuft(true);
-    window.setTimeout(() => {
-      void (async () => {
-        const gesehen = await zeigeBelohnungsVideo();
-        setVideoLaeuft(false);
-        if (!gesehen) {
-          setVideoLeer(true);
-          window.setTimeout(() => setVideoLeer(false), 2500);
-          return;
-        }
-        if (!partie.extraGlas()) return;
-        setGewaehlt(null);
-        setTippZiel(null);
-        neuZeichnen();
-        // Mit einem Glas mehr ist das Brett fast immer wieder loesbar — aber
-        // eben nur fast. Also nachrechnen statt hoffen.
-        setSteckt(festgefahren(partie.zustand));
-      })();
-    }, 30);
-  };
-
-  const holeMuenzen = () => {
-    setVideoLaeuft(true);
-    window.setTimeout(() => {
-      void (async () => {
-        const gesehen = await zeigeBelohnungsVideo();
-        setVideoLaeuft(false);
-        if (!gesehen) {
-          setVideoLeer(true);
-          window.setTimeout(() => setVideoLeer(false), 2500);
-          return;
-        }
-        klangMuenze();
-        setMuenzen((m) => {
-          const neu = m + BELOHNUNG_VIDEO;
-          speichereMuenzen(neu);
-          return neu;
-        });
-      })();
-    }, 30);
+    mitVideo(() => {
+      if (!partie.extraGlas()) return;
+      setGewaehlt(null);
+      setTippZiel(null);
+      neuZeichnen();
+      // Mit einem Glas mehr ist das Brett fast immer wieder loesbar — aber
+      // eben nur fast. Also nachrechnen statt hoffen.
+      setSteckt(festgefahren(partie.zustand));
+    });
   };
 
   const neustart = () => {
@@ -654,11 +681,19 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
         <button
           type="button"
           onClick={tipp}
-          disabled={rechnet || geloest || !reichtFuer(muenzen, KOSTEN_TIPP)}
+          disabled={rechnet || videoLaeuft || geloest
+            || (!reichtFuer(muenzen, KOSTEN_TIPP) && !belohnungMoeglich())}
           className="knopf knopf-haupt flex-grow"
         >
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18h6" /><path d="M10 21.5h4" /><path d="M12 2.5a6.5 6.5 0 00-3.7 11.8c.5.4.7.9.7 1.4v.3h6v-.3c0-.5.2-1 .7-1.4A6.5 6.5 0 0012 2.5z" /></svg>
-          {rechnet ? t('spiel.rechnet') : t('spiel.tippPreis', { n: KOSTEN_TIPP })}
+          {/* Reichen die Muenzen nicht, wird derselbe Knopf zum Tipp per Video.
+              Zwei Tipp-Knoepfe nebeneinander passen in die Fusszeile nicht,
+              und mit genug Muenzen braucht es das Video nicht. */}
+          {rechnet
+            ? t('spiel.rechnet')
+            : !reichtFuer(muenzen, KOSTEN_TIPP) && belohnungMoeglich()
+              ? t('spiel.tippVideo')
+              : t('spiel.tippPreis', { n: KOSTEN_TIPP })}
         </button>
 
         <button type="button" aria-label={t('spiel.symbole')} aria-pressed={symbole} data-symbole
@@ -687,10 +722,10 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
         </div>
       )}
 
-      {videoLeer && (
+      {videoHinweis && (
         <div className="pointer-events-none fixed inset-x-0 bottom-28 z-20 flex justify-center px-6">
           <p className="rounded-full border border-kante bg-theke px-4 py-2 text-xs font-bold text-rauch">
-            {t('spiel.videoNichts')}
+            {t(videoHinweis)}
           </p>
         </div>
       )}
@@ -738,9 +773,16 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
                   {t('spiel.extraGlasHolen')}
                 </button>
               )}
-              {!reichtFuer(muenzen, KOSTEN_RUECKKAUF) && belohnungMoeglich() && (
-                <button type="button" className="knopf" disabled={videoLaeuft} onClick={holeMuenzen}>
-                  {t('spiel.muenzenVideo', { n: BELOHNUNG_VIDEO })}
+              {/* Der Zug zurueck per Video (seit 1.1.0) ersetzt hier das
+                  fruehere „Muenzen per Video": 30 Muenzen reichen fuer einen
+                  Rueckkauf (40) ohnehin nicht mehr, und das Muenzvideo hat
+                  einen Tagesdeckel. Erlaubt wie der Rueckkauf selbst ueberall,
+                  auch im Tagesraetsel und im Duell — ein Zug zurueck aendert
+                  nichts am nachspielbaren Brett. */}
+              {belohnungMoeglich() && (
+                <button type="button" className="knopf" disabled={videoLaeuft || !partie.kannUndo()}
+                  onClick={rueckkaufPerVideo}>
+                  {t('spiel.zurueckVideo')}
                 </button>
               )}
               <button type="button" className="knopf" onClick={neustart}>

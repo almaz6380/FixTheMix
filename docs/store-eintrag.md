@@ -21,6 +21,7 @@ Store zu nehmen.
 | Datenschutz-URL | `https://almaz6380.github.io/fixthemix/datenschutz.html` |
 | Datenlöschung (nur Play) | `https://almaz6380.github.io/fixthemix/daten-loeschen.html` |
 | Support / Kontakt | `63almaz80@gmail.com` |
+| Website (für `app-ads.txt`) | `https://fixthemix.almaz6380.workers.dev` — dort liegt seit 1.1.0 `/app-ads.txt`. Google sucht die Datei an der **Wurzel** der im Store hinterlegten Website; in Play (Website) und App Store (Marketing-URL) muss also genau diese Adresse stehen, nicht die GitHub-Pages-Unterseite. |
 | Sprachen der App | 20: Deutsch, Englisch, Spanisch, Französisch, Portugiesisch, Italienisch, Niederländisch, Polnisch, Türkisch, Russisch, Ukrainisch, Arabisch, Hindi, Indonesisch, Vietnamesisch, Thai, Japanisch, Koreanisch, Chinesisch (vereinfacht, traditionell) |
 
 Die Rechtsseiten liegen seit dem 01.10.2026 auf GitHub Pages
@@ -226,7 +227,7 @@ was Werbung und Kauf brauchen. Ändert sich mit Phase 4 — siehe unten.
 |---|---|---|---|
 | Werbe-ID (IDFA / AAID) | ja | Werbung, mit Einwilligung | Google AdMob |
 | Kaufinformationen | ja | Kaufwiederherstellung | RevenueCat, Apple, Google |
-| Geräteeigene Kennung (`fixthemix.kennung.v1`) | erzeugt, **verlässt das Gerät nicht** | Zuordnung für Auskunfts- und Löschbegehren | — |
+| Geräteeigene Kennung (`fixthemix.kennung.v1`) | ja — **geht bei jedem App-Start an RevenueCat** (als `appUserID`, auch ohne Kauf; korrigiert am 04.10.2026, vorher stand hier fälschlich, sie verlasse das Gerät nicht) | Kaufstatus prüfen; Zuordnung für Auskunfts- und Löschbegehren | RevenueCat |
 | Spielfortschritt, Sterne, Münzen, Serie | ja | Spielstand | **nur lokal** (`localStorage`) |
 | Name, E-Mail, Telefon, Standort, Kontakte, Fotos | **nein** | — | — |
 
@@ -235,8 +236,11 @@ Daraus für die Formulare:
 - **Apple:** „Wird zum Tracking deiner Person verwendet" → **ja** (Identifikatoren:
   Geräte-ID; Kategorie Werbung). „Mit dir verknüpfte Daten" → Käufe. Diese Angabe
   gehört zwingend zur ATT-Abfrage; fehlt sie, ist es Richtlinie 2.1.
-- **Play:** Datentyp „Geräte- oder andere IDs" → erhoben, geteilt, für Werbung;
-  „App-Aktivität → In-App-Käufe" → erhoben. Verschlüsselung bei der Übertragung:
+- **Play:** Datentyp „Geräte- oder andere IDs" → erhoben, geteilt, für Werbung
+  **und** App-Funktionalität (die RevenueCat-Kennung, bei jedem Start übertragen);
+  „App-Aktivität → In-App-Käufe" → erhoben.
+- **Apple:** zusätzlich „Kennungen → Nutzer-ID" (die RevenueCat-Kennung), Zweck
+  App-Funktionalität, nicht zum Tracking. In beiden Konsolen von Hand nachziehen. Verschlüsselung bei der Übertragung:
   ja. Löschanfrage möglich: ja, über die Adresse oben.
 
 **Sobald die Bestenliste live ist**, kommt dazu: die Kennung und das Tagesergebnis

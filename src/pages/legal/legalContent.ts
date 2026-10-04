@@ -60,7 +60,7 @@ export const BETREIBER = {
 const bDE = `${BETREIBER.name}\n${BETREIBER.adresse}\n${BETREIBER.ort}\nE-Mail: ${BETREIBER.email}`;
 const bEN = `${BETREIBER.name}\n${BETREIBER.adresse}\n${BETREIBER.ort}\nEmail: ${BETREIBER.email}`;
 
-export const STAND = '26.09.2026';
+export const STAND = '04.10.2026';
 
 export interface RechtsAbschnitt {
   titel: string;
@@ -183,24 +183,26 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Empfänger deiner Daten',
           text:
             'Cloudflare (Cloudflare, Inc., USA): Auslieferung der Web-App unter fixthemix.almaz6380.workers.dev. Dabei fallen technisch bedingt Serverprotokolle mit IP-Adresse an.\n\n' +
-            'Google AdMob: Werbung in den mobilen Apps. Google kann dabei Gerätekennungen verarbeiten. Ohne deine Einwilligung wird nur nicht personalisierte Werbung ausgeliefert.\n\n' +
-            'RevenueCat (Auftragsverarbeiter, USA): Abwicklung und Wiederherstellung des Kaufs „Werbung entfernen", sofern du ihn tätigst.\n\n' +
-            'Eine Übermittlung in Drittstaaten (insbesondere USA) findet bei Cloudflare, Google und RevenueCat statt und stützt sich auf die Standardvertragsklauseln der EU-Kommission.',
+            'Google AdMob (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland, und Google LLC, USA): Werbung in den mobilen Apps. Google verarbeitet dabei Gerätekennungen wie die Werbe-ID, die IP-Adresse und Angaben zu Gerät und App. Ohne deine Einwilligung wird nur nicht personalisierte Werbung ausgeliefert.\n\n' +
+            'RevenueCat (RevenueCat, Inc., USA, Auftragsverarbeiter): Prüfung, Abwicklung und Wiederherstellung des Kaufs „Werbung entfernen" — bei jedem Start der App, auch wenn du nichts kaufst (siehe „In-App-Kauf").\n\n' +
+            'Eine Übermittlung in Drittstaaten (insbesondere USA) findet bei Cloudflare, Google und RevenueCat statt. Sie stützt sich auf den Angemessenheitsbeschluss der EU-Kommission zum EU-US Data Privacy Framework, soweit der Empfänger danach zertifiziert ist, und im Übrigen auf die Standardvertragsklauseln der EU-Kommission.',
         },
         {
           titel: 'Werbung und deine Einwilligung',
           text:
             'Die mobilen Apps zeigen Werbung. Vor der ersten Anzeige fragen wir über Googles Einwilligungsdialog (UMP), ob du personalisierte Werbung möchtest. Du kannst diese Entscheidung jederzeit in den Einstellungen der App ändern.\n\n' +
             'Lehnst du ab, siehst du weiterhin Werbung, aber ohne Personalisierung. Auf iOS fragen wir zusätzlich über Apples Dialog zur App-Tracking-Transparenz.\n\n' +
-            'Wir zeigen keine Werbung mitten in einem Level. Zwischen zwei Leveln erscheint höchstens eine Anzeige, und auch das nur mit Abstand. Videos gibt es ausschließlich freiwillig — du startest sie selbst, um Münzen oder ein Extra-Glas zu erhalten.\n\n' +
+            'Rechtsgrundlage für personalisierte Werbung und den dafür nötigen Zugriff auf dein Gerät (Werbe-ID, Speicher) ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit § 165 Abs. 3 TKG 2021). Für nicht personalisierte Werbung, mit der wir die kostenlose App finanzieren, stützen wir uns auf unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO); auch dafür greift Google nur so weit auf dein Gerät zu, wie es für die Auslieferung und gegen Betrug unbedingt nötig ist.\n\n' +
+            'Wie lange Google diese Daten speichert, legt Google fest; Einzelheiten stehen in Googles Datenschutzerklärung unter policies.google.com/privacy und unter policies.google.com/technologies/partner-sites.\n\n' +
+            'Wir zeigen keine Werbung mitten in einem Level. Zwischen zwei Leveln erscheint höchstens eine Anzeige, und auch das nur mit Abstand. Videos gibt es ausschließlich freiwillig — du startest sie selbst, um Münzen, einen Tipp, einen Zug zurück oder ein Extra-Glas zu erhalten. Hast du „Werbung entfernen" gekauft, entfallen die Anzeigen zwischen den Leveln; die freiwilligen Videos bleiben als Angebot bestehen.\n\n' +
             'Die Web-App unter fixthemix.almaz6380.workers.dev zeigt keine Werbung.',
         },
         {
           titel: 'In-App-Kauf',
           text:
             'In der App kannst du einmalig „Werbung entfernen" kaufen. Der Kauf selbst wird von Apple bzw. Google abgewickelt — Zahlungsdaten wie Kreditkartennummern erhalten wir zu keinem Zeitpunkt und können sie auch nicht einsehen.\n\n' +
-            'Zur Verwaltung des Kaufs setzen wir RevenueCat ein. Übermittelt werden eine zufällige Kennung deines Geräts und die Kaufbestätigung des jeweiligen Stores; RevenueCat verarbeitet zusätzlich technische Angaben zu Gerät und App-Version. Als Kennung dient bewusst keine E-Mail-Adresse.\n\n' +
-            'Zweck ist die Erfüllung des Kaufvertrags (Art. 6 Abs. 1 lit. b DSGVO) — ohne diese Übermittlung ließe sich die Werbefreiheit weder freischalten noch auf einem neuen Gerät wiederherstellen.',
+            'Zur Verwaltung des Kaufs setzen wir RevenueCat ein (RevenueCat, Inc., USA). Bei JEDEM Start der App fragt sie bei RevenueCat nach, ob „Werbung entfernen" gekauft wurde — auch dann, wenn du nie etwas kaufst. Übermittelt werden dabei eine zufällige Kennung, die die App beim ersten Start selbst erzeugt (sie gilt nur für dieses Gerät und ist kein Konto und kein Name), technische Angaben zu Gerät, Betriebssystem und App-Version sowie die IP-Adresse; nach einem Kauf zusätzlich die Kaufbestätigung des jeweiligen Stores. Als Kennung dient bewusst keine E-Mail-Adresse.\n\n' +
+            'Rechtsgrundlage ist die Erfüllung des Kaufvertrags (Art. 6 Abs. 1 lit. b DSGVO) — ohne diese Übermittlung ließe sich die Werbefreiheit weder freischalten noch auf einem neuen Gerät wiederherstellen. Die Abfrage beim Start, auch ohne Kauf, stützt sich auf unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO), Käufer verlässlich werbefrei zu stellen, ohne dass sie sich anmelden müssen.',
         },
         {
           titel: 'Speicherdauer',
@@ -249,24 +251,26 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Recipients of your data',
           text:
             'Cloudflare (Cloudflare, Inc., USA): delivery of the web app at fixthemix.almaz6380.workers.dev. This technically produces server logs containing the IP address.\n\n' +
-            'Google AdMob: advertising in the mobile apps. Google may process device identifiers. Without your consent, only non-personalised advertising is served.\n\n' +
-            'RevenueCat (processor, USA): handling and restoring the “Remove ads” purchase, if you make it.\n\n' +
-            'Transfers to third countries (in particular the USA) take place with Cloudflare, Google and RevenueCat and rely on the European Commission’s standard contractual clauses.',
+            'Google AdMob (Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Ireland, and Google LLC, USA): advertising in the mobile apps. Google processes device identifiers such as the advertising ID, the IP address and details about device and app. Without your consent, only non-personalised advertising is served.\n\n' +
+            'RevenueCat (RevenueCat, Inc., USA, processor): checking, handling and restoring the “Remove ads” purchase — at every app start, even if you never buy anything (see “In-app purchase”).\n\n' +
+            'Transfers to third countries (in particular the USA) take place with Cloudflare, Google and RevenueCat. They rely on the European Commission’s adequacy decision for the EU-US Data Privacy Framework where the recipient is certified under it, and otherwise on the European Commission’s standard contractual clauses.',
         },
         {
           titel: 'Advertising and your consent',
           text:
             'The mobile apps show advertising. Before the first ad we ask via Google’s consent dialog (UMP) whether you want personalised advertising. You can change that decision at any time in the app’s settings.\n\n' +
             'If you decline, you still see advertising, but without personalisation. On iOS we additionally ask via Apple’s App Tracking Transparency dialog.\n\n' +
-            'We show no advertising in the middle of a level. Between two levels there is at most one ad, and only with a gap. Videos are always voluntary — you start them yourself to receive coins or an extra glass.\n\n' +
+            'The legal basis for personalised advertising and the access to your device it requires (advertising ID, storage) is your consent (Art. 6(1)(a) GDPR in conjunction with sec. 165(3) of the Austrian Telecommunications Act 2021). For non-personalised advertising, which finances the free app, we rely on our legitimate interest (Art. 6(1)(f) GDPR); here too Google only accesses your device as far as strictly necessary to deliver ads and prevent fraud.\n\n' +
+            'How long Google keeps this data is determined by Google; details are in Google’s privacy policy at policies.google.com/privacy and at policies.google.com/technologies/partner-sites.\n\n' +
+            'We show no advertising in the middle of a level. Between two levels there is at most one ad, and only with a gap. Videos are always voluntary — you start them yourself to receive coins, a hint, an undo or an extra glass. If you have bought “Remove ads”, the ads between levels are gone; the voluntary videos remain available as an option.\n\n' +
             'The web app at fixthemix.almaz6380.workers.dev shows no advertising.',
         },
         {
           titel: 'In-app purchase',
           text:
             'You can buy “Remove ads” once in the app. The purchase itself is handled by Apple or Google — we never receive payment data such as card numbers and cannot access it.\n\n' +
-            'We use RevenueCat to manage the purchase. A random identifier for your device and the store’s purchase receipt are transmitted; RevenueCat additionally processes technical details about device and app version. Deliberately, no email address is used as the identifier.\n\n' +
-            'The purpose is performance of the purchase contract (Art. 6(1)(b) GDPR) — without this transmission the ad-free status could neither be unlocked nor restored on a new device.',
+            'We use RevenueCat (RevenueCat, Inc., USA) to manage the purchase. At EVERY start the app asks RevenueCat whether “Remove ads” has been bought — even if you never buy anything. This transmits a random identifier that the app creates itself on first start (it applies to this device only and is neither an account nor a name), technical details about device, operating system and app version, and the IP address; after a purchase also the store’s purchase receipt. Deliberately, no email address is used as the identifier.\n\n' +
+            'The legal basis is performance of the purchase contract (Art. 6(1)(b) GDPR) — without this transmission the ad-free status could neither be unlocked nor restored on a new device. The check at start-up, even without a purchase, relies on our legitimate interest (Art. 6(1)(f) GDPR) in reliably keeping buyers ad-free without making them sign in.',
         },
         {
           titel: 'Retention',
@@ -314,7 +318,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Münzen, Videos und Extra-Glas',
           text:
             'Münzen sind eine Zahl in deinem Gerät, keine Währung und kein Guthaben. Sie lassen sich nicht auszahlen, nicht übertragen und nicht zurückgeben.\n\n' +
-            'Videos sind immer freiwillig: du startest sie selbst. Wird ein Video nicht vollständig gesehen, gibt es keine Belohnung — das entscheidet Googles Anzeigen-SDK, nicht wir.\n\n' +
+            'Videos sind immer freiwillig: du startest sie selbst. Wird ein Video nicht vollständig gesehen, gibt es keine Belohnung — das entscheidet Googles Anzeigen-SDK, nicht wir. Videos gegen Münzen gibt es höchstens dreimal am Tag; Tipp und Zug zurück per Video sind nicht begrenzt.\n\n' +
             'Löschst du die App oder die Daten, sind die Münzen weg. Ein Anspruch auf Wiederherstellung besteht nicht.',
         },
         {
@@ -356,7 +360,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
           titel: 'Coins, videos and the extra glass',
           text:
             'Coins are a number on your device, not a currency and not credit. They cannot be paid out, transferred or returned.\n\n' +
-            'Videos are always voluntary: you start them yourself. If a video is not watched to the end there is no reward — that is decided by Google’s ad SDK, not by us.\n\n' +
+            'Videos are always voluntary: you start them yourself. If a video is not watched to the end there is no reward — that is decided by Google’s ad SDK, not by us. Videos for coins are limited to three a day; a hint or an undo by video is not limited.\n\n' +
             'If you delete the app or its data, the coins are gone. There is no claim to restoration.',
         },
         {

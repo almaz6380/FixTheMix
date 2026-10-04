@@ -17,8 +17,10 @@ import { replay } from '../src/engine/wiedergabe.ts';
 import { legaleZuege } from '../src/engine/zuege.ts';
 import { istGeloest, mitExtraGlas, pruefeInvariante, schluessel, standAusLevel } from '../src/engine/zustand.ts';
 import {
-  JEDES_NTE_LEVEL, MINDESTABSTAND_MS, darfInterstitial,
+  JEDES_NTE_LEVEL, MINDESTABSTAND_MS, belohnungMoeglich, darfInterstitial, setzeWerbefrei,
+  zeigeBelohnungsVideo,
 } from '../src/lib/werbung.ts';
+import { ABSTAND_MS, AB_LEVEL, darfBewertungFragen } from '../src/lib/bewertung.ts';
 
 let fehler = 0;
 const ok = (b: boolean, msg: string) => {
@@ -175,6 +177,32 @@ console.log('\n--- Warum es im Tagesraetsel kein Extra-Glas gibt ---');
   ok(nach.grund === 'index',
      `... und der Grund benennt es: ein Glas, das es dort nicht gibt (${nach.grund})`);
   ok(!istGeloest(nach.endstand), '... der Endstand ist nicht geloest');
+}
+
+console.log('\n--- Belohnungsvideos ausserhalb der App ---');
+{
+  // In node gibt es kein natives Plugin — genau der Fall des Browsers.
+  ok(!belohnungMoeglich(), 'im Browser gibt es keine Belohnungsvideos');
+  setzeWerbefrei(true);
+  ok(!belohnungMoeglich(), 'auch werbefrei nicht — dort fehlt schlicht das Plugin');
+  setzeWerbefrei(false);
+  ok(await zeigeBelohnungsVideo() === 'unavailable',
+     'ohne Plugin meldet das Video „nicht verfuegbar" und belohnt NICHT');
+}
+
+console.log('\n--- Die Bitte um eine Bewertung ---');
+{
+  const jetzt = 10_000_000_000;
+  ok(AB_LEVEL === 10, 'gefragt wird ab dem zehnten geloesten Level');
+  ok(!darfBewertungFragen({ geloest: AB_LEVEL - 1, zuletzt: 0 }, jetzt, false), 'nach neun Siegen noch nicht');
+  ok(darfBewertungFragen({ geloest: AB_LEVEL, zuletzt: 0 }, jetzt, false), 'nach dem zehnten schon');
+  ok(!darfBewertungFragen({ geloest: AB_LEVEL, zuletzt: 0 }, jetzt, true),
+     'nie im selben Moment wie ein Interstitial');
+  ok(!darfBewertungFragen({ geloest: 50, zuletzt: jetzt - ABSTAND_MS + 1 }, jetzt, false),
+     'innerhalb von 90 Tagen nach der letzten Bitte nicht');
+  ok(darfBewertungFragen({ geloest: 50, zuletzt: jetzt - ABSTAND_MS }, jetzt, false),
+     'nach 90 Tagen wieder');
+  ok(ABSTAND_MS === 90 * 24 * 3600 * 1000, 'der Abstand sind genau 90 Tage');
 }
 
 console.log(fehler === 0 ? '\nAlles gruen.' : `\n${fehler} Fehler.`);

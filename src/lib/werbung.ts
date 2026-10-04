@@ -129,22 +129,36 @@ export function setzeWerbefrei(frei: boolean): void {
   werbefrei = frei;
 }
 
-async function einwilligung() {
+/** Hat UMP erlaubt, Anzeigen anzufragen? Fehlt die Angabe, gilt ja. */
+let darfAnfragen = true;
+/** Ist der Start einmal gescheitert? Dann gibt es in dieser Sitzung keine Videos. */
+let startFehlgeschlagen = false;
+
+async function einwilligungsInfo() {
   try {
     const info = await AdMob.requestConsentInfo();
     datenschutzOptionen = info.privacyOptionsRequirementStatus ?? null;
-    if (info.isConsentFormAvailable && info.status === 'REQUIRED') {
-      await AdMob.showConsentForm();
-    }
+    if (typeof info.canRequestAds === 'boolean') darfAnfragen = info.canRequestAds;
+    return info;
   } catch (e) {
-    console.warn('Einwilligung fehlgeschlagen:', e);
+    console.warn('Einwilligungsstatus nicht lesbar:', e);
+    return null;
+  }
+}
+
+async function einwilligungsFormular() {
+  try {
+    const ergebnis = await AdMob.showConsentForm();
+    if (typeof ergebnis?.canRequestAds === 'boolean') darfAnfragen = ergebnis.canRequestAds;
+  } catch (e) {
+    console.warn('Einwilligungsformular fehlgeschlagen:', e);
   }
 }
 
 /**
  * Wartet auf die Antwort zum ATT-Dialog — fragt aber selbst NICHT.
  *
- * Gefragt wird nativ im AppDelegate. Von hier aus geht es nicht: Capacitor
+ * Gefragt wird nativ im SceneDelegate. Von hier aus geht es nicht: Capacitor
  * fuehrt Plugin-Aufrufe auf einer Hintergrund-Warteschlange aus, und
  * `ATTrackingManager` zeigt dort nichts an. Genau daran ist Anigosha 1.0 an
  * Apples Richtlinie 2.1 gescheitert — der Dialog kam nie.
@@ -174,15 +188,38 @@ export function starteWerbung(): Promise<void> {
   return initLauf;
 }
 
+/**
+ * Reihenfolge seit 1.1.0: EINWILLIGUNG VOR `AdMob.initialize`. Google verlangt,
+ * dass das SDK erst startet, wenn die Einwilligung eingeholt ist
+ * (`canRequestAds`) — der Start selbst baut schon Verbindungen auf.
+ *
+ * ⚠ EINE AUSNAHME, und sie steckt im Plugin, nicht bei uns: auf iOS setzt
+ * `@capacitor-community/admob` die Rueckreferenz seines Consent-Teils
+ * (`consentExecutor.plugin`) AUSSCHLIESSLICH in `initialize()`. Vorher findet
+ * `showConsentForm` keinen ViewController und lehnt mit „No ViewController" ab
+ * — Swaply hatte genau so eine Sitzung lang gar keine Werbung (CLAUDE.md dort,
+ * 29.07.2026). Auf iOS wird deshalb der STATUS vor dem Start geholt, das
+ * FORMULAR aber direkt nach `initialize()` gezeigt. Eine Anzeige wird auch dort
+ * erst NACH dem Formular angefragt (`bereit` steht erst danach), und nur, wenn
+ * UMP es erlaubt. Auf Android gibt es diese Abhaengigkeit nicht (das Formular
+ * holt sich die Activity selbst), dort laeuft alles vor dem Start.
+ */
 async function starteIntern() {
   try {
     const mod = await import('@capacitor-community/admob');
     AdMob = mod.AdMob;
+    belohnungsEreignisse = mod.RewardAdPluginEvents;
     await warteAufTracking();
+    const info = await einwilligungsInfo();
+    const formularNoetig = Boolean(info?.isConsentFormAvailable && info?.status === 'REQUIRED');
+    const ios = Capacitor.getPlatform() === 'ios';
+    if (formularNoetig && !ios) await einwilligungsFormular();
     await AdMob.initialize({ initializeForTesting: TEST_ANZEIGEN });
-    await einwilligung();
-    bereit = true;
+    if (formularNoetig && ios) await einwilligungsFormular();
+    bereit = darfAnfragen;
+    if (!bereit) console.warn('UMP erlaubt keine Anzeigen — Werbung bleibt aus.');
   } catch (e) {
+    startFehlgeschlagen = true;
     console.warn('AdMob-Start fehlgeschlagen:', e);
   }
 }
@@ -202,8 +239,9 @@ export async function aendereEinwilligung(): Promise<void> {
   if (!bereit) return;
   try {
     await AdMob.resetConsentInfo();
-    const info = await AdMob.requestConsentInfo();
-    if (info.isConsentFormAvailable) await AdMob.showConsentForm();
+    const info = await einwilligungsInfo();
+    if (info?.isConsentFormAvailable) await einwilligungsFormular();
+    bereit = darfAnfragen;
   } catch (e) {
     console.warn('Einwilligungs-Aenderung fehlgeschlagen:', e);
   }
@@ -214,45 +252,129 @@ export async function aendereEinwilligung(): Promise<void> {
  * Anzeige erscheint. Wird auch ohne Werbung aufgerufen, damit der Zaehler
  * mitlaeuft — sonst kaeme nach dem Kauf „Werbung entfernen" und einem spaeteren
  * Widerruf sofort eine Anzeige.
+ *
+ * Gibt zurueck, ob wirklich eine Anzeige lief — die Bitte um eine Bewertung
+ * (bewertung.ts) darf nie im selben Moment kommen.
  */
-export async function vielleichtInterstitial(): Promise<void> {
+export async function vielleichtInterstitial(): Promise<boolean> {
   bremse.zaehler += 1;
-  if (!bereit || werbefrei) return;
-  if (!darfInterstitial(bremse, Date.now())) return;
+  if (!bereit || werbefrei) return false;
+  if (!darfInterstitial(bremse, Date.now())) return false;
   try {
     await AdMob.prepareInterstitial({ adId: ids().interstitial });
     await AdMob.showInterstitial();
     bremse.zuletzt = Date.now();
+    return true;
   } catch (e) {
     console.warn('Interstitial fehlgeschlagen:', e);
-  }
-}
-
-/**
- * Belohnte Anzeige — fuer Muenzen und fuer das Extra-Glas.
- *
- * Gibt nur dann true zurueck, wenn die Anzeige VOLLSTAENDIG gesehen wurde.
- * Alles andere waere geschenkt, und geschenkte Belohnungen entwerten den
- * Kreislauf, den die Muenzen tragen sollen.
- *
- * Im Browser und ohne Plugin: false. Die Oberflaeche zeigt den Knopf dann gar
- * nicht erst (`belohnungMoeglich`).
- */
-export async function zeigeBelohnungsVideo(): Promise<boolean> {
-  if (!bereit) return false;
-  try {
-    await AdMob.prepareRewardVideoAd({ adId: ids().rewarded });
-    const belohnung = await AdMob.showRewardVideoAd();
-    return Boolean(belohnung);
-  } catch (e) {
-    console.warn('Belohnungsvideo fehlgeschlagen:', e);
     return false;
   }
 }
 
-/** Gibt es hier ueberhaupt Belohnungsvideos? Im Browser nicht. */
+// --- Belohnte Anzeige ---------------------------------------------------------
+//
+// Fuer Muenzen, das Extra-Glas, den Tipp per Video und den Zug zurueck per
+// Video.
+//
+//  'earned'      = vollstaendig gesehen, Belohnung darf gutgeschrieben werden
+//  'aborted'     = das Video lief, wurde aber abgebrochen -> KEINE Belohnung
+//  'unavailable' = gar kein Video (kein Netz, keine Fuellung, kein Plugin)
+//
+// ⚠ DIE HAENGE-FALLE (aus Mahjong Royale, dort am 31.07.2026 im Store
+// aufgefallen): `showRewardVideoAd()` loest im Plugin AUSSCHLIESSLICH im
+// Belohnungs-Callback auf (iOS `AdRewardExecutor.swift`, Android
+// `onUserEarnedReward`). Bricht der Spieler ab, kommt NIE eine Antwort — ein
+// blankes `await` haengt fuer immer, der Knopf bleibt grau und nichts passiert.
+// Deshalb wird zusaetzlich auf Dismissed/FailedToShow gehoert und hart auf
+// Zeit begrenzt. Die Aufloesung der Plugin-Promise zaehlt selbst als Beleg —
+// nicht nur das Rewarded-Ereignis, sonst entschiede ein Reihenfolge-Rennen
+// zwischen Ereignis und Antwort ueber die Belohnung.
+
+export type VideoErgebnis = 'earned' | 'aborted' | 'unavailable';
+
+const VIDEO_NOTBREMSE_MS = 180_000;
+const VIDEO_NACH_BELOHNUNG_MS = 15_000;
+const VIDEO_NACH_SCHLIESSEN_MS = 400;
+
+/* Die Ereignisnamen kommen aus dem dynamisch geladenen Modul. */
+let belohnungsEreignisse: any = null;
+/** Ein Doppeltipp darf ein Video nicht zweimal gutschreiben. */
+let videoLaeuftGerade = false;
+
+export async function zeigeBelohnungsVideo(): Promise<VideoErgebnis> {
+  if (!nativ) return 'unavailable';
+  // Wer „Werbung entfernen" gekauft hat, startet das SDK nicht beim
+  // App-Start (kein Einwilligungsdialog fuer jemanden, der dafuer bezahlt
+  // hat). Erst wenn er selbst ein Video haben will, wird es hier gestartet.
+  if (!bereit) await starteWerbung();
+  if (!bereit || !belohnungsEreignisse) return 'unavailable';
+  if (videoLaeuftGerade) return 'unavailable';
+  videoLaeuftGerade = true;
+
+  const griffe: Array<{ remove: () => Promise<void> }> = [];
+  let verdient = false;
+  let gezeigt = false;
+  let fertig!: () => void;
+  const ende = new Promise<void>((r) => { fertig = r; });
+  let uhr = setTimeout(() => fertig(), VIDEO_NOTBREMSE_MS);
+  const neuStellen = (ms: number) => {
+    clearTimeout(uhr);
+    uhr = setTimeout(() => fertig(), ms);
+  };
+
+  try {
+    const E = belohnungsEreignisse;
+    griffe.push(await AdMob.addListener(E.Showed, () => { gezeigt = true; }));
+    griffe.push(await AdMob.addListener(E.Rewarded, () => {
+      verdient = true;
+      neuStellen(VIDEO_NACH_BELOHNUNG_MS);
+    }));
+    griffe.push(await AdMob.addListener(E.Dismissed, () => neuStellen(VIDEO_NACH_SCHLIESSEN_MS)));
+    griffe.push(await AdMob.addListener(E.FailedToShow, () => fertig()));
+
+    try {
+      await AdMob.prepareRewardVideoAd({ adId: ids().rewarded });
+    } catch (e) {
+      console.warn('Belohnungsvideo nicht geladen:', e);
+      return 'unavailable';
+    }
+
+    // Bewusst OHNE await, siehe oben: diese Promise kann ewig offen bleiben.
+    AdMob.showRewardVideoAd()
+      .then(() => {
+        verdient = true;
+        neuStellen(VIDEO_NACH_BELOHNUNG_MS);
+      })
+      .catch((e: unknown) => {
+        console.warn('Belohnungsvideo fehlgeschlagen:', e);
+        fertig();
+      });
+
+    await ende;
+    return verdient ? 'earned' : gezeigt ? 'aborted' : 'unavailable';
+  } catch (e) {
+    console.warn('Belohnungsvideo fehlgeschlagen:', e);
+    return 'unavailable';
+  } finally {
+    videoLaeuftGerade = false;
+    clearTimeout(uhr);
+    for (const g of griffe) {
+      try { await g.remove(); } catch { /* schon weg */ }
+    }
+  }
+}
+
+/**
+ * Gibt es hier ueberhaupt Belohnungsvideos? Im Browser nicht.
+ *
+ * „Werbung entfernen" schaltet NUR die Interstitials ab, nicht die
+ * freiwilligen Videos (seit 1.1.0): wer bezahlt hat, soll nicht schlechter
+ * dastehen als jemand, der nicht bezahlt hat. Fuer ihn ist das SDK eventuell
+ * noch gar nicht gestartet — dann startet es beim ersten Video.
+ */
 export function belohnungMoeglich(): boolean {
-  return bereit && !werbefrei;
+  if (!nativ || startFehlgeschlagen) return false;
+  return bereit || (werbefrei && initLauf === null);
 }
 
 /** Nur fuer die Anzeige in den Einstellungen. */

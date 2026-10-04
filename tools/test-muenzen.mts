@@ -8,8 +8,9 @@
 // Aufruf: npx tsx tools/test-muenzen.mts
 // Schneller: node tools/test-muenzen.mts
 import {
-  KOSTEN_RUECKKAUF, KOSTEN_TIPP, LOHN, START,
-  ladeMuenzen, lohnFuer, reichtFuer, speichereMuenzen,
+  BELOHNUNG_VIDEO, KOSTEN_RUECKKAUF, KOSTEN_TIPP, LOHN, START, VIDEOS_JE_TAG,
+  ladeMuenzen, ladeVideoStand, lohnFuer, reichtFuer, speichereMuenzen, speichereVideoStand,
+  videoKontingent, zaehleVideo,
 } from '../src/lib/muenzen.ts';
 
 let fehler = 0;
@@ -39,10 +40,22 @@ console.log('\n--- Preise ---');
 ok(KOSTEN_TIPP > 0 && KOSTEN_RUECKKAUF > 0, 'beide Preise sind echte Preise');
 ok(KOSTEN_TIPP > KOSTEN_RUECKKAUF,
    'der Tipp kostet mehr als ein Zug zurueck — er nimmt die Aufgabe ab, nicht nur den Fehler');
-ok(START >= 4 * KOSTEN_TIPP,
-   `das Startguthaben (${START}) traegt mindestens vier Tipps`);
-ok(LOHN[3]! >= KOSTEN_TIPP,
-   'ein perfekt geloestes Level finanziert einen Tipp — sonst laeuft das Guthaben zwangslaeufig leer');
+ok(START >= KOSTEN_TIPP,
+   `das Startguthaben (${START}) traegt mindestens einen Tipp zum Kennenlernen`);
+// Seit 1.1.0 sind Hilfen knapp: rund eine je acht bis zehn Level. Gerechnet
+// mit einem Spieler, der abwechselnd zwei und drei Sterne holt.
+{
+  const jeLevel = (LOHN[2]! + LOHN[3]!) / 2;
+  const levelJeTipp = KOSTEN_TIPP / jeLevel;
+  const levelJeRueckkauf = KOSTEN_RUECKKAUF / jeLevel;
+  ok(levelJeTipp >= 8 && levelJeTipp <= 12,
+     `ein Tipp kostet rund zehn Level Lohn (${levelJeTipp.toFixed(1)})`);
+  ok(levelJeRueckkauf >= 6 && levelJeRueckkauf <= 10,
+     `ein Zug zurueck kostet rund acht Level Lohn (${levelJeRueckkauf.toFixed(1)})`);
+  ok(LOHN[3]! < KOSTEN_RUECKKAUF,
+     'kein einzelnes Level finanziert eine Hilfe — sonst waeren die Preise wirkungslos');
+  ok(BELOHNUNG_VIDEO > LOHN[3]!, 'ein Muenzvideo bringt mehr als ein perfektes Level');
+}
 
 console.log('\n--- Reicht es? ---');
 ok(reichtFuer(KOSTEN_TIPP, KOSTEN_TIPP), 'genau der Preis reicht');
@@ -63,6 +76,28 @@ console.log('\n--- Speicher ohne localStorage ---');
   } catch {
     geworfen = true;
   }
+  ok(!geworfen, 'speichern ohne Speicher wirft nicht');
+}
+
+console.log('\n--- Tagesdeckel fuer Muenzvideos ---');
+{
+  ok(VIDEOS_JE_TAG === 3, 'hoechstens drei Muenzvideos am Tag');
+  const tag = '2026-10-04';
+  ok(videoKontingent(null, tag) === 3, 'ohne Stand gehen alle drei');
+  let s = zaehleVideo(null, tag);
+  ok(s.tag === tag && s.anzahl === 1, 'das erste Video zaehlt eins');
+  ok(videoKontingent(s, tag) === 2, 'danach noch zwei');
+  s = zaehleVideo(zaehleVideo(s, tag), tag);
+  ok(videoKontingent(s, tag) === 0, 'nach drei Videos ist fuer heute Schluss');
+  ok(videoKontingent(zaehleVideo(s, tag), tag) === 0, 'ein viertes macht den Rest nie negativ');
+  ok(videoKontingent(s, '2026-10-05') === 3, 'am naechsten Tag geht es von vorn los');
+  ok(zaehleVideo(s, '2026-10-05').anzahl === 1, 'ein neuer Tag faengt bei eins an');
+  ok(Number.isFinite(videoKontingent({ tag, anzahl: NaN }, tag)),
+     'ein verbogener Stand ergibt nie NaN');
+  ok(videoKontingent({ tag, anzahl: -4 }, tag) === 3, 'ein negativer Stand wird geklemmt');
+  ok(ladeVideoStand() === null, 'ohne Speicher gibt es keinen Stand');
+  let geworfen = false;
+  try { speichereVideoStand(s); } catch { geworfen = true; }
   ok(!geworfen, 'speichern ohne Speicher wirft nicht');
 }
 

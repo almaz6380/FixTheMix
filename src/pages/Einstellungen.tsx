@@ -15,9 +15,13 @@ import { useTranslation } from 'react-i18next';
 import { SPRACHEN, appSprache, setzeSprache, type AppSprache } from '../i18n/index.ts';
 import { ladeEinstellung, loescheAlles, speichereEinstellung } from '../lib/fortschritt.ts';
 import { klangWahl, setzeTon, tonGeladen } from '../lib/klang.ts';
-import { BELOHNUNG_VIDEO, ladeMuenzen, speichereMuenzen } from '../lib/muenzen.ts';
 import {
-  kaufMoeglich, kaufeWerbefrei, kennung, preisHolen, stelleKaufWiederHer,
+  BELOHNUNG_VIDEO, ladeMuenzen, ladeVideoStand, speichereMuenzen, speichereVideoStand,
+  videoKontingent, zaehleVideo,
+} from '../lib/muenzen.ts';
+import { heute } from '../lib/serie.ts';
+import {
+  kaufMoeglich, kaufeWerbefrei, kennung, preisHolen, stelleKaufWiederHer, werbefreiPruefen,
 } from '../lib/kauf.ts';
 import {
   aendereEinwilligung, belohnungMoeglich, einwilligungAenderbar, zeigeBelohnungsVideo,
@@ -43,6 +47,10 @@ export default function Einstellungen() {
   const [laeuft, setLaeuft] = useState(false);
   const [meldung, setMeldung] = useState<Meldung>(null);
   const [loeschFrage, setLoeschFrage] = useState(false);
+  // Der Tagesdeckel fuer „Video fuer Muenzen" (seit 1.1.0, drei je Ortstag).
+  const [videoStand, setVideoStand] = useState(() => ladeVideoStand());
+  const [videoMoeglich, setVideoMoeglich] = useState(() => belohnungMoeglich());
+  const videosRest = videoKontingent(videoStand, heute());
 
   // Preis und Einwilligungsknopf kommen aus dem Store bzw. von UMP und brauchen
   // beide einen nativen Aufruf. Im Browser liefern sie nichts — dann bleiben
@@ -50,10 +58,16 @@ export default function Einstellungen() {
   useEffect(() => {
     let lebt = true;
     void (async () => {
-      const [p, e] = await Promise.all([preisHolen(), einwilligungAenderbar()]);
+      // Der Kaufstatus gehoert hierher: ohne ihn stand nach einem Kauf und dem
+      // naechsten Oeffnen der Einstellungen wieder der Kaufknopf da.
+      const [p, e, frei] = await Promise.all([
+        preisHolen(), einwilligungAenderbar(), werbefreiPruefen(),
+      ]);
       if (!lebt) return;
       setPreis(p);
       setEinwilligung(e);
+      setWerbefrei(frei);
+      setVideoMoeglich(belohnungMoeglich());
     })();
     return () => { lebt = false; };
   }, []);
@@ -83,15 +97,25 @@ export default function Einstellungen() {
   };
 
   const videoFuerMuenzen = async () => {
+    if (videosRest <= 0) return;
     setLaeuft(true);
     setMeldung(null);
-    const gesehen = await zeigeBelohnungsVideo();
+    const ergebnis = await zeigeBelohnungsVideo();
     setLaeuft(false);
-    if (!gesehen) {
-      setMeldung({ art: 'schlecht', text: t('spiel.videoNichts') });
+    if (ergebnis !== 'earned') {
+      setMeldung({
+        art: 'schlecht',
+        text: t(ergebnis === 'aborted' ? 'spiel.videoNichts' : 'spiel.videoKeins'),
+      });
       return;
     }
-    const neu = muenzen + BELOHNUNG_VIDEO;
+    // Erst verbuchen, dann gutschreiben: der Deckel zaehlt nur gesehene Videos.
+    const stand = zaehleVideo(ladeVideoStand(), heute());
+    speichereVideoStand(stand);
+    setVideoStand(stand);
+    // Frisch gelesen statt aus dem State: waehrend des Videos koennte ein
+    // anderer Bildschirm Muenzen veraendert haben.
+    const neu = ladeMuenzen() + BELOHNUNG_VIDEO;
     setMuenzen(neu);
     speichereMuenzen(neu);
     setMeldung({ art: 'gut', text: t('spiel.gewinn', { n: BELOHNUNG_VIDEO }) });
@@ -178,10 +202,16 @@ export default function Einstellungen() {
         <p className="px-1 text-sm font-bold text-zitrus" data-muenzstand={muenzen}>
           {t('spiel.muenzen', { n: muenzen })}
         </p>
-        {belohnungMoeglich() && (
-          <button type="button" onClick={videoFuerMuenzen} disabled={laeuft} className="knopf justify-start px-4">
-            {t('spiel.muenzenVideo', { n: BELOHNUNG_VIDEO })}
-          </button>
+        {videoMoeglich && (
+          <>
+            <button type="button" onClick={videoFuerMuenzen} disabled={laeuft || videosRest <= 0}
+              className="knopf justify-start px-4" data-videos-rest={videosRest}>
+              {t('spiel.muenzenVideo', { n: BELOHNUNG_VIDEO })}
+            </button>
+            <p className="px-1 text-xs text-rauch">
+              {videosRest > 0 ? t('spiel.videosHeute', { n: videosRest }) : t('spiel.videosAlle')}
+            </p>
+          </>
         )}
       </div>
 

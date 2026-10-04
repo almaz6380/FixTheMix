@@ -92,6 +92,73 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
+### Version 1.1.0 — knappe Münzen, Videos als Hilfe, Rechtsnachzug (04.10.2026)
+
+Branch `claude/rechtspruefung-fixes`, iOS 1.1.0 (Build 2), Android 1.1.0 (vc2).
+Noch nicht gebaut, nicht eingereicht.
+
+**Die Ökonomie.** In 1.0 finanzierte jedes perfekte Level (25) mehr als einen Tipp
+(15) — die Münzen waren wirkungslos, der Tipp wieder eine Lösungsmaschine. Jetzt:
+Lohn 2/4/8, Tipp 60, Zug zurück 40, Start 100, Video 30. Ziel: **rund eine Hilfe je
+acht bis zehn Level** aus eigener Kraft; wer öfter Hilfe will, sieht freiwillig ein
+Video. `test-muenzen.mts` rechnet das nach (Level je Tipp 8–12, je Rückkauf 6–10).
+
+**Videos als Hilfe** (`src/App.tsx`):
+- **Tipp per Video:** Reichen die Münzen nicht, wird derselbe Knopf in der Fußzeile
+  zu „Tipp · Video". Zwei Tipp-Knöpfe passen nicht in die Fußzeile. Erst rechnet der
+  Löser, dann kommt das Video — für einen Tipp, der nichts liefert, gibt es kein Video.
+- **Zug zurück per Video** im Festgefahren-Fenster, überall wie der Münz-Rückkauf
+  (auch Tagesrätsel/Duell: ein Zug zurück ändert das nachspielbare Brett nicht). Er
+  ersetzt dort das alte „Münzen per Video" — 30 Münzen reichten für 40 ohnehin nicht.
+- **„Video für 30 Münzen"** (Einstellungen) ist auf **3 je Ortstag** gedeckelt:
+  `videoKontingent()`/`zaehleVideo()` in `muenzen.ts`, eigener Schlüssel
+  `fixthemix.muenzvideos.v1`. Tipp und Zug zurück per Video sind nicht gedeckelt —
+  sie kosten genau ein Video je Hilfe.
+
+**Werbung** (`src/lib/werbung.ts`):
+- `zeigeBelohnungsVideo()` liefert `'earned' | 'aborted' | 'unavailable'` und hängt
+  nicht mehr: das Plugin löst `showRewardVideoAd()` NUR bei verdienter Belohnung auf,
+  ein Abbruch kam nie zurück. Muster aus Mahjong Royale (`requestReward`): Dismissed/
+  FailedToShow abhören, harte Zeitgrenze, Doppeltipp-Sperre. Belohnt wird nur bei
+  `'earned'`.
+- **„Werbung entfernen" nimmt die Videos nicht weg**, nur die Interstitials. Ein
+  werbefreier Spieler startet das SDK NICHT beim App-Start (kein Einwilligungsdialog
+  für jemanden, der bezahlt hat); es startet beim ersten Video, das er selbst will.
+  App.tsx prüft deshalb erst den Kaufstatus, dann die Werbung.
+- **Einwilligung vor `initialize`** — mit einer Ausnahme, die im Plugin steckt: auf
+  iOS setzt `@capacitor-community/admob` 8.1 die ViewController-Referenz des
+  Consent-Teils nur in `initialize()`. Dort wird der STATUS vorher geholt, das
+  FORMULAR direkt nach dem Start gezeigt; Anzeigen kommen in jedem Fall erst danach
+  und nur bei `canRequestAds`. Android: alles vor dem Start.
+- `public/app-ads.txt` (kontoweite Zeile). Wirkt nur, wenn in beiden Store-Konsolen
+  als Website `https://fixthemix.almaz6380.workers.dev` steht — von Hand prüfen.
+
+**Einstellungen** prüfen beim Öffnen den Kaufstatus (`werbefreiPruefen`) — vorher
+stand nach einem Kauf beim nächsten Öffnen wieder der Kaufknopf da.
+
+**Bewertung** (`src/lib/bewertung.ts`, `@capacitor-community/in-app-review` 8.0.0,
+per `npx cap sync` sauber in Package.swift und Gradle eingetragen): ab dem 10.
+gelösten Level, höchstens alle 90 Tage, nie im selben Moment wie ein Interstitial
+(`vielleichtInterstitial()` meldet jetzt zurück, ob eine Anzeige lief), nie im
+Browser, ohne Belohnung. Regel als reine Funktion in `test-werbung.mts` geprüft.
+⚠ Am Gerät ungetestet.
+
+**Recht:** Die Datenschutzerklärung (DE+EN, Stand 04.10.2026) sagt jetzt ehrlich,
+dass die App **bei jedem Start** RevenueCat mit ihrer zufälligen Kennung fragt —
+auch ohne Kauf (lit. b bzw. f). AdMob mit Google Ireland/Google LLC, Einwilligung
+nach Art. 6 Abs. 1 lit. a DSGVO + § 165 Abs. 3 TKG, Speicherdauer nach Google, DPF/SCC.
+`docs/store-eintrag.md` behauptete, die Kennung verlasse das Gerät nicht — falsch,
+korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
+(Kennung → App-Funktionalität). Danach im Repo `almaz6380.github.io`
+`npm run erzeugen`, sonst zeigt der Store den alten Text.
+
+**Versionshinweise 1.1.0** (Vorschlag):
+- DE: „Neu: Tipp und Zug zurück jetzt auch per Video. Münzen sind wertvoller
+  geworden — Hilfe gibt es seltener, dafür fairer. Kleine Verbesserungen und
+  Fehlerbehebungen."
+- EN: „New: get a hint or an undo by watching a video. Coins are now scarcer and
+  worth more. Small improvements and fixes."
+
 ### M1 Grundgerüst — FERTIG (25.09.2026)
 - [x] Scaffold Vite + React + TS, Tailwind v4 (`@tailwindcss/vite`), Capacitor-Config
       (`at.gallab.fixthemix`) — Konventionen 1:1 aus anigosha
@@ -227,7 +294,7 @@ Code auf seinem Rechner laufen.
       Alarm triebe den Spieler in einen Neustart, der nicht nötig war.
 - [x] Fenster „Festgefahren" mit **Rückkauf gegen Münzen** (je Rückkauf ein Zug) und
       kostenlosem Neustart
-- [x] **`src/lib/muenzen.ts`**: Startguthaben 100, Tipp 15, Rückkauf 10, Lohn nach
+- [x] **`src/lib/muenzen.ts`** (Werte von 1.0, seit 1.1.0 knapper — siehe oben): Startguthaben 100, Tipp 15, Rückkauf 10, Lohn nach
       Sternen 5/12/25 — und **nur die Verbesserung** wird gezahlt
 - [x] Münz-Chip in der Kopfzeile, Preis auf dem Tipp-Knopf
 - [x] 31 Experten-Level mit 7 oder 8 Schichten, Optima 24–30 (statt 20–27)
@@ -609,9 +676,12 @@ Billig ist es trotzdem: ein totes Brett hat kaum Suchraum, gemessen 1–2 ms im 
 | Posten | Wert |
 |---|---|
 | Startguthaben | 100 |
-| Tipp | 15 |
-| Ein Zug zurück aus der Sackgasse | 10 |
-| Lohn für 1 / 2 / 3 Sterne | 5 / 12 / 25 |
+| Tipp | 60 (bis 1.0: 15) |
+| Ein Zug zurück aus der Sackgasse | 40 (bis 1.0: 10) |
+| Lohn für 1 / 2 / 3 Sterne | 2 / 4 / 8 (bis 1.0: 5 / 12 / 25) |
+| Video für Münzen | 30, höchstens 3 je Ortstag |
+
+Seit 1.1.0 knapp — siehe „Version 1.1.0" unter „Aktueller Stand".
 
 Vier Entscheidungen, die man kennen muss:
 

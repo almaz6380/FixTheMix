@@ -23,24 +23,35 @@
 
 const SCHLUESSEL = 'fixthemix.muenzen.v1';
 
-/** Startguthaben. Reicht fuer sechs Tipps oder zehn Rueckkaeufe. */
+// DIE OEKONOMIE SEIT 1.1.0 (04.10.2026, Josefs Entscheidung): Muenzen sind
+// knapp. Ziel ist ungefaehr EINE Hilfe je acht bis zehn Level, die man aus
+// eigener Kraft verdient — wer oefter Hilfe will, sieht freiwillig ein
+// Werbevideo (Tipp per Video, Zug zurueck per Video, siehe App.tsx). Vorher
+// zahlte ein perfektes Level 25 Muenzen und ein Tipp kostete 15: jedes Level
+// finanzierte mehr als einen Tipp, und die Waehrung war wirkungslos.
+//
+// Rechnung: ein Spieler, der meist zwei bis drei Sterne holt, verdient je
+// Level etwa 5–6 Muenzen (Erstabschluss). Ein Rueckkauf (40) ist damit nach
+// rund acht Leveln drin, ein Tipp (60) nach rund zehn.
+
+/** Startguthaben. Reicht fuer einen Tipp oder zwei Rueckkaeufe zum Kennenlernen. */
 export const START = 100;
 
-/** Was ein Tipp kostet. */
-export const KOSTEN_TIPP = 15;
+/** Was ein Tipp kostet — rund zehn Level Lohn. */
+export const KOSTEN_TIPP = 60;
 
-/** Was EIN Zug zurueck aus einer Sackgasse kostet. */
-export const KOSTEN_RUECKKAUF = 10;
+/** Was EIN Zug zurueck aus einer Sackgasse kostet — rund acht Level Lohn. */
+export const KOSTEN_RUECKKAUF = 40;
 
 /**
  * Lohn nach Sternen, Index 0..3.
  *
- * Bewusst steil: drei Sterne bringen mehr als doppelt so viel wie einer. Wer
- * sauber spielt, finanziert damit die Tipps fuer die schweren Level — wer sich
- * durchtippt, geht irgendwann leer aus. Genau diese Rueckkopplung soll die
+ * Klein und steil: drei Sterne bringen das Vierfache von einem. Wer sauber
+ * spielt, kommt schneller zur naechsten Hilfe — wer sich durchtippt, geht leer
+ * aus und hat nur noch das Werbevideo. Genau diese Rueckkopplung soll die
  * Waehrung leisten.
  */
-export const LOHN: readonly number[] = [0, 5, 12, 25];
+export const LOHN: readonly number[] = [0, 2, 4, 8];
 
 /**
  * Was ein Levelabschluss einbringt. Gezahlt wird nur die VERBESSERUNG.
@@ -98,12 +109,68 @@ export function reichtFuer(guthaben: number, kosten: number): boolean {
 /**
  * Was ein freiwilliges Werbevideo einbringt (Phase 5).
  *
- * Etwas MEHR als ein perfekt geloestes Level (25), damit das Video eine echte
- * Wahl ist — und nicht so viel, dass Sterne sich nicht mehr lohnen. Wer
- * sauber spielt, soll weiter die guenstigste Quelle haben.
+ * Seit 1.1.0 deutlich mehr als ein perfektes Level (8) — dafuer gedeckelt auf
+ * `VIDEOS_JE_TAG` am Tag (`videoKontingent`). Ohne Deckel liesse sich die
+ * Waehrung mit Videos beliebig auffuellen, und die Hilfen haetten wieder
+ * keinen Preis. Wer ueber den Deckel hinaus Hilfe will, nimmt den Tipp bzw.
+ * den Zug zurueck direkt per Video — das kostet ihn genau ein Video je Hilfe.
  *
  * Das Video selbst liegt in `src/lib/werbung.ts` (`zeigeBelohnungsVideo`).
  * Gutgeschrieben wird NUR, wenn es vollstaendig gesehen wurde — das entscheidet
  * Googles SDK, nicht wir.
  */
 export const BELOHNUNG_VIDEO = 30;
+
+// --- Der Tagesdeckel fuer „Video fuer Muenzen" -------------------------------
+//
+// Hoechstens drei solche Videos je ORTSTAG (wie beim Tagesraetsel: der Tag des
+// Spielers, nicht UTC). Eigener Speicherschluessel, aus demselben Grund wie die
+// Muenzen selbst: der Fortschritt darf ihn nicht mitreissen.
+//
+// Die Regel steht als REINE Funktion da, damit sie ohne localStorage und ohne
+// Uhr pruefbar ist (`tools/test-muenzen.mts`). Das Datum kommt vom Aufrufer
+// (`heute()` aus serie.ts).
+
+export const VIDEOS_JE_TAG = 3;
+
+const VIDEO_SCHLUESSEL = 'fixthemix.muenzvideos.v1';
+
+export interface VideoStand {
+  /** Ortstag als JJJJ-MM-TT. */
+  tag: string;
+  /** An diesem Tag schon gesehene Muenzvideos. */
+  anzahl: number;
+}
+
+/** Wie viele Muenzvideos gehen heute noch? Ein Stand von gestern zaehlt nicht. */
+export function videoKontingent(stand: VideoStand | null, heute: string): number {
+  if (!stand || stand.tag !== heute) return VIDEOS_JE_TAG;
+  const n = Number.isFinite(stand.anzahl) ? Math.max(0, Math.trunc(stand.anzahl)) : VIDEOS_JE_TAG;
+  return Math.max(0, VIDEOS_JE_TAG - n);
+}
+
+/** Ein gesehenes Video verbuchen. Ein neuer Tag faengt bei eins an. */
+export function zaehleVideo(stand: VideoStand | null, heute: string): VideoStand {
+  if (!stand || stand.tag !== heute) return { tag: heute, anzahl: 1 };
+  return { tag: heute, anzahl: Math.max(0, Math.trunc(stand.anzahl) || 0) + 1 };
+}
+
+export function ladeVideoStand(): VideoStand | null {
+  try {
+    const roh = localStorage.getItem(VIDEO_SCHLUESSEL);
+    if (!roh) return null;
+    const o = JSON.parse(roh) as Partial<VideoStand>;
+    if (typeof o?.tag !== 'string' || typeof o?.anzahl !== 'number') return null;
+    return { tag: o.tag, anzahl: o.anzahl };
+  } catch {
+    return null;
+  }
+}
+
+export function speichereVideoStand(stand: VideoStand): void {
+  try {
+    localStorage.setItem(VIDEO_SCHLUESSEL, JSON.stringify(stand));
+  } catch {
+    // Kein Speicher — der Deckel gilt dann nur fuer diese Sitzung nicht.
+  }
+}

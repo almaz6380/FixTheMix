@@ -1,7 +1,7 @@
 {
   "name": "fixthemix",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.1.0",
+    "@capacitor-community/in-app-review": "^8.0.0",
     "@capacitor/android": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "@capacitor/ios": "^8.5.2",

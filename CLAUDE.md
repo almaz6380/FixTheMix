@@ -270,6 +270,21 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
 - [x] **Die Fischschuppen blenden nach unten aus.** Sie liefen mit vollem Kontrast bis
       unter die Gläser durch und stritten dort mit der Flüssigkeit. Jetzt sind sie die
       Rückwand und verschwinden, bevor das Brett beginnt.
+- [x] **Neuer Startbildschirm** (Josef, 03.10.2026: Gemini-Entwurf „oben links“ aus
+      vier): Titel mittig, zwei Lampen ganz außen (`Rueckwand lampenX`), drei große
+      Gläser auf einem Holztresen bis ganz unten (`.start-tresen`) mit Messingreling
+      (`.start-reling`), darauf ein goldener Hauptknopf und dunkle Glaskacheln
+      (`.start-kachel`) für Level, Münzen, Tagesrätsel und Duell.
+- [x] **`<html>` trägt Holz** (`#1D1310`), damit unter dem Tresen kein Nachtblau
+      hervorschaut, dazu `overscroll-behavior: none`. *Die Falle dabei:* hat `<html>`
+      einen eigenen Grund, malt `<body>` seinen Nachtgrund selbst — und ohne eigenen
+      Stapelkontext **über** alles mit `z-index: -1`. Lampen und Regal waren im Spiel
+      weg. Deshalb `isolation: isolate` auf `<body>`.
+- [ ] **Blauer Balken unten in der Home-Bildschirm-Web-App (iOS):** liegt außerhalb
+      des Dokuments. Eine `theme-color` nur für `display-mode: standalone` (PR #37)
+      half **nicht**. Zweiter Versuch: `background_color` im Manifest auf Holz
+      (PR #38) — wirkt erst nach Löschen und neuem „Zum Home-Bildschirm“, **Ergebnis
+      offen**. Bleibt er, den Tresen per `position: fixed` über den Rand ziehen.
 
 ### M5 Levelfolge — FERTIG (26.09.2026)
 - [x] **Die Kurve ist eine Funktion** (`src/engine/kurve.ts`), keine Liste mehr. Vorher

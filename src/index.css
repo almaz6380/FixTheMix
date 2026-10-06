@@ -240,12 +240,18 @@ body {
      bis unter die Glaeser durch und stritt dort mit der Fluessigkeit. Jetzt
      ist es oben eine Ruecktwand und verschwindet, bevor das Brett beginnt.
      Reihenfolge zaehlt: die zuerst genannte Lage liegt oben. */
-  background-color: var(--color-nacht);
+  /* Die GRUNDFARBE ist Holz, das Nachtblau liegt als deckende letzte Lage
+     darueber. Sichtbar ist das dasselbe. Aber am Home-Bildschirm-Symbol fuellt
+     iOS den Rand unter der Seite offenbar mit der Grundfarbe des <body> —
+     weder <html>, theme-color noch Manifest halfen gegen den blauen Balken
+     unter dem Tresen (Josef, 03.–06.10.2026). */
+  background-color: #1d1310;
   background-image:
     radial-gradient(120% 44% at 50% -6%, rgba(255, 201, 60, 0.13) 0%, rgba(255, 201, 60, 0) 62%),
     linear-gradient(180deg, rgba(14, 26, 46, 0) 0%, rgba(14, 26, 46, 0.55) 22%, var(--color-nacht) 46%),
-    repeating-radial-gradient(circle at 50% 0, transparent 0 16px, rgba(110, 165, 235, 0.11) 16px 18px);
-  background-size: 100% 100%, 100% 100%, 46px 46px;
+    repeating-radial-gradient(circle at 50% 0, transparent 0 16px, rgba(110, 165, 235, 0.11) 16px 18px),
+    linear-gradient(var(--color-nacht), var(--color-nacht));
+  background-size: 100% 100%, 100% 100%, 46px 46px, 100% 100%;
   background-attachment: fixed;
 }
 
@@ -763,6 +769,22 @@ body {
 }
 
 /* Die Messingreling vor der Front: ein Rohr mit Lichtkante und zwei Halter. */
+/* Holz bis ueber die Bildschirmkante: ein fester Streifen UNTER dem Tresen,
+   der jede Luecke zwischen Tresenende und Rand schliesst — auch eine, die
+   `100dvh` am Home-Bildschirm-Symbol offen laesst. */
+.start-tresen::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(env(safe-area-inset-bottom) + 120px);
+  transform: translateY(100px);
+  background: #1d1310;
+  z-index: -1;
+  pointer-events: none;
+}
+
 .start-reling {
   position: absolute;
   top: 54px;

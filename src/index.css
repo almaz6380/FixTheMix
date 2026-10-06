@@ -780,7 +780,12 @@ body {
   bottom: 0;
   height: calc(env(safe-area-inset-bottom) + 120px);
   transform: translateY(100px);
-  background: #1d1310;
+  /* Dieselben Bretter wie die Tresenfront, im selben 64-px-Takt ab x = 0 —
+     sonst endet die Maserung sichtbar ueber der Home-Leiste (Josef, 06.10.). */
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 61px, rgba(0, 0, 0, 0.42) 61px 63px, rgba(255, 210, 160, 0.05) 63px 64px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 5px, rgba(0, 0, 0, 0.06) 5px 6px, rgba(0, 0, 0, 0) 6px 13px, rgba(255, 210, 160, 0.025) 13px 14px),
+    #1d1310;
   z-index: -1;
   pointer-events: none;
 }

@@ -283,8 +283,10 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
 - [ ] **Blauer Balken unten in der Home-Bildschirm-Web-App (iOS):** liegt außerhalb
       des Dokuments. Eine `theme-color` nur für `display-mode: standalone` (PR #37)
       half **nicht**. Zweiter Versuch: `background_color` im Manifest auf Holz
-      (PR #38) — wirkt erst nach Löschen und neuem „Zum Home-Bildschirm“, **Ergebnis
-      offen**. Bleibt er, den Tresen per `position: fixed` über den Rand ziehen.
+      (PR #38) half nach Neuinstallation **auch nicht**. Dritter Versuch (06.10.):
+      `<body>` hat jetzt Holz als **Grundfarbe** (das Nachtblau liegt als deckende
+      Bildlage darüber, sichtbar unverändert), und `.start-tresen::after` legt einen
+      festen Holzstreifen über den unteren Rand. **Ergebnis offen.**
 
 ### M5 Levelfolge — FERTIG (26.09.2026)
 - [x] **Die Kurve ist eine Funktion** (`src/engine/kurve.ts`), keine Liste mehr. Vorher
@@ -424,9 +426,8 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
 - [x] **Eingereicht am 03.10.2026:** iOS 1.0 (Build 1) samt In-App-Kauf
       `fixthemix_no_ads` (2,99 €) wartet auf Apples Prüfung, Android 1.0 (vc1) liegt
       in Produktion zur Prüfung bei Google, derselbe Kauf ist dort aktiv.
-- [ ] **RevenueCat Android:** Die Dienstkonto-JSON (`revenuecat@wellbooked-501311`)
-      ist hinterlegt. Google braucht bis zu 36 Stunden, bis sie gilt. Vorher geht
-      „Werbung entfernen“ auf Android nicht; danach in RevenueCat „Check again“.
+- [x] **RevenueCat Android:** Die Dienstkonto-JSON (`revenuecat@wellbooked-501311`)
+      ist hinterlegt und seit dem 06.10.2026 **„Valid credentials“**.
 
 #### Erste Einreichung — vier Fallen (03.10.2026)
 

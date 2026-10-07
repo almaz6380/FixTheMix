@@ -280,13 +280,18 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
       einen eigenen Grund, malt `<body>` seinen Nachtgrund selbst — und ohne eigenen
       Stapelkontext **über** alles mit `z-index: -1`. Lampen und Regal waren im Spiel
       weg. Deshalb `isolation: isolate` auf `<body>`.
-- [ ] **Blauer Balken unten in der Home-Bildschirm-Web-App (iOS):** liegt außerhalb
-      des Dokuments. Eine `theme-color` nur für `display-mode: standalone` (PR #37)
-      half **nicht**. Zweiter Versuch: `background_color` im Manifest auf Holz
-      (PR #38) half nach Neuinstallation **auch nicht**. Dritter Versuch (06.10.):
-      `<body>` hat jetzt Holz als **Grundfarbe** (das Nachtblau liegt als deckende
-      Bildlage darüber, sichtbar unverändert), und `.start-tresen::after` legt einen
-      festen Holzstreifen über den unteren Rand. **Ergebnis offen.**
+- [x] **Der Streifen unten in der Home-Bildschirm-Web-App (iOS, ~59 pt):** liegt
+      **außerhalb der Seite** — iOS malt ihn selbst, und die Seite kann nur seine
+      **Farbe** bestimmen, nie ein Muster. Belegt durch fünf Versuche (03.–07.10.):
+      `theme-color` (#37) und Manifest `background_color` (#38) änderten nichts;
+      die **Grundfarbe von `<body>`** (#41: Holz `#1d1310`, das Nachtblau liegt als
+      deckende Bildlage darüber) machte ihn braun. Ein fester Holzstreifen (#42)
+      und ein Startbildschirm, der per `position: fixed` tiefer reicht (#43),
+      kamen dort **nicht** an — beide wieder entfernt; #43 hätte sogar Inhalt in
+      den unsichtbaren Bereich geschoben. **Lösung:** die Bretter von
+      `.start-tresen` laufen unten in genau `#1d1310` aus, der Streifen hat damit
+      keine Kante mehr. *Lehre: erst messen, dann bauen — hier wurde fünfmal
+      geraten.*
 
 ### M5 Levelfolge — FERTIG (26.09.2026)
 - [x] **Die Kurve ist eine Funktion** (`src/engine/kurve.ts`), keine Liste mehr. Vorher

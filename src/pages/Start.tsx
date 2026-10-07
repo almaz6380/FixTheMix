@@ -69,7 +69,7 @@ export default function Start() {
   const serie = serieLaeuft(taeglich, HEUTE) ? taeglich.serie : 0;
 
   return (
-    <main className="start-buehne relative flex min-h-dvh flex-col overflow-hidden pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+    <main className="relative flex min-h-dvh flex-col overflow-hidden pt-[calc(env(safe-area-inset-top)+0.75rem)]">
       {/* Die Bar hinter dem Titel: dieselbe Rueckwand wie im Spiel, die
           Lampen aber ganz aussen, neben dem Schriftzug. */}
       <Rueckwand lampenX={[26, 364]} />

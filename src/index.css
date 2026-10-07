@@ -757,7 +757,14 @@ body {
    Holzlagen wie `.theke`, damit Start und Spiel dieselbe Bar sind.
 */
 .start-tresen {
+  /* Die Bretter laufen unten weich in #1D1310 aus. Am Home-Bildschirm-Symbol
+     malt iOS unter der Seite einen Streifen, den keine Seite erreicht — nur
+     seine Farbe laesst sich setzen (Grundfarbe von <html>/<body>). Fuenf
+     Versuche, Inhalt dort hinzubringen, sind gescheitert (03.–07.10.2026).
+     Mit dem Verlauf hat der Streifen keine Kante mehr: das Holz wird nach
+     unten dunkler und geht nahtlos in ihn ueber. */
   background:
+    linear-gradient(180deg, rgba(29, 19, 16, 0) calc(100% - 110px), #1d1310 100%) 0 0 / 100% 100% no-repeat,
     radial-gradient(60% 34px at 50% 0, rgba(255, 220, 160, 0.18), rgba(255, 220, 160, 0)) 0 0 / 100% 34px no-repeat,
     repeating-linear-gradient(180deg, rgba(0, 0, 0, 0) 0 3px, rgba(0, 0, 0, 0.09) 3px 4px, rgba(0, 0, 0, 0) 4px 7px, rgba(255, 210, 160, 0.04) 7px 8px) 0 0 / 100% 34px no-repeat,
     linear-gradient(180deg, #5A4030 0%, #3E2A1F 100%) 0 0 / 100% 34px no-repeat,
@@ -772,41 +779,6 @@ body {
 /* Holz bis ueber die Bildschirmkante: ein fester Streifen UNTER dem Tresen,
    der jede Luecke zwischen Tresenende und Rand schliesst — auch eine, die
    `100dvh` am Home-Bildschirm-Symbol offen laesst. */
-.start-tresen::after {
-  content: '';
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: calc(env(safe-area-inset-bottom) + 120px);
-  transform: translateY(100px);
-  /* Dieselben Bretter wie die Tresenfront, im selben 64-px-Takt ab x = 0 —
-     sonst endet die Maserung sichtbar ueber der Home-Leiste (Josef, 06.10.). */
-  background:
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 61px, rgba(0, 0, 0, 0.42) 61px 63px, rgba(255, 210, 160, 0.05) 63px 64px),
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0) 0 5px, rgba(0, 0, 0, 0.06) 5px 6px, rgba(0, 0, 0, 0) 6px 13px, rgba(255, 210, 160, 0.025) 13px 14px),
-    #1d1310;
-  z-index: -1;
-  pointer-events: none;
-}
-
-/* Die eigentliche Ursache des Balkens (Josef, 03.–07.10.2026): in der
-   Home-Bildschirm-App mit `black-translucent` ist der Layout-Viewport um die
-   Hoehe der Statusleiste zu KURZ. `100dvh` und `bottom: 0` enden rund 59 pt
-   ueber dem Bildschirmrand; darunter malt WebKit nur noch die Grundfarbe.
-   Deshalb haengt der Startbildschirm dort fest am Bildschirm und reicht um
-   genau diese Hoehe tiefer — der Tresen samt Brettern laeuft bis ganz unten.
-   Nur im Standalone-Modus: in Safari und in der Store-App stimmt der Viewport. */
-@media (display-mode: standalone) {
-  .start-buehne {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: calc(-1 * env(safe-area-inset-top));
-  }
-}
-
 .start-reling {
   position: absolute;
   top: 54px;

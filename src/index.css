@@ -790,6 +790,23 @@ body {
   pointer-events: none;
 }
 
+/* Die eigentliche Ursache des Balkens (Josef, 03.–07.10.2026): in der
+   Home-Bildschirm-App mit `black-translucent` ist der Layout-Viewport um die
+   Hoehe der Statusleiste zu KURZ. `100dvh` und `bottom: 0` enden rund 59 pt
+   ueber dem Bildschirmrand; darunter malt WebKit nur noch die Grundfarbe.
+   Deshalb haengt der Startbildschirm dort fest am Bildschirm und reicht um
+   genau diese Hoehe tiefer — der Tresen samt Brettern laeuft bis ganz unten.
+   Nur im Standalone-Modus: in Safari und in der Store-App stimmt der Viewport. */
+@media (display-mode: standalone) {
+  .start-buehne {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: calc(-1 * env(safe-area-inset-top));
+  }
+}
+
 .start-reling {
   position: absolute;
   top: 54px;

@@ -101,7 +101,9 @@
     "duellNochmal": "再來一局",
     "duellAufgeben": "認輸",
     "duellOptimum": "最少：{{n}} 步",
-    "ton": "切換吧台音效"
+    "ton": "切換吧台音效",
+    "symboleKurz": "色盲輔助符號",
+    "tonKurz": "酒吧音效"
   },
   "farben": {
     "rot": "草莓",

@@ -390,69 +390,22 @@ body {
   100% { opacity: 0.32; }
 }
 
-.glas-licht {
+/* Der farbige Lichtfleck unter einem gefuellten Glas, auf der Platte. */
+.glas-lichtfleck {
   position: absolute;
-  inset: 0;
-  /* Das Zylinderlicht. Zwei Dinge haben sich am 27.09.2026 geaendert, und
-     zusammen machen sie aus einem Plastikrohr ein Glas:
-
-     1. Die Kanten sind nicht mehr SCHWARZ, sondern ein sehr dunkles Blau.
-        Reines Schwarz auf farbiger Fluessigkeit liest sich als Schmutz.
-     2. Aussen liegt je eine hauchduenne HELLE Linie. Eine Glaskante faengt
-        Licht — ohne sie endet das Glas einfach im Nichts. */
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.5) 0%,
-    rgba(10, 20, 36, 0.46) 3.5%,
-    rgba(255, 255, 255, 0.1) 11%,
-    rgba(255, 255, 255, 0.2) 22%,
-    rgba(255, 255, 255, 0.06) 32%,
-    rgba(10, 20, 36, 0) 54%,
-    rgba(10, 20, 36, 0.12) 73%,
-    rgba(255, 255, 255, 0.24) 85%,
-    rgba(10, 20, 36, 0.4) 96.5%,
-    rgba(255, 255, 255, 0.45) 100%
-  );
+  left: 8%;
+  right: 8%;
+  bottom: -9px;
+  height: 16px;
+  opacity: 0.32;
   pointer-events: none;
+  mix-blend-mode: screen;
 }
 
-/* Der dicke Glasboden (siehe `BODEN` in Glas.tsx): massives Glas, heller
-   als der leere Teil darueber und unten am dichtesten. Oben die flache
-   Ellipse, auf der die Fluessigkeit aufsitzt — von vorn sieht man in einen
-   Glasboden hinein, deshalb ist sie ein Oval und kein Strich. */
-.glas-boden {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  background: linear-gradient(180deg, rgba(200, 228, 255, 0.3) 0%, rgba(200, 228, 255, 0.46) 70%, rgba(225, 240, 255, 0.6) 100%);
-}
-
-.glas-boden::before {
-  content: '';
-  position: absolute;
-  top: -14%;
-  right: 6%;
-  left: 6%;
-  height: 34%;
-  border-radius: 50%;
-  border: 1.5px solid rgba(225, 240, 255, 0.75);
-  background: rgba(200, 228, 255, 0.2);
-}
-
-/* Die Huelle mit der Glasform als Maske (siehe `UMRISS` in Glas.tsx). */
+/* Die Huelle mit dem Innenumriss als Maske (siehe `MASKE` in Glas.tsx). */
 .glas-form {
   position: absolute;
   inset: 0;
-}
-
-.glas-umriss {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
 }
 
 /* Der Strohhalm auf einem fertigen Drink (siehe Garnitur.tsx). Der
@@ -497,66 +450,6 @@ body {
    gefuellte letzte Reihe genauso linksbuendig steht wie vorher — und damit
    sie eine eigene Leiste bekommen kann.
 */
-/*
-   Der Glanz. Erst diese beiden Lichter lassen ein Glas glaenzen — vorher war
-   es sauber schattiert, aber matt, und matt liest sich als billig.
-
-   Beide kommen OHNE `filter: blur` aus — die Begruendung steht unten. */
-.glas-glanz {
-  position: absolute;
-  top: 8%;
-  left: 10%;
-  width: 9%;
-  height: 40%;
-  /*
-    Weiche Kanten OHNE `filter: blur`. Bei 14 Glaesern waeren das 28 unscharfe
-    Elemente gleichzeitig, jedes mit eigener GPU-Ebene — auf einem billigen
-    Android kostet das Bilder pro Sekunde, und das Spiel soll auf jedem Geraet
-    fluessig laufen. Ein radialer Verlauf sieht bei einem so schmalen Streifen
-    genauso aus und kostet nichts.
-  */
-  background: radial-gradient(
-    50% 50% at 50% 26%,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(255, 255, 255, 0.6) 42%,
-    rgba(255, 255, 255, 0.12) 78%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  pointer-events: none;
-}
-
-/* Das zweite, kurze Spitzlicht weiter unten. Ein einzelner Streifen sieht
-   aus wie ein Aufkleber; zwei in einer Linie sehen aus wie Glas. */
-.glas-glanz::after {
-  content: '';
-  position: absolute;
-  top: 116%;
-  right: 0;
-  left: 0;
-  height: 30%;
-  background: radial-gradient(
-    50% 50% at 50% 30%,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(255, 255, 255, 0.28) 45%,
-    rgba(255, 255, 255, 0) 100%
-  );
-}
-
-.glas-glanz-rand {
-  position: absolute;
-  top: 12%;
-  right: 9%;
-  width: 7%;
-  height: 56%;
-  background: radial-gradient(
-    50% 50% at 50% 22%,
-    rgba(255, 255, 255, 0.52) 0%,
-    rgba(255, 255, 255, 0.22) 46%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  pointer-events: none;
-}
-
 .brett {
   position: relative;
   display: flex;
@@ -744,9 +637,159 @@ body {
   -webkit-box-reflect: below 2px linear-gradient(transparent 72%, rgba(255, 255, 255, 0.18));
 }
 
-/* Der Titel leuchtet warm, als haenge er im Licht der Lampen. */
+/*
+   Das Leuchtschild (03.11.2026). Eine dunkle Tafel mit Messingrahmen, an zwei
+   Ketten von der Decke, darauf der Name in Neon. Neon ist hier kein Effekt um
+   des Effekts willen: es ist das, was an der Wand einer Bar wirklich haengt.
+   Die Leuchtroehre ist ein heller Kern (fast weiss) mit farbigem Hof in drei
+   Stufen — ein einfarbiger Schein ohne Kern liest sich als Unschaerfe.
+*/
+.start-schild {
+  position: relative;
+  padding: 10px 22px 12px;
+  border-radius: 18px;
+  border: 2px solid rgba(232, 176, 75, 0.55);
+  background:
+    radial-gradient(80% 120% at 50% 50%, rgba(255, 190, 90, 0.10), rgba(255, 190, 90, 0) 70%),
+    linear-gradient(180deg, #121C2E, #0B1220);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 230, 190, 0.12),
+    inset 0 0 0 4px rgba(10, 16, 28, 0.9),
+    inset 0 0 0 5px rgba(232, 176, 75, 0.18),
+    0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Die beiden Ketten nach oben. */
+.start-schild::before,
+.start-schild::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  width: 2px;
+  height: 90px;
+  background: repeating-linear-gradient(180deg, #B98A3C 0 4px, #5E4318 4px 6px);
+  opacity: 0.8;
+}
+.start-schild::before { left: 18%; }
+.start-schild::after { right: 18%; }
+
 .start-titel {
-  text-shadow: 0 0 22px rgba(255, 201, 60, 0.28), 0 2px 0 rgba(0, 0, 0, 0.35);
+  /* Einmal beim Oeffnen zuendet die Roehre, danach brennt sie ruhig. */
+  animation: neon-zuenden 1.5s ease-out 0.15s both;
+}
+
+.neon-zitrus {
+  color: #FFF4D6;
+  text-shadow:
+    0 0 2px #FFE7A8,
+    0 0 8px rgba(255, 201, 60, 0.95),
+    0 0 18px rgba(255, 170, 40, 0.65),
+    0 0 36px rgba(255, 150, 30, 0.35);
+}
+
+.neon-erdbeere {
+  color: #FFE3E6;
+  text-shadow:
+    0 0 2px #FFC2CA,
+    0 0 8px rgba(255, 92, 120, 0.95),
+    0 0 18px rgba(240, 60, 95, 0.65),
+    0 0 36px rgba(230, 40, 80, 0.35);
+}
+
+@keyframes neon-zuenden {
+  0% { opacity: 0.15; }
+  12% { opacity: 0.9; }
+  18% { opacity: 0.25; }
+  30% { opacity: 1; }
+  36% { opacity: 0.5; }
+  48%, 100% { opacity: 1; }
+}
+
+/* Muenzen und Zahnrad oben: dunkles Glas mit Messingkante, wie die Kacheln
+   auf dem Tresen — vorher war das Zahnrad der einzige blaue Knopf der Bar. */
+.start-chip {
+  border: 1.5px solid rgba(232, 176, 75, 0.38);
+  background: linear-gradient(180deg, rgba(255, 230, 190, 0.07), rgba(0, 0, 0, 0.2)), rgba(10, 16, 28, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 230, 190, 0.08), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Aufsteigende Blaeschen in den Startglaesern. Der Rahmen liegt grob ueber der
+   Fluessigkeit (ueber dem Glasboden, unter dem Spiegel) und schneidet ab. */
+.start-blasen {
+  position: absolute;
+  top: 34%;
+  right: 20%;
+  bottom: 18%;
+  left: 20%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.start-blase {
+  position: absolute;
+  top: 100%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.05) 60%);
+  animation: blase-steigt 3s linear infinite;
+}
+
+@keyframes blase-steigt {
+  0% { top: 100%; opacity: 0; transform: translateX(0); }
+  15% { opacity: 0.9; }
+  50% { transform: translateX(2px); }
+  85% { opacity: 0.8; }
+  100% { top: -6%; opacity: 0; transform: translateX(-1px); }
+}
+
+/* Die Gaeste sitzen hinter der Platte, links und rechts halb aus dem Bild.
+   Hinter den Glaesern (`z-index: -1` im Stapelkontext der Glasreihe). */
+.start-gaeste {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.start-gast {
+  position: absolute;
+  bottom: 0;
+  width: 116px;
+  height: 164px;
+}
+.start-gast-links { left: -34px; }
+.start-gast-rechts { right: -34px; }
+
+/* „Heute noch offen" auf der Tagesraetsel-Kachel. */
+.start-punkt {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-erdbeere-punkt, #FF5C78);
+  box-shadow: 0 0 0 2px rgba(22, 14, 10, 0.9), 0 0 8px rgba(255, 92, 120, 0.8);
+  animation: punkt-pocht 2.4s ease-in-out infinite;
+}
+
+@keyframes punkt-pocht {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.18); }
+}
+
+/* Der Sternbalken: eine Messingrille, gefuellt in Zitrus. */
+.start-balken {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 214, 150, 0.08);
+  overflow: hidden;
+}
+.start-balken > div {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--color-messing), var(--color-zitrus-hell));
 }
 
 /*
@@ -1078,7 +1121,134 @@ body {
   color: #1A1206;
 }
 
+/* --- Das gerenderte Glas (tools/glas-3d-rendern.mjs) ------------------- */
+.glas-3d-bild {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* Gewaehlt: das Glas faengt warmes Licht an der Kante. */
+.glas-hervor > .glas-3d-bild:last-of-type {
+  filter: drop-shadow(0 0 2px rgba(255, 227, 163, 0.95)) drop-shadow(0 0 7px rgba(255, 201, 60, 0.45));
+}
+
+/* --- Levelwahl ------------------------------------------------------------ */
+/* Kacheln aus dunklem Glas wie auf dem Tresen. Gesperrte bleiben LESBAR
+   (vorher fast unsichtbar: man sah nicht, wie weit die Folge reicht), voll
+   geloeste tragen einen warmen Rand, das aktuelle Level leuchtet. */
+.level-kachel {
+  border: 1.5px solid rgba(232, 176, 75, 0.3);
+  background: linear-gradient(180deg, rgba(255, 230, 190, 0.06), rgba(0, 0, 0, 0.18)), rgba(14, 22, 38, 0.85);
+  box-shadow: inset 0 1px 0 rgba(255, 230, 190, 0.07), 0 3px 8px rgba(0, 0, 0, 0.35);
+}
+
+.level-zu {
+  border-color: rgba(140, 163, 191, 0.16);
+  background: rgba(10, 16, 28, 0.6);
+  box-shadow: none;
+}
+
+.level-voll {
+  border-color: rgba(255, 201, 60, 0.55);
+}
+
+.level-jetzt {
+  border: 2px solid var(--color-zitrus);
+  background: linear-gradient(180deg, rgba(255, 201, 60, 0.16), rgba(255, 201, 60, 0.04)), rgba(20, 30, 50, 0.92);
+  box-shadow: 0 0 18px rgba(255, 201, 60, 0.28), inset 0 1px 0 rgba(255, 240, 200, 0.2);
+}
+
+/* --- Einstellungen -------------------------------------------------------- */
+/* Karten aus dunklem Glas mit Messingkante, wie die Kacheln des Tresens. Nur
+   `background-color`, kein Verlauf: die Sprachwahl traegt ihren Pfeil als
+   Hintergrundbild, und eine Kurzschreibweise wuerde ihn loeschen. */
+.einst-karte {
+  border: 1.5px solid rgba(232, 176, 75, 0.28);
+  border-radius: 18px;
+  background-color: rgba(14, 22, 38, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 230, 190, 0.06), 0 4px 14px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.einst-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 54px;
+  padding: 8px 16px;
+  color: var(--color-creme);
+  font-family: var(--font-anzeige);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.einst-zeile + .einst-zeile {
+  border-top: 1px solid rgba(232, 176, 75, 0.12);
+}
+
+.einst-link {
+  width: 100%;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.einst-link:active {
+  background: rgba(255, 230, 190, 0.05);
+}
+
+/* Der Schalter: eine Rille, darin ein Knubbel. Aus = dunkel, an = Zitrus. */
+.schalter {
+  position: relative;
+  flex-shrink: 0;
+  width: 50px;
+  height: 30px;
+  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(140, 163, 191, 0.25);
+  transition: background 160ms;
+}
+
+.schalter > span {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #F3F6FA, #BFCADA);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+  transition: transform 160ms;
+}
+
+.schalter-an {
+  background: linear-gradient(180deg, var(--color-zitrus-hell), #E8A520);
+  box-shadow: inset 0 1px 2px rgba(120, 70, 0, 0.4), 0 0 10px rgba(255, 201, 60, 0.3);
+}
+
+.schalter-an > span { transform: translateX(20px); }
+[dir='rtl'] .schalter-an > span { transform: translateX(-20px); }
+
+/* Daten loeschen: leise rot, und die Bestaetigung kraeftig rot — der einzige
+   Knopf, der etwas Unwiderrufliches tut, soll nicht gold sein wie „Spielen". */
+.einst-gefahr-leise {
+  border-color: rgba(255, 92, 120, 0.35);
+  background: rgba(255, 92, 120, 0.06);
+  color: #FFB3BF;
+}
+
+.einst-gefahr {
+  border-color: transparent;
+  background: linear-gradient(180deg, #F0637C, #C93A55);
+  color: #FFF4F6;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .schalter, .schalter > span { transition: none; }
   .glas, .knopf, .glas-koerper { transition: none; }
   /* Der Sieg kommt sofort, ohne Welle, ohne Funken. */
   .glas-fertig, .glas-jubel, .sieg-schleier, .sieg-karte, .sieg-stern { animation: none; }
@@ -1094,6 +1264,9 @@ body {
   /* Der Strahl verschwindet ganz, statt still dazustehen: ein halb
      gezeichneter Bogen ueber dem Brett waere schlimmer als keiner. */
   .guss { display: none; }
+  /* Startbildschirm: das Schild brennt sofort, keine Blaeschen, kein Pochen. */
+  .start-titel, .start-punkt { animation: none; }
+  .start-blasen { display: none; }
 }
 
 /* --- Von rechts nach links (Arabisch) ------------------------------------ */

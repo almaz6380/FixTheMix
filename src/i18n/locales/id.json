@@ -101,7 +101,9 @@
     "duellNochmal": "Duel lagi",
     "duellAufgeben": "Menyerah",
     "duellOptimum": "Optimal: {{n}} langkah",
-    "ton": "Suara bar aktif/nonaktif"
+    "ton": "Suara bar aktif/nonaktif",
+    "symboleKurz": "Simbol buta warna",
+    "tonKurz": "Suara bar"
   },
   "farben": {
     "rot": "Stroberi",

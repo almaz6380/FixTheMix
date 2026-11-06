@@ -121,6 +121,13 @@ export default function Einstellungen() {
     setMeldung({ art: 'gut', text: t('spiel.gewinn', { n: BELOHNUNG_VIDEO }) });
   };
 
+  // Eine Ueberschrift ueber jeder Karte — gleiche Bauart ueberall.
+  const titel = (text: string) => (
+    <h2 className="font-anzeige mt-7 mb-2 px-1 text-[13px] font-bold tracking-[0.08em] text-messing-hell/80 uppercase">
+      {text}
+    </h2>
+  );
+
   return (
     <main className="mx-auto flex min-h-dvh max-w-xl flex-col px-5 pt-[calc(env(safe-area-inset-top)+1.2rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
       <div className="flex items-center gap-3">
@@ -128,7 +135,7 @@ export default function Einstellungen() {
           type="button"
           onClick={() => navigate(-1)}
           aria-label={t('spiel.zurueck')}
-          className="flex h-[42px] w-[42px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl border-[1.5px] border-kante bg-theke/90 text-creme"
+          className="start-chip flex h-[42px] w-[42px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl text-creme"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
@@ -145,19 +152,16 @@ export default function Einstellungen() {
         </p>
       )}
 
-      {/* Sprache */}
-      <h2 className="font-anzeige mt-7 text-sm font-bold tracking-[0.08em] text-rauch uppercase">
-        {t('spiel.sprache')}
-      </h2>
-      {/* Eine Auswahlliste statt Knoepfen: bei zwanzig Sprachen waeren es
-          sechs Zeilen Chips gewesen. Jede Sprache steht in ihrem eigenen
-          Namen — wer die App nicht lesen kann, sucht „日本語". `lang` je
-          Eintrag, damit das Geraet die Zeichen richtig setzt. */}
+      {/* Sprache. Eine Auswahlliste statt Knoepfen: bei zwanzig Sprachen
+          waeren es sechs Zeilen Chips gewesen. Jede Sprache steht in ihrem
+          eigenen Namen — wer die App nicht lesen kann, sucht „日本語". `lang`
+          je Eintrag, damit das Geraet die Zeichen richtig setzt. */}
+      {titel(t('spiel.sprache'))}
       <select
         value={sprache}
         onChange={(e) => setzeSprache(e.target.value as AppSprache)}
         aria-label={t('spiel.sprache')}
-        className="knopf sprachwahl mt-2 w-full px-4"
+        className="knopf sprachwahl einst-karte w-full px-4"
       >
         {SPRACHEN.map((s) => (
           <option key={s.code} value={s.code} lang={s.code}>
@@ -166,52 +170,50 @@ export default function Einstellungen() {
         ))}
       </select>
 
-      {/* Spiel. Eigener Schluessel und NICHT `spiel.tagesraetsel`: darunter steht
-          der Farbenblind-Schalter und der Muenzstand, mit dem Tagesraetsel hat
-          dieser Abschnitt nichts zu tun. */}
-      <h2 className="font-anzeige mt-7 text-sm font-bold tracking-[0.08em] text-rauch uppercase">
-        {t('spiel.bereichSpiel')}
-      </h2>
-      <div className="mt-2 flex flex-col gap-2.5">
-        <button
-          type="button"
-          onClick={() => { const n = !symbole; setSymbole(n); speichereEinstellung('symbole', n); }}
-          aria-pressed={symbole}
-          className={`knopf justify-start px-4 ${symbole ? 'knopf-an' : ''}`}
-        >
-          {t('spiel.symbole')}
-        </button>
+      {/* Spiel. Eigener Schluessel und NICHT `spiel.tagesraetsel`. Die beiden
+          Schalter waren bis zum 03.11.2026 Knoepfe mit der Aufschrift
+          „… ein- oder ausschalten" — man sah nicht, was gerade an ist. Jetzt
+          ein Schalter mit Zustand, wie auf jedem Telefon. */}
+      {titel(t('spiel.bereichSpiel'))}
+      <div className="einst-karte flex flex-col">
+        <Schalter
+          an={symbole}
+          text={t('spiel.symboleKurz')}
+          onWechsel={() => { const n = !symbole; setSymbole(n); speichereEinstellung('symbole', n); }}
+        />
         {/* Der Ton-Schalter gibt beim EINSCHALTEN gleich eine Probe — sonst
-            tippt man ihn an und weiss nicht, ob etwas passiert ist. Beim
-            Ausschalten schweigt er, was die Antwort ja schon ist. */}
-        <button
-          type="button"
-          onClick={() => {
+            tippt man ihn an und weiss nicht, ob etwas passiert ist. */}
+        <Schalter
+          an={ton}
+          text={t('spiel.tonKurz')}
+          daten={{ 'data-ton': ton ? '1' : '0' }}
+          onWechsel={() => {
             const neu = !ton;
             setTon(neu);
             setzeTon(neu);
             speichereEinstellung('ton', neu);
             if (neu) klangWahl();
           }}
-          aria-pressed={ton}
-          data-ton={ton ? '1' : '0'}
-          className={`knopf justify-start px-4 ${ton ? 'knopf-an' : ''}`}
-        >
-          {t('spiel.ton')}
-        </button>
-        <p className="px-1 text-sm font-bold text-zitrus" data-muenzstand={muenzen}>
-          {t('spiel.muenzen', { n: muenzen })}
-        </p>
+        />
+        <div className="einst-zeile">
+          <span className="flex items-center gap-2 text-[15px] font-bold text-zitrus tabular-nums" data-muenzstand={muenzen}>
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9.5" fill="var(--color-zitrus)" />
+              <circle cx="12" cy="12" r="6" fill="none" stroke="rgba(120,78,10,0.5)" strokeWidth="1.6" />
+            </svg>
+            {t('spiel.muenzen', { n: muenzen })}
+          </span>
+        </div>
         {videoMoeglich && (
-          <>
+          <div className="einst-zeile flex-col items-stretch gap-1.5">
             <button type="button" onClick={videoFuerMuenzen} disabled={laeuft || videosRest <= 0}
-              className="knopf justify-start px-4" data-videos-rest={videosRest}>
+              className="knopf knopf-bar min-h-[46px] px-4 text-[15px]" data-videos-rest={videosRest}>
               {t('spiel.muenzenVideo', { n: BELOHNUNG_VIDEO })}
             </button>
             <p className="px-1 text-xs text-rauch">
               {videosRest > 0 ? t('spiel.videosHeute', { n: videosRest }) : t('spiel.videosAlle')}
             </p>
-          </>
+          </div>
         )}
       </div>
 
@@ -219,26 +221,24 @@ export default function Einstellungen() {
           ganze Abschnitt weg, statt Knoepfe zu zeigen, die nichts tun. */}
       {(kaufMoeglich() || einwilligung) && (
         <>
-          <h2 className="font-anzeige mt-7 text-sm font-bold tracking-[0.08em] text-rauch uppercase">
-            {t('spiel.werbungEntfernen')}
-          </h2>
-          <div className="mt-2 flex flex-col gap-2.5">
+          {titel(t('spiel.werbungEntfernen'))}
+          <div className="einst-karte flex flex-col gap-2.5 p-3">
             {werbefrei ? (
               <p className="px-1 text-sm font-bold text-zitrus">{t('spiel.werbefrei')}</p>
             ) : kaufMoeglich() && (
               <>
                 <button type="button" onClick={() => void kaufen(false)} disabled={laeuft}
-                  className="knopf knopf-an justify-start px-4">
+                  className="knopf knopf-haupt px-4">
                   {t('spiel.werbungEntfernen')}{preis ? ` · ${preis}` : ''}
                 </button>
                 <button type="button" onClick={() => void kaufen(true)} disabled={laeuft}
-                  className="knopf justify-start px-4">
+                  className="knopf knopf-bar px-4">
                   {t('spiel.kaufWieder')}
                 </button>
               </>
             )}
             {einwilligung && (
-              <button type="button" onClick={() => void aendereEinwilligung()} className="knopf justify-start px-4">
+              <button type="button" onClick={() => void aendereEinwilligung()} className="knopf knopf-bar px-4">
                 {t('spiel.einwilligung')}
               </button>
             )}
@@ -246,52 +246,75 @@ export default function Einstellungen() {
         </>
       )}
 
-      {/* Recht und Daten */}
-      <h2 className="font-anzeige mt-7 text-sm font-bold tracking-[0.08em] text-rauch uppercase">
-        {t('spiel.datenschutz')}
-      </h2>
-      <nav className="mt-2 flex flex-col gap-2.5">
+      {/* Recht und Daten: eine Liste mit Pfeilen statt vier grosser Knoepfe. */}
+      {titel(t('spiel.datenschutz'))}
+      <nav className="einst-karte flex flex-col">
         {(Object.keys(RECHTS_PFADE) as RechtsSchluessel[]).map((k) => (
-          <Link key={k} to={RECHTS_PFADE[k]} className="knopf justify-start px-4">
-            {rechtsTexte[k][rechtsSprache].titel}
+          <Link key={k} to={RECHTS_PFADE[k]} className="einst-zeile einst-link">
+            <span>{rechtsTexte[k][rechtsSprache].titel}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil text-rauch" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
           </Link>
         ))}
       </nav>
 
-      {/* Die Kennung. Ohne sie koennen wir einen Eintrag in der Bestenliste
+      {/* Die Kennung. Ohne sie koennen wir ein Auskunfts- oder Loeschbegehren
           nicht zuordnen — wir kennen keine Namen und keine E-Mail-Adressen.
           Deshalb steht sie hier und wird in der Datenschutzerklaerung genannt. */}
-      <p className="mt-6 px-1 text-[11px] leading-relaxed font-bold break-all text-rauch" data-kennung>
+      <p className="mt-4 px-1 text-[11px] leading-relaxed font-bold break-all text-rauch/80" data-kennung>
         {kennung()}
       </p>
 
       {/* Der Knopf heisst ANDERS als der Link darueber: der Link fuehrt auf die
           Seite „Daten loeschen", die Google Play verlangt, dieser Knopf loescht
-          wirklich. Zweimal dasselbe Wort untereinander, mit voellig
-          verschiedener Wirkung, war der Stand nach Phase 5 — im Screenshot
-          aufgefallen. Die Bestaetigung darf weiter schlicht „Daten loeschen"
-          heissen, dort ist der Zusammenhang eindeutig. */}
+          wirklich. Die Bestaetigung darf schlicht „Daten loeschen" heissen,
+          dort ist der Zusammenhang eindeutig. */}
       {loeschFrage ? (
-        <div className="mt-3 flex flex-col gap-2.5 rounded-2xl border border-kante bg-theke p-4">
+        <div className="einst-karte mt-3 flex flex-col gap-2.5 p-4">
           <p className="text-sm text-rauch">{rechtsTexte.loeschen[rechtsSprache].abschnitte[4]!.text}</p>
           <div className="flex gap-2.5">
             <button
               type="button"
-              className="knopf knopf-an flex-grow"
+              className="knopf einst-gefahr flex-grow"
               onClick={() => { loescheAlles(); window.location.href = '/'; }}
             >
               {t('spiel.loeschen')}
             </button>
-            <button type="button" className="knopf flex-grow" onClick={() => setLoeschFrage(false)}>
+            <button type="button" className="knopf knopf-bar flex-grow" onClick={() => setLoeschFrage(false)}>
               {t('spiel.zurueck')}
             </button>
           </div>
         </div>
       ) : (
-        <button type="button" onClick={() => setLoeschFrage(true)} className="knopf mt-3 justify-start px-4">
+        <button type="button" onClick={() => setLoeschFrage(true)} className="knopf einst-gefahr-leise mt-3 px-4">
           {t('spiel.loeschenStarten')}
         </button>
       )}
     </main>
+  );
+}
+
+/**
+ * Ein Schalter mit sichtbarem Zustand. `role="switch"` und `aria-checked`,
+ * damit ein Vorleseprogramm „an" bzw. „aus" sagt; die ganze Zeile ist die
+ * Trefferflaeche, nicht nur der kleine Knubbel.
+ */
+function Schalter({ an, text, onWechsel, daten }: {
+  an: boolean;
+  text: string;
+  onWechsel: () => void;
+  daten?: Record<string, string>;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={an}
+      onClick={onWechsel}
+      className="einst-zeile einst-link text-start"
+      {...daten}
+    >
+      <span>{text}</span>
+      <span className={`schalter ${an ? 'schalter-an' : ''}`} aria-hidden="true"><span /></span>
+    </button>
   );
 }

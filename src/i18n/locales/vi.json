@@ -101,7 +101,9 @@
     "duellNochmal": "Đấu trận khác",
     "duellAufgeben": "Đầu hàng",
     "duellOptimum": "Tối ưu: {{n}} nước",
-    "ton": "Bật/tắt âm thanh quầy bar"
+    "ton": "Bật/tắt âm thanh quầy bar",
+    "symboleKurz": "Biểu tượng cho người mù màu",
+    "tonKurz": "Âm thanh quầy bar"
   },
   "farben": {
     "rot": "Dâu tây",

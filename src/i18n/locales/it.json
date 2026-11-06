@@ -101,7 +101,9 @@
     "duellNochmal": "Un altro duello",
     "duellAufgeben": "Abbandona il duello",
     "duellOptimum": "Minimo: {{n}} mosse",
-    "ton": "Attiva o disattiva i suoni del bar"
+    "ton": "Attiva o disattiva i suoni del bar",
+    "symboleKurz": "Simboli per daltonici",
+    "tonKurz": "Suoni del bar"
   },
   "farben": {
     "rot": "Fragola",

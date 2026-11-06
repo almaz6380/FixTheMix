@@ -101,7 +101,9 @@
     "duellNochmal": "もう一戦",
     "duellAufgeben": "降参する",
     "duellOptimum": "最短：{{n}}手",
-    "ton": "バーの効果音オン/オフ"
+    "ton": "バーの効果音オン/オフ",
+    "symboleKurz": "色覚サポート記号",
+    "tonKurz": "バーの効果音"
   },
   "farben": {
     "rot": "イチゴ",

@@ -28,8 +28,8 @@ const SORTEN = ['rot', 'gelb', 'blau', 'orange', 'gruen', 'lila', 'minze', 'koko
 /** Streifenfarbe je Sorte — `tief` aus farben.ts. Kokos ist dort fast weiss; auf
     einem weissen Halm verschwaende der Streifen, deshalb ein dunkleres Beige. */
 const STREIFEN = {
-  rot: '#D4112B', gelb: '#D2A925', blau: '#0943B7', orange: '#C95E01', gruen: '#3A9D00',
-  lila: '#9024C6', minze: '#05AD8B', kokos: '#A88A5E', kaffee: '#642B00',
+  rot: '#D60028', gelb: '#D4A800', blau: '#0040BE', orange: '#C95E00', gruen: '#3A9D00',
+  lila: '#9500D1', minze: '#00AD8B', kokos: '#A88A5E', kaffee: '#642B00',
 };
 
 /*

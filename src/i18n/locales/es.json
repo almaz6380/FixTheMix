@@ -101,7 +101,9 @@
     "duellNochmal": "Otro duelo",
     "duellAufgeben": "Abandonar el duelo",
     "duellOptimum": "Óptimo: {{n}} movimientos",
-    "ton": "Activar o desactivar los sonidos del bar"
+    "ton": "Activar o desactivar los sonidos del bar",
+    "symboleKurz": "Símbolos para daltónicos",
+    "tonKurz": "Sonidos del bar"
   },
   "farben": {
     "rot": "Fresa",

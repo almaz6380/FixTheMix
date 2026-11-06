@@ -101,7 +101,9 @@
     "duellNochmal": "Kolejny pojedynek",
     "duellAufgeben": "Poddaj pojedynek",
     "duellOptimum": "Optimum — ruchy: {{n}}",
-    "ton": "Włącz lub wyłącz dźwięki baru"
+    "ton": "Włącz lub wyłącz dźwięki baru",
+    "symboleKurz": "Symbole dla daltonistów",
+    "tonKurz": "Dźwięki baru"
   },
   "farben": {
     "rot": "Truskawka",

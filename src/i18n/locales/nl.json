@@ -101,7 +101,9 @@
     "duellNochmal": "Nog een duel",
     "duellAufgeben": "Duel opgeven",
     "duellOptimum": "Beste: {{n}} zetten",
-    "ton": "Bargeluiden aan/uit"
+    "ton": "Bargeluiden aan/uit",
+    "symboleKurz": "Symbolen voor kleurenblinden",
+    "tonKurz": "Bargeluiden"
   },
   "farben": {
     "rot": "Aardbei",

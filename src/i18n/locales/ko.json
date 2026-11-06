@@ -101,7 +101,9 @@
     "duellNochmal": "한 번 더 대결",
     "duellAufgeben": "대결 포기",
     "duellOptimum": "최단: {{n}}수",
-    "ton": "바 효과음 켜기/끄기"
+    "ton": "바 효과음 켜기/끄기",
+    "symboleKurz": "색약 기호",
+    "tonKurz": "바 효과음"
   },
   "farben": {
     "rot": "딸기",

@@ -101,7 +101,9 @@
     "duellNochmal": "Un autre duel",
     "duellAufgeben": "Abandonner le duel",
     "duellOptimum": "Optimum : {{n}} coups",
-    "ton": "Activer ou couper les sons du bar"
+    "ton": "Activer ou couper les sons du bar",
+    "symboleKurz": "Symboles pour daltoniens",
+    "tonKurz": "Sons du bar"
   },
   "farben": {
     "rot": "Fraise",

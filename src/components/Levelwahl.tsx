@@ -69,7 +69,7 @@ export default function Levelwahl({
           type="button"
           onClick={onZu}
           aria-label={schliessen}
-          className="flex h-[46px] w-[46px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl border-[1.5px] border-kante bg-theke/90 text-creme"
+          className="start-chip flex h-[46px] w-[46px] flex-shrink-0 touch-manipulation items-center justify-center rounded-2xl text-creme"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
@@ -85,7 +85,7 @@ export default function Levelwahl({
           onClick={() => setBlock((b) => Math.max(0, b - 1))}
           disabled={block === 0}
           aria-label={zurueck}
-          className="flex h-[38px] w-[38px] flex-shrink-0 touch-manipulation items-center justify-center rounded-xl border-[1.5px] border-kante bg-theke/90 text-creme disabled:opacity-30"
+          className="flex h-[38px] w-[38px] flex-shrink-0 touch-manipulation items-center justify-center rounded-xl start-chip text-creme disabled:opacity-30"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
         </button>
@@ -97,9 +97,8 @@ export default function Levelwahl({
               den Abstand zum vollen Abschnitt — der Balken zeigt ihn, ohne
               dass man rechnen muss. */}
           <div className="mt-1.5 flex items-center gap-2">
-            <div className="h-[5px] w-[104px] overflow-hidden rounded-full bg-kante/45">
+            <div className="start-balken w-[104px]">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-[#E0A038] to-zitrus-hell"
                 style={{ width: `${Math.round((bloseSterne / Math.max(1, (bis - von) * 3)) * 100)}%` }}
               />
             </div>
@@ -113,7 +112,7 @@ export default function Levelwahl({
           onClick={() => setBlock((b) => Math.min(bloecke - 1, b + 1))}
           disabled={block >= bloecke - 1}
           aria-label={vor}
-          className="flex h-[38px] w-[38px] flex-shrink-0 touch-manipulation items-center justify-center rounded-xl border-[1.5px] border-kante bg-theke/90 text-creme disabled:opacity-30"
+          className="flex h-[38px] w-[38px] flex-shrink-0 touch-manipulation items-center justify-center rounded-xl start-chip text-creme disabled:opacity-30"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" className="pfeil" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
         </button>
@@ -135,12 +134,14 @@ export default function Levelwahl({
               onClick={() => onWahl(i)}
               disabled={!frei}
               aria-label={frei ? kachelTitel(i + 1, s, experte) : gesperrtTitel(i + 1)}
-              className={`flex aspect-square touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl border transition ${
+              className={`flex aspect-square touch-manipulation flex-col items-center justify-center gap-1 rounded-2xl transition ${
                 !frei
-                  ? 'border-kante/25 bg-theke/25 text-rauch/50'
+                  ? 'level-kachel level-zu text-rauch/75'
                   : jetzt
-                    ? 'border-2 border-zitrus bg-theke-hell text-zitrus'
-                    : 'border-kante bg-theke text-creme'
+                    ? 'level-kachel level-jetzt text-zitrus'
+                    : s === 3
+                      ? 'level-kachel level-voll text-creme'
+                      : 'level-kachel text-creme'
               }`}
             >
               {frei ? (
@@ -178,7 +179,7 @@ export default function Levelwahl({
                 </>
               ) : (
                 <>
-                  <span className="font-anzeige text-base leading-none font-semibold opacity-60">{i + 1}</span>
+                  <span className="font-anzeige text-base leading-none font-semibold">{i + 1}</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="5" y="11" width="14" height="10" rx="2" />
                     <path d="M8 11V8a4 4 0 018 0v3" />

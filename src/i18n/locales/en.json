@@ -101,7 +101,9 @@
     "duellNochmal": "Another duel",
     "duellAufgeben": "Concede the duel",
     "duellOptimum": "Optimum: {{n}} moves",
-    "ton": "Turn bar sounds on or off"
+    "ton": "Turn bar sounds on or off",
+    "symboleKurz": "Colour-blind symbols",
+    "tonKurz": "Bar sounds"
   },
   "farben": {
     "rot": "Strawberry",

@@ -101,7 +101,9 @@
     "duellNochmal": "Noch ein Duell",
     "duellAufgeben": "Duell aufgeben",
     "duellOptimum": "Optimum: {{n}} Züge",
-    "ton": "Bar-Geräusche ein- oder ausschalten"
+    "ton": "Bar-Geräusche ein- oder ausschalten",
+    "symboleKurz": "Symbole für Farbenblinde",
+    "tonKurz": "Bar-Geräusche"
   },
   "farben": {
     "rot": "Erdbeere",

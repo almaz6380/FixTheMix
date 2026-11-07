@@ -292,6 +292,35 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
       `.start-tresen` laufen unten in genau `#1d1310` aus, der Streifen hat damit
       keine Kante mehr. *Lehre: erst messen, dann bauen — hier wurde fünfmal
       geraten.*
+- [x] **Die Gläser sind 3D** (Josef, 06.11.2026: „Ich will 3D-Gläser", gewählt
+      der **Becher** aus sechs gerenderten Formen — Pint, Tumbler, Becher,
+      Highball, Smoothie, Kelch). `tools/glas-3d-rendern.mjs` dreht ein Profil in
+      three.js um die Achse (`LatheGeometry`), rendert es einmal im Chromium und
+      zerlegt es in **zwei Bildebenen**: `glas-becher-hinten.webp` (Rückwand und
+      Boden, UNTER dem Saft) und `glas-becher-vorn.webp` (Vorderwand, Rand,
+      Spiegelungen, DARÜBER), zusammen 41 KB. Dazu `formen.json` mit dem
+      **Innenumriss**, aus dem Profil gerechnet — er ist die Maske des Safts.
+      Gießen, Kippen, Strahl, Strohhalm und Farbenblind-Modus bleiben, wie sie
+      waren; das Pint aus SVG-Pfad und CSS-Licht ist weg.
+      *Warum Bilder und kein Echtzeit-3D:* WebGL im Spiel hätte Saft, Gießen,
+      Strahl und Tests neu verlangt und auf billigen Androids bei 14 Gläsern
+      geruckelt. *Warum ein Profil und kein Tripo-Netz:* ein KI-Netz ist leicht
+      schief, dann passt keine Maske; das Profil liefert den Umriss exakt.
+      *Warum ein eigener Shader statt `transmission`:* Transmission bricht, was
+      hinter dem Glas liegt — vor durchsichtigem Grund ist das Schwarz. Die
+      Deckkraft ist Fresnel plus die Spiegelung zweier Lichtleisten und einer
+      Lampe oben links. `three` ist nur devDependency.
+      Form wechseln: Profil in `FORMEN` wählen, `node tools/glas-3d-rendern.mjs
+      --nur <form>`, Importe in `Glas.tsx` umstellen.
+- [x] **Startbildschirm mit Leuchtschild und Gästen** (03.11.2026): „FixThe" in
+      Zitrus-, „Mix" in Erdbeer-Neon auf einer Tafel an zwei Ketten, zwei leise
+      SVG-Silhouetten am Tresen (`Gaeste.tsx`, ohne Gesichter), Bläschen in den
+      Gläsern, Münzen oben als Anzeige statt als Knopf, drei gleich große
+      Kacheln, Punkt „heute offen" am Tagesrätsel, Sternbalken.
+- [x] **Einstellungen mit echten Schaltern** (03.11.2026): `role="switch"` mit
+      sichtbarem Zustand statt Knöpfen „… ein- oder ausschalten"; Karten,
+      Rechtstexte als Liste, „Alle Daten löschen" rot. Neue Schlüssel
+      `spiel.symboleKurz`/`spiel.tonKurz` in allen zwanzig Sprachen (maschinell).
 
 ### M5 Levelfolge — FERTIG (26.09.2026)
 - [x] **Die Kurve ist eine Funktion** (`src/engine/kurve.ts`), keine Liste mehr. Vorher
@@ -858,6 +887,15 @@ und Ziel-Chroma den passenden Hexwert.
 **Drei Töne je Farbe statt zwei.** `tief` ist neu und trägt den Fuß jeder Schicht:
 Flüssigkeit ist unten tiefer und damit dunkler. Vorher war eine Schicht eine flache
 Fläche mit einem hellen Streifen obendrauf — der zweite Grund für „billig".
+
+**Kräftiger, am 05.11.2026** (Josef: „Ich will kräftigere Farben"). Das Chroma
+aller Töne ist in OKLCH um bis zu 35 % gehoben, die **Helligkeit unverändert** —
+so bleiben die Graustufen-Abstände, an denen der Farbenblind-Modus hängt (engster
+Abstand jetzt 5,6 L\*). Rot und Orange lagen schon am Rand von sRGB und gewinnen
+kaum; Blau, Gelb, Lila, Minze und Grün deutlich. Kokos bleibt, Kaffee +15 %.
+Dazu ist der Quer-Schleier über dem Saft (Weiß 0,30 → 0,20, Schwarz 0,34 → 0,26)
+leiser. Die Strohhalm-Streifen in `tools/garnitur-bilder.mjs` tragen die neuen
+`tief`-Töne. Mehr ginge nur mit Display-P3.
 
 ### Läufe, nicht Schichten (27.09.2026)
 

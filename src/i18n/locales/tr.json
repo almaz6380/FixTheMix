@@ -101,7 +101,9 @@
     "duellNochmal": "Bir düello daha",
     "duellAufgeben": "Düellodan çekil",
     "duellOptimum": "En iyi: {{n}} hamle",
-    "ton": "Bar seslerini aç/kapat"
+    "ton": "Bar seslerini aç/kapat",
+    "symboleKurz": "Renk körü sembolleri",
+    "tonKurz": "Bar sesleri"
   },
   "farben": {
     "rot": "Çilek",

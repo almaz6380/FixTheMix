@@ -108,14 +108,14 @@ console.log('\n--- Android: Start-Symbole ---');
 
 console.log('\n--- Startbilder ---');
 {
-  // Ein Startbild ist kein Symbol: es fuellt den ganzen Bildschirm, und das
-  // Logo steht klein in der Mitte. Der Rest ist der Grundton der Bar, damit
-  // der Uebergang ins Spiel nicht blitzt.
+  // Das native Startbild ist seit dem 07.11.2026 nur noch der dunkle Grund
+  // #020814 — derselbe wie im Studio-Intro (src/components/StudioIntro.tsx),
+  // das gleich danach das WellApps-Logo zeichnet. Stuende hier das
+  // Glas-Symbol, blitzte es kurz auf und wuerde dann vom Intro ersetzt. Muster
+  // aus Mountain Ride.
+  const INTRO_GRUND = { r: 2, g: 8, b: 20, alpha: 1 };
   const startbild = async (breite, hoehe, ziel) => {
-    const logo = Math.round(Math.min(breite, hoehe) * 0.3);
-    const bild = await rendern(nurGlas, logo).png().toBuffer();
-    await sharp({ create: { width: breite, height: hoehe, channels: 4, background: GRUND } })
-      .composite([{ input: bild, gravity: 'centre' }])
+    await sharp({ create: { width: breite, height: hoehe, channels: 4, background: INTRO_GRUND } })
       .png().toFile(p(ziel));
   };
 

@@ -8,6 +8,7 @@ import Start from './pages/Start.tsx'
 import LevelSeite from './pages/LevelSeite.tsx'
 import Einstellungen from './pages/Einstellungen.tsx'
 import RechtsSeite from './pages/RechtsSeite.tsx'
+import StudioIntro from './components/StudioIntro.tsx'
 
 // Seit Phase 5 gibt es Routen, und zwar nicht aus Schoenheit: Apple und Google
 // verlangen eine oeffentlich erreichbare Datenschutz-URL, Google Play zusaetzlich
@@ -20,6 +21,8 @@ import RechtsSeite from './pages/RechtsSeite.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    {/* Das WellApps-Logo beim Oeffnen, nur in der Store-App (siehe dort). */}
+    <StudioIntro />
     <BrowserRouter>
       <Routes>
         {/* Der Aufbau, seit dem 27.09.2026:

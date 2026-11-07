@@ -317,6 +317,17 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
       SVG-Silhouetten am Tresen (`Gaeste.tsx`, ohne Gesichter), Bläschen in den
       Gläsern, Münzen oben als Anzeige statt als Knopf, drei gleich große
       Kacheln, Punkt „heute offen" am Tagesrätsel, Sternbalken.
+- [x] **WellApps-Intro beim Öffnen** (Josef, 07.11.2026: „wie bei Mountain Ride"):
+      `src/components/StudioIntro.tsx`, Bild `src/assets/wellapps-intro.jpg` und
+      Ablauf 1:1 aus `almaz6380/Mountain-Ride` — das „W" als Neonlinie, dann das
+      Logo, nach ~3,4 s weg, Antippen überspringt. **Nur in der Store-App** (oder
+      mit `?intro`), damit Web-App und Datenschutz-Links sofort lesbar bleiben.
+      Native Grundfarbe und Startbild (`tools/app-icons-bauen.mjs`) sind dafür
+      einfarbig `#020814`, sonst blitzte das Glas-Symbol vor dem Logo auf;
+      `test-release.mts` prüft, dass alle drei dieselbe Farbe tragen.
+- [x] **Kein brauner Streifen mehr unten** (07.11.2026): `.theke-fest` ist weg,
+      die Levelwahl endet im Nachtblau. Der Balken in Josefs Screenshot stammte
+      aus dem Startbildschirm von 1.0; der neue hat ihn nicht.
 - [x] **Einstellungen mit echten Schaltern** (03.11.2026): `role="switch"` mit
       sichtbarem Zustand statt Knöpfen „… ein- oder ausschalten"; Karten,
       Rechtstexte als Liste, „Alle Daten löschen" rot. Neue Schlüssel

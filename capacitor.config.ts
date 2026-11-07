@@ -5,7 +5,9 @@ const config: CapacitorConfig = {
   appId: 'at.gallab.fixthemix',
   appName: 'FixTheMix',
   webDir: 'dist',
-  backgroundColor: '#0E1A2E',
+  // Dunkel wie das Studio-Intro (StudioIntro.tsx): erst Startbild, dann Intro,
+  // dann die Bar — ohne Farbblitz dazwischen.
+  backgroundColor: '#020814',
 };
 
 export default config;

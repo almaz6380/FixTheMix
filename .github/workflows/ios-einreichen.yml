@@ -1,0 +1,50 @@
+# Reicht die iOS-Version bei Apple zur Pruefung ein (scripts/asc-einreichen.py).
+#
+# Laeuft auf Linux, braucht keinen Mac und kein Xcode — nur den API-Schluessel
+# von App Store Connect, derselbe wie beim Hochladen (ASC_KEY_ID, ASC_ISSUER_ID,
+# ASC_KEY_P8_BASE64, siehe docs/release-ci.md). Version und Build-Nummer liest
+# es aus dem Repo, also immer genau das, was `ios-release.yml` hochgeladen hat.
+#
+# Vorher: `ios-release.yml` mit upload = an. Apple braucht danach 5–30 Minuten
+# zum Verarbeiten; dieses Workflow wartet darauf (hoechstens 45 Minuten).
+name: iOS Einreichen
+
+on:
+  workflow_dispatch:
+    inputs:
+      einreichen:
+        description: 'Wirklich zur Pruefung einreichen? (aus = nur Version, Build und Neuerungen vorbereiten)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  einreichen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version und Build aus dem Repo
+        run: |
+          VN=$(grep -m1 'MARKETING_VERSION' ios/App/App.xcodeproj/project.pbxproj | tr -dc '0-9.')
+          BN=$(grep -m1 'CURRENT_PROJECT_VERSION' ios/App/App.xcodeproj/project.pbxproj | tr -dc '0-9')
+          if [ -z "$VN" ] || [ -z "$BN" ]; then echo "ABBRUCH: Version/Build nicht gelesen"; exit 1; fi
+          echo "VN=$VN" >> "$GITHUB_ENV"
+          echo "BN=$BN" >> "$GITHUB_ENV"
+          echo "FixTheMix $VN ($BN)"
+
+      - name: Python
+        run: python3 -m pip install --quiet pyjwt cryptography requests
+
+      - name: Einreichen
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: |
+          FLAG=""
+          if [ "${{ inputs.einreichen }}" != "true" ]; then FLAG="--nur-vorbereiten"; fi
+          python3 scripts/asc-einreichen.py --version "$VN" --build "$BN" $FLAG

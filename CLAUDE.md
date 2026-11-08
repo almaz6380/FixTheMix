@@ -152,12 +152,24 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
 (Kennung → App-Funktionalität). Danach im Repo `almaz6380.github.io`
 `npm run erzeugen`, sonst zeigt der Store den alten Text.
 
-**Versionshinweise 1.1.0** (Vorschlag):
-- DE: „Neu: Tipp und Zug zurück jetzt auch per Video. Münzen sind wertvoller
-  geworden — Hilfe gibt es seltener, dafür fairer. Kleine Verbesserungen und
-  Fehlerbehebungen."
-- EN: „New: get a hint or an undo by watching a video. Coins are now scarcer and
-  worth more. Small improvements and fixes."
+**Versionshinweise 1.1.0** (mit dem neuen Design, 08.11.2026):
+- DE: „Neues Design: 3D-Gläser, kräftigere Farben und ein neuer Startbildschirm.
+  Tipp und Zug zurück jetzt auch per Video. Münzen sind wertvoller geworden.
+  Kleine Verbesserungen und Fehlerbehebungen."
+- EN: „New look: 3D glasses, richer colours and a new home screen. Get a hint or
+  an undo by watching a video. Coins are now scarcer and worth more. Small
+  improvements and fixes."
+
+**Gebaut und eingereicht am 08.11.2026** über die Release-Workflows auf GitHub-
+Rechnern (`laeufer: github`): Android 1.1.0 (vc2) in Produktion zur Prüfung, iOS
+1.1.0 (Build 2) zu App Store Connect hochgeladen — das Einreichen zur Prüfung
+dort ist Handarbeit (Josef).
+
+**Das Repo ist seit dem 07.11.2026 öffentlich** (Josef). Damit kosten GitHub-
+Rechner keine Minuten mehr. Die Warnung oben gilt weiter: solange Josefs Mac als
+Self-hosted Runner angemeldet ist, kann ein fremder Pull Request darauf Code
+ausführen — Runner abmelden oder Fork-PRs nur mit Freigabe laufen lassen
+(Settings → Actions → General).
 
 ### M1 Grundgerüst — FERTIG (25.09.2026)
 - [x] Scaffold Vite + React + TS, Tailwind v4 (`@tailwindcss/vite`), Capacitor-Config

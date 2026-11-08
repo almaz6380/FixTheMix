@@ -160,10 +160,17 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
   an undo by watching a video. Coins are now scarcer and worth more. Small
   improvements and fixes."
 
-**Gebaut und eingereicht am 08.11.2026** über die Release-Workflows auf GitHub-
-Rechnern (`laeufer: github`): Android 1.1.0 (vc2) in Produktion zur Prüfung, iOS
-1.1.0 (Build 2) zu App Store Connect hochgeladen — das Einreichen zur Prüfung
-dort ist Handarbeit (Josef).
+**Gebaut und eingereicht am 08.11.2026**, alles über GitHub Actions (`laeufer: github`):
+- **Android 1.1.0 (vc2)** in Produktion zur Prüfung bei Google. Der erste Lauf scheiterte
+  am leeren Secret `PLAY_SERVICE_ACCOUNT_JSON`; Josef hat für `play-upload@wellbooked-501311`
+  (Google-Cloud-Projekt „WELLbooked") einen neuen JSON-Schlüssel angelegt und eingetragen.
+- **iOS 1.1.0 (Build 2)** hochgeladen und **per API eingereicht** — neues Workflow
+  `ios-einreichen.yml` mit `scripts/asc-einreichen.py` (Muster aus Mountain Ride): wartet
+  auf den verarbeiteten Build, legt die Version an, hängt den Build an, setzt „Neuerungen"
+  in jeder Sprache (de-* Deutsch, sonst Englisch) und reicht ein. Gleiche ASC-Secrets wie
+  beim Hochladen. **Ablauf künftig:** `ios-release.yml` (upload an) → `ios-einreichen.yml`.
+  Die Versionshinweise stehen als `NEU` im Skript. Vorher war das Einreichen Handarbeit.
+  iOS 1.0 ist seit der Prüfung im Store (`READY_FOR_SALE`).
 
 **Das Repo ist seit dem 07.11.2026 öffentlich** (Josef). Damit kosten GitHub-
 Rechner keine Minuten mehr. Die Warnung oben gilt weiter: solange Josefs Mac als

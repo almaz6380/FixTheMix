@@ -152,12 +152,24 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
 (Kennung → App-Funktionalität). Danach im Repo `almaz6380.github.io`
 `npm run erzeugen`, sonst zeigt der Store den alten Text.
 
-**Versionshinweise 1.1.0** (Vorschlag):
-- DE: „Neu: Tipp und Zug zurück jetzt auch per Video. Münzen sind wertvoller
-  geworden — Hilfe gibt es seltener, dafür fairer. Kleine Verbesserungen und
-  Fehlerbehebungen."
-- EN: „New: get a hint or an undo by watching a video. Coins are now scarcer and
-  worth more. Small improvements and fixes."
+**Versionshinweise 1.1.0** (mit dem neuen Design, 08.11.2026):
+- DE: „Neues Design: 3D-Gläser, kräftigere Farben und ein neuer Startbildschirm.
+  Tipp und Zug zurück jetzt auch per Video. Münzen sind wertvoller geworden.
+  Kleine Verbesserungen und Fehlerbehebungen."
+- EN: „New look: 3D glasses, richer colours and a new home screen. Get a hint or
+  an undo by watching a video. Coins are now scarcer and worth more. Small
+  improvements and fixes."
+
+**Gebaut und eingereicht am 08.11.2026** über die Release-Workflows auf GitHub-
+Rechnern (`laeufer: github`): Android 1.1.0 (vc2) in Produktion zur Prüfung, iOS
+1.1.0 (Build 2) zu App Store Connect hochgeladen — das Einreichen zur Prüfung
+dort ist Handarbeit (Josef).
+
+**Das Repo ist seit dem 07.11.2026 öffentlich** (Josef). Damit kosten GitHub-
+Rechner keine Minuten mehr. Die Warnung oben gilt weiter: solange Josefs Mac als
+Self-hosted Runner angemeldet ist, kann ein fremder Pull Request darauf Code
+ausführen — Runner abmelden oder Fork-PRs nur mit Freigabe laufen lassen
+(Settings → Actions → General).
 
 ### M1 Grundgerüst — FERTIG (25.09.2026)
 - [x] Scaffold Vite + React + TS, Tailwind v4 (`@tailwindcss/vite`), Capacitor-Config
@@ -317,6 +329,17 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
       SVG-Silhouetten am Tresen (`Gaeste.tsx`, ohne Gesichter), Bläschen in den
       Gläsern, Münzen oben als Anzeige statt als Knopf, drei gleich große
       Kacheln, Punkt „heute offen" am Tagesrätsel, Sternbalken.
+- [x] **WellApps-Intro beim Öffnen** (Josef, 07.11.2026: „wie bei Mountain Ride"):
+      `src/components/StudioIntro.tsx`, Bild `src/assets/wellapps-intro.jpg` und
+      Ablauf 1:1 aus `almaz6380/Mountain-Ride` — das „W" als Neonlinie, dann das
+      Logo, nach ~3,4 s weg, Antippen überspringt. **Nur in der Store-App** (oder
+      mit `?intro`), damit Web-App und Datenschutz-Links sofort lesbar bleiben.
+      Native Grundfarbe und Startbild (`tools/app-icons-bauen.mjs`) sind dafür
+      einfarbig `#020814`, sonst blitzte das Glas-Symbol vor dem Logo auf;
+      `test-release.mts` prüft, dass alle drei dieselbe Farbe tragen.
+- [x] **Kein brauner Streifen mehr unten** (07.11.2026): `.theke-fest` ist weg,
+      die Levelwahl endet im Nachtblau. Der Balken in Josefs Screenshot stammte
+      aus dem Startbildschirm von 1.0; der neue hat ihn nicht.
 - [x] **Einstellungen mit echten Schaltern** (03.11.2026): `role="switch"` mit
       sichtbarem Zustand statt Knöpfen „… ein- oder ausschalten"; Karten,
       Rechtstexte als Liste, „Alle Daten löschen" rot. Neue Schlüssel

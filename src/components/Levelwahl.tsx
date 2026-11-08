@@ -59,7 +59,8 @@ export default function Levelwahl({
 
   return (
     <main className="relative flex min-h-dvh flex-col overflow-hidden">
-      <div className="theke-fest" aria-hidden="true" />
+      {/* Kein Tresen-Streifen mehr am unteren Rand (Josef, 07.11.2026: „unten
+          ein brauner Balken"). Die Levelwahl ist eine Liste, keine Bar. */}
       <div className="relative flex items-start justify-between gap-4 px-6 pt-[calc(env(safe-area-inset-top)+1.2rem)] pb-3">
         <div>
           <h2 className="font-anzeige text-2xl leading-tight font-bold text-creme">{titel}</h2>
@@ -118,7 +119,7 @@ export default function Levelwahl({
         </button>
       </div>
 
-      <div className="relative grid flex-1 grid-cols-4 content-start gap-3 overflow-y-auto px-6 pb-[calc(env(safe-area-inset-bottom)+7rem)] sm:grid-cols-5">
+      <div className="relative grid flex-1 grid-cols-4 content-start gap-3 overflow-y-auto px-6 pb-[calc(env(safe-area-inset-bottom)+2rem)] sm:grid-cols-5">
         {sichtbar.map((_, k) => {
           const i = von + k;
           const s = sterne[i] ?? 0;

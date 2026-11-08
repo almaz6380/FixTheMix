@@ -287,8 +287,12 @@ console.log('\n--- Symbole und Startbilder ---');
   const grund = lies('android/app/src/main/res/values/ic_launcher_background.xml');
   ok(!/#FFFFFF/i.test(grund), 'der adaptive Hintergrund ist nicht mehr das weisse Original');
   ok(grund.includes('#0E1A2E'), '... sondern das Nachtblau der Bar');
-  ok(lies('capacitor.config.ts').includes("backgroundColor: '#0E1A2E'"),
-     'und der native Hintergrund passt zur Oberflaeche (sonst blitzt es beim Start)');
+  // Seit dem 07.11.2026 beginnt die App mit dem Studio-Intro auf #020814 —
+  // native Grundfarbe, Startbild und Intro muessen dieselbe Farbe tragen.
+  ok(lies('capacitor.config.ts').includes("backgroundColor: '#020814'"),
+     'und der native Hintergrund passt zum Studio-Intro (sonst blitzt es beim Start)');
+  ok(lies('src/index.css').includes('background: #020814'),
+     '... und das Intro selbst steht auf demselben Grund');
 
   for (const d of ['port', 'land']) {
     ok(gibtEs(`android/app/src/main/res/drawable-${d}-xxxhdpi/splash.png`),

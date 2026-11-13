@@ -1,0 +1,87 @@
+# Store-Bilder neu aufnehmen und in App Store und Google Play ersetzen.
+#
+# Nimmt mit tools/store-bilder.mjs aus dem echten Bundle auf (alle zwanzig
+# Sprachen), legt die Bilder IMMER als Artefakt ab und laedt sie nur bei
+# `hochladen` hoch:
+#   Android: scripts/play-bilder.py — Screenshots + Feature-Grafik, jede Sprache
+#            des Play-Eintrags, eine Edit-Transaktion.
+#   iOS:     scripts/asc-bilder.py — iPhone 6,7″/6,5″ und iPad 13″; an die
+#            bearbeitbare Version oder an eine neu angelegte naechste.
+#
+# Laeuft auf Linux, braucht keinen Mac. Schluessel: PLAY_SERVICE_ACCOUNT_JSON,
+# ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64 (docs/release-ci.md).
+name: Store-Bilder
+
+on:
+  workflow_dispatch:
+    inputs:
+      ziel:
+        description: 'Welcher Store?'
+        type: choice
+        default: 'beide'
+        options: ['beide', 'android', 'ios']
+      hochladen:
+        description: 'Wirklich hochladen? (aus = nur aufnehmen, Bilder als Artefakt)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  bilder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Abhaengigkeiten
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          # Ohne Noto landen Hindi, Arabisch und CJK in Ersatzschriften —
+          # am Handy saehe das anders aus (CLAUDE.md, „Store-Bilder").
+          sudo apt-get install -y -q fonts-noto-core fonts-noto-cjk
+
+      - name: Bauen
+        run: npm run build
+
+      - name: Aufnehmen (alle Sprachen)
+        run: |
+          for s in de en es fr pt it nl pl tr ru uk ar hi id vi th ja ko zh-Hans zh-Hant; do
+            echo "::group::$s"
+            node tools/store-bilder.mjs --sprache "$s"
+            echo "::endgroup::"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: store-bilder
+          path: .store/
+          retention-days: 14
+
+      - name: Python
+        if: ${{ inputs.hochladen }}
+        run: python3 -m pip install --quiet pyjwt cryptography requests
+
+      - name: Google Play
+        if: ${{ inputs.hochladen && inputs.ziel != 'ios' }}
+        env:
+          PLAY_KEY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          printf '%s' "$PLAY_KEY_JSON" > "$RUNNER_TEMP/play-key.json"
+          PLAY_KEY="$RUNNER_TEMP/play-key.json" python3 scripts/play-bilder.py
+          rm -f "$RUNNER_TEMP/play-key.json"
+
+      - name: App Store
+        if: ${{ inputs.hochladen && inputs.ziel != 'android' }}
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: python3 scripts/asc-bilder.py

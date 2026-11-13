@@ -228,3 +228,11 @@ Baukette: `xcode` schreibt die `project.pbxproj` und landet nie im Bundle, und d
 verwundbare Stelle (`uuid.v3`/`v5` mit eigenem Puffer) wird dort nicht benutzt.
 Ein `overrides`-Eintrag wäre möglich, hebelt aber ausgerechnet das Werkzeug aus,
 das die Xcode-Projektdatei erzeugt — das Risiko steht in keinem Verhältnis.
+
+## Store-Bilder (`store-bilder.yml`)
+
+Actions → „Store-Bilder" → Run workflow. `ziel`: beide/android/ios, `hochladen`: aus = nur
+aufnehmen (Bilder als Artefakt „store-bilder"), an = in die Stores. Braucht dieselben
+Secrets wie die Release-Workflows (`PLAY_SERVICE_ACCOUNT_JSON`, `ASC_KEY_ID`,
+`ASC_ISSUER_ID`, `ASC_KEY_P8_BASE64`). iOS-Bilder gehen an die bearbeitbare Version, sonst
+an eine neu angelegte nächste Version.

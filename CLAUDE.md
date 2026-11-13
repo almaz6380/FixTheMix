@@ -172,6 +172,15 @@ korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
   Die Versionshinweise stehen als `NEU` im Skript. Vorher war das Einreichen Handarbeit.
   iOS 1.0 ist seit der Prüfung im Store (`READY_FOR_SALE`).
 
+**Store-Bilder per Workflow** (13.11.2026, Josef: „mach du 3. fertig"):
+`store-bilder.yml` nimmt mit `tools/store-bilder.mjs` alle zwanzig Sprachen auf (mit
+Noto-Schriften), legt sie als Artefakt ab und lädt bei `hochladen` hoch —
+`scripts/play-bilder.py` (Screenshots + Feature-Grafik, jede Play-Sprache, **eine**
+Edit-Transaktion) und `scripts/asc-bilder.py` (iPhone 6,7″/6,5″, iPad 13″). Apple
+nimmt Bilder nur an einer **bearbeitbaren** Version an; ist die neueste in Prüfung oder
+im Store, legt das Skript die nächste (Patch +1) an und hängt die Bilder dort an —
+sichtbar werden sie mit dem nächsten Update.
+
 **Das Repo ist seit dem 07.11.2026 öffentlich** (Josef). Damit kosten GitHub-
 Rechner keine Minuten mehr. Die Warnung oben gilt weiter: solange Josefs Mac als
 Self-hosted Runner angemeldet ist, kann ein fremder Pull Request darauf Code

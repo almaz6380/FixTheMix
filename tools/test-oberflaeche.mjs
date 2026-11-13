@@ -125,8 +125,10 @@ console.log('\n--- Ein Zug, dann zurueck ---');
   // Der Giessstrahl. Er ist reine Zierde und darf deshalb nichts aufhalten —
   // geprueft wird beides: dass er ueberhaupt kommt, und dass er den Zug nicht
   // blockiert (der Zaehler steht oben schon auf 1, bevor hier gemessen wird).
-  ok(await seite.locator('svg.guss path').count() === 2,
-     'ein Guss zeichnet den Strahl (zwei Pfade: Fluessigkeit und Lichtkante)');
+  // Masken-Pfad, Flaeche und zwei wandernde Glanzlinien (seit 13.11.2026).
+  ok(await seite.locator('svg.guss path').count() === 4
+     && await seite.locator('svg.guss .guss-glanz').count() === 2,
+     'ein Guss zeichnet den Strahl (Maske, Flaeche und zwei Glanzlinien)');
   // 380 ms Bewegung plus Reserve — danach ist er weg und liegt nicht ueber
   // dem naechsten Zug.
   await seite.waitForTimeout(700);
@@ -288,8 +290,11 @@ console.log('\n--- Der Giesszug ---');
         const hub = parseFloat(cs.getPropertyValue('--kipp-y')) || 0;
         const x = parseFloat(cs.getPropertyValue('--kipp-x')) || 0;
         const bog = ((parseFloat(cs.getPropertyValue('--kipp-winkel')) || 0) * Math.PI) / 180;
-        // Muss zu KIPP_DREHARM in Brett.tsx passen.
-        const muendung = a.top + a.height * 0.72 * (1 - Math.cos(bog)) + hub;
+        // Muss zu KIPP_DREHARM und KIPP_HALBBREIT in Brett.tsx passen: der
+        // Saft verlaesst das Glas an der unteren Ecke der Oeffnung.
+        const b2 = Math.abs(bog);
+        const muendung = a.top + a.height * 0.72
+          + a.width * 0.36 * Math.sin(b2) - a.height * 0.72 * Math.cos(b2) + hub;
         return {
           luft: (b.top + b.height * 0.1) - muendung,
           nachOben: b.top < a.top - 40,

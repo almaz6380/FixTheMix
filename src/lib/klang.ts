@@ -28,7 +28,8 @@
 // und der Oberflaechentest zaehlt die.
 
 import { ladeEinstellung } from './fortschritt.ts';
-import { LAUTSTAERKE, gussDauer, siegToene } from './klangregeln.ts';
+import { LAUTSTAERKE, gussDauer, gussTempo, siegToene } from './klangregeln.ts';
+import giessenUrl from '../assets/ton/giessen.m4a';
 
 // Die Regeln (`gussDauer`, `siegToene`, `LAUTSTAERKE`) stehen in
 // `klangregeln.ts` — dort sind sie ohne DOM-Typen und damit in node pruefbar.
@@ -41,7 +42,6 @@ import { LAUTSTAERKE, gussDauer, siegToene } from './klangregeln.ts';
 
 let ctx: AudioContext | null = null;
 let summe: GainNode | null = null;
-let rauschen: AudioBuffer | null = null;
 let an = true;
 
 /** Den Schalter setzen. Wird von den Einstellungen und beim Start gerufen. */
@@ -80,18 +80,6 @@ function hol(): AudioContext | null {
   }
 }
 
-/** Ein Sekunde weisses Rauschen, einmal erzeugt und danach wiederverwendet. */
-function holRauschen(c: AudioContext): AudioBuffer {
-  if (!rauschen) {
-    rauschen = c.createBuffer(1, c.sampleRate, c.sampleRate);
-    const daten = rauschen.getChannelData(0);
-    // Kein Math.random-Verbot hier: das ist die Oberflaeche, nicht die Engine.
-    // Ein Rauschen MUSS zufaellig sein, sonst ist es ein Ton.
-    for (let i = 0; i < daten.length; i++) daten[i] = Math.random() * 2 - 1;
-  }
-  return rauschen;
-}
-
 /** Ein einzelner Ton mit weicher Huellkurve. */
 function ton(
   c: AudioContext,
@@ -122,6 +110,9 @@ export function klangWahl(): void {
   if (!c) return;
   try {
     ton(c, 880, c.currentTime, 0.055, 0.35, 'triangle');
+    // Vor jedem Guss wird erst ein Glas gewaehlt — der beste Moment, die
+    // Aufnahme zu laden, damit schon der erste Guss klingt.
+    ladeGuss(c);
   } catch { /* still */ }
 }
 
@@ -135,55 +126,59 @@ export function klangDaneben(): void {
 }
 
 /**
- * Giessen: gefiltertes Rauschen mit fallender Tonhoehe.
+ * Giessen: eine ECHTE Aufnahme (13.11.2026). Der im Browser berechnete Klang —
+ * erst Rauschen, dann Blaeschen — war Josef zweimal „nicht gut". Gewaehlt hat
+ * er aus drei gemeinfreien Aufnahmen; Quelle in `src/assets/ton/QUELLE.md`,
+ * zugeschnitten mit `tools/giess-ton.mjs`. Rund 7 KB, im Bundle, offline.
  *
- * Das Bandpassfilter macht aus weissem Rauschen etwas, das nach Fluessigkeit
- * klingt; die fallende Mittenfrequenz ist der Trick, der es nach „laeuft in
- * ein Glas" klingen laesst statt nach Regen. Dazu ein leiser Ton, der mit dem
- * Fuellstand STEIGT — genau das hoert man an einem Glas, das voll wird.
+ * Geladen und dekodiert wird sie beim ersten Antippen eines Glases (das
+ * kommt vor jedem Guss), danach liegt sie im Speicher. Ist sie beim Guss noch
+ * nicht da, bleibt er still — besser als ein Ton, der zu spaet kommt.
+ *
+ * Was am Zug haengt, bleibt: die LAENGE nach der Menge (`gussDauer`, danach
+ * kurz ausgeblendet) und die HOEHE nach dem Fuellstand des Ziels
+ * (`gussTempo`). `verzoegerung` ist der Moment, in dem der Strahl im Ziel
+ * ankommt.
  */
-export function klangGuss(menge: number): void {
+let gussPuffer: AudioBuffer | null = null;
+let gussLaedt = false;
+
+function ladeGuss(c: AudioContext): void {
+  if (gussPuffer || gussLaedt) return;
+  gussLaedt = true;
+  fetch(giessenUrl)
+    .then((r) => r.arrayBuffer())
+    .then((daten) => c.decodeAudioData(daten))
+    .then((p) => { gussPuffer = p; })
+    // Still, und beim naechsten Guss ein neuer Versuch.
+    .catch(() => { gussLaedt = false; });
+}
+
+export function klangGuss(
+  menge: number,
+  ziel: { vorher: number; nachher: number; hoehe: number },
+  verzoegerung = 0,
+): void {
   const c = hol();
   if (!c) return;
   try {
-    const jetzt = c.currentTime;
-    const dauer = gussDauer(menge);
+    ladeGuss(c);
+    if (!gussPuffer) return;
+    const start = c.currentTime + Math.max(0, verzoegerung);
+    const tempo = gussTempo(ziel.vorher, ziel.nachher, ziel.hoehe);
+    const dauer = Math.min(gussDauer(menge), gussPuffer.duration / tempo);
 
     const quelle = c.createBufferSource();
-    quelle.buffer = holRauschen(c);
-    quelle.loop = true;
-
-    const filter = c.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.Q.value = 1.4;
-    filter.frequency.setValueAtTime(1500, jetzt);
-    filter.frequency.exponentialRampToValueAtTime(520, jetzt + dauer);
-
+    quelle.buffer = gussPuffer;
+    quelle.playbackRate.value = tempo;
     const g = c.createGain();
-    g.gain.setValueAtTime(0.0001, jetzt);
-    g.gain.exponentialRampToValueAtTime(0.5, jetzt + 0.05);
-    g.gain.setValueAtTime(0.5, jetzt + dauer * 0.7);
-    g.gain.exponentialRampToValueAtTime(0.0001, jetzt + dauer);
-
-    quelle.connect(filter);
-    filter.connect(g);
+    g.gain.setValueAtTime(1, start);
+    g.gain.setValueAtTime(1, start + dauer * 0.75);
+    g.gain.linearRampToValueAtTime(0.0001, start + dauer);
+    quelle.connect(g);
     g.connect(summe!);
-    quelle.start(jetzt);
-    quelle.stop(jetzt + dauer + 0.02);
-
-    // Der steigende Ton: das Glas fuellt sich.
-    const o = c.createOscillator();
-    const og = c.createGain();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(300, jetzt);
-    o.frequency.exponentialRampToValueAtTime(430, jetzt + dauer);
-    og.gain.setValueAtTime(0.0001, jetzt);
-    og.gain.exponentialRampToValueAtTime(0.16, jetzt + 0.08);
-    og.gain.exponentialRampToValueAtTime(0.0001, jetzt + dauer);
-    o.connect(og);
-    og.connect(summe!);
-    o.start(jetzt);
-    o.stop(jetzt + dauer + 0.02);
+    quelle.start(start);
+    quelle.stop(start + dauer + 0.02);
   } catch { /* still */ }
 }
 

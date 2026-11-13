@@ -18,7 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Brett, { KIPP_MS, type Guss } from './components/Brett.tsx';
+import Brett, { GUSS_ANKUNFT, KIPP_MS, type Guss } from './components/Brett.tsx';
 import Rueckwand from './components/Rueckwand.tsx';
 import { Partie } from './engine/verlauf.ts';
 import { festgefahren } from './engine/loeser.ts';
@@ -364,7 +364,11 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
     const e = partie.pour(quelle, b);
     if (e.ok) {
       haptik(8);
-      klangGuss(e.menge);
+      // Der Ton kommt, wenn der Strahl im Ziel ankommt, und steigt mit dem
+      // Fuellstand des Ziels.
+      klangGuss(e.menge, {
+        vorher: stand.fuell[b]! - e.menge, nachher: stand.fuell[b]!, hoehe: stand.hoehe,
+      }, (KIPP_MS * GUSS_ANKUNFT) / 1000);
       setKippt(quelle);
       // Der Zeitgeber wird ERSETZT, nicht gestapelt. Zwei Guesse kurz
       // hintereinander liessen sonst den ersten Zeitgeber das zweite Glas
@@ -821,7 +825,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
                   fill={i < sterne ? 'var(--color-zitrus)' : 'none'}
                   stroke={i < sterne ? 'none' : '#2F4A6B'} strokeWidth="2.2" strokeLinejoin="round"
                   style={i < sterne
-                    ? { filter: 'drop-shadow(0 0 14px rgba(255,201,60,0.55))', animationDelay: `${1250 + i * 160}ms` }
+                    ? { filter: 'drop-shadow(0 0 14px rgba(255,201,60,0.55))', animationDelay: `${1790 + i * 160}ms` }
                     : undefined}>
                   <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
                 </svg>
@@ -967,7 +971,7 @@ function Funken() {
           ['--fx' as string]: `${Math.cos(winkel) * weite}px`,
           ['--fy' as string]: `${Math.sin(winkel) * weite * 0.8 - 90}px`,
           ['--dreh' as string]: `${((k * 53) % 360) - 180}deg`,
-          animationDelay: `${780 + (k % 4) * 40}ms`,
+          animationDelay: `${1320 + (k % 4) * 40}ms`,
         }}
       />,
     );

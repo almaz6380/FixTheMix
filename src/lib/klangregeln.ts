@@ -15,19 +15,18 @@
 export const LAUTSTAERKE = 0.16;
 
 /**
- * Wie lange ein Guss klingt, in Sekunden.
+ * Wie lange Saft ins Zielglas laeuft, in Sekunden — so lange klingt der Guss.
  *
- * Haengt an der MENGE, nicht am Zufall: wer vier Schichten auf einmal
- * umschuettet, soll es laenger hoeren als bei einer. Der Faktor ist so
- * gewaehlt, dass acht Schichten (das Maximum der Experten-Level) noch UNTER
- * dem Deckel liegen. Mit 0,07 lagen sieben und acht beide auf 0,62 — zwei
- * verschieden grosse Guesse klangen gleich lang, und `test-klang.mts` hat
- * genau das gefangen. Der Deckel bleibt als Netz stehen: zwischen zwei Zuegen
- * liegen im Test 45 ms, und ein Mensch ist kaum langsamer.
+ * Haengt an der MENGE: wer vier Schichten auf einmal umschuettet, soll es
+ * laenger hoeren als bei einer. Der Deckel von 0,5 s ist das Fenster, in dem
+ * der Strahl im Ziel ankommt (46 % bis Ende von KIPP_MS = 900 ms in
+ * Brett.tsx); laenger klaenge es nach, wenn laengst nichts mehr fliesst.
+ * Acht Schichten (Experten-Level) liegen knapp darunter, damit auch sieben
+ * und acht verschieden lang klingen — `test-klang.mts` prueft genau das.
  */
 export function gussDauer(menge: number): number {
   const m = Math.max(1, Math.min(8, Math.round(menge)));
-  return Math.min(0.62, 0.16 + m * 0.055);
+  return Math.min(0.5, 0.2 + m * 0.037);
 }
 
 /**
@@ -41,4 +40,18 @@ export function siegToene(sterne: number): number[] {
   const alle = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
   const n = Math.max(1, Math.min(3, Math.round(sterne)));
   return alle.slice(0, n + 1);
+}
+
+/**
+ * Abspieltempo der Giessaufnahme, je nach Fuellstand des ZIELglases.
+ *
+ * Ein Glas, das voller wird, klingt heller — die Luftsaeule darueber wird
+ * kuerzer. Dasselbe Geraeusch etwas schneller abgespielt klingt genau so.
+ * Gemessen wird an der Mitte des Gusses; der Bereich ist klein (0,92–1,12),
+ * mehr klaenge nach Zeichentrick.
+ */
+export function gussTempo(vorher: number, nachher: number, hoehe: number): number {
+  const h = Math.max(1, hoehe);
+  const mitte = Math.max(0, Math.min(1, (vorher + nachher) / 2 / h));
+  return 0.92 + 0.2 * mitte;
 }

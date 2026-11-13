@@ -28,13 +28,12 @@ import requests
 BUNDLE = 'at.gallab.fixthemix'
 API = 'https://api.appstoreconnect.apple.com'
 
-# Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.0").
+# Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.1").
 NEU = {
-    'de': 'Neues Design: 3D-Gläser, kräftigere Farben und ein neuer Startbildschirm. '
-          'Tipp und Zug zurück jetzt auch per Video. Münzen sind wertvoller geworden. '
-          'Kleine Verbesserungen und Fehlerbehebungen.',
-    'en': 'New look: 3D glasses, richer colours and a new home screen. Get a hint or an undo '
-          'by watching a video. Coins are now scarcer and worth more. Small improvements and fixes.',
+    'de': 'Echteres Umleeren: Das Glas fährt zum Zielglas, kippt und gießt sichtbar hinüber '
+          '— mit echtem Gießgeräusch. Kleine Verbesserungen.',
+    'en': 'More realistic pouring: the glass moves over the target, tilts and pours — with a '
+          'real pouring sound. Small improvements.',
 }
 
 KEY = base64.b64decode(''.join(os.environ['ASC_KEY_P8_BASE64'].split())).decode()

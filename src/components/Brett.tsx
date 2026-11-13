@@ -36,33 +36,47 @@ import { istGeloest } from '../engine/zustand.ts';
  * Drehung sie nicht schon hingeschoben hat. Ziel ist die Mitte des
  * Zielglases — das Glas haelt also wirklich ueber dem anderen, statt daneben
  * zu stehen und zu spucken (Josef, 27.09.2026).
- * `KIPP_MAX` deckelt das: bei einem Ziel fuenf Spalten weiter soll das Glas
- * nicht quer durch die Bar reisen. Dann uebernimmt der Strahl den Rest.
+ * Seit dem 13.11.2026 faehrt die Quelle dafuer auch weit (Josef: „sieht nicht
+ * real aus" — vorher goss sie aus der Ferne, und der Strahl fiel quer ueber
+ * andere Glaeser). `KIPP_MAX` ist nur noch ein Netz.
  */
-const KIPP_MAX = 72;
-/**
- * GRUNDhub nach oben, in Pixeln (negativ = hoch). Beim Giessen in eine hoehere
- * Reihe wird mehr daraus — siehe die Rechnung im Effekt: die Oeffnung der
- * Quelle muss ueber der des Ziels stehen, sonst fliesst es bergauf.
- */
-const KIPP_HUB = -54;
+const KIPP_MAX = 400;
 /** Wie weit die Oeffnung der Quelle ueber der des Ziels steht. */
 const KIPP_LUFT = 26;
 /** Wie weit ein Glas ueber den Rand des Bretts hinausragen darf. */
 const KIPP_UEBERHANG = 16;
-const KIPP_WINKEL = 34;
+/**
+ * Wie weit das Glas kippt. Bis zum 13.11.2026 waren es 34 Grad — Josef: „sieht
+ * nicht real aus". Bei 34 Grad laeuft aus einem echten Glas nichts heraus;
+ * wer umleert, legt es fast waagrecht. Bei 65 Grad steht der Rand unten, und
+ * der Saft faellt sichtbar ueber die Kante.
+ */
+const KIPP_WINKEL = 65;
+/** Halbe Breite der Oeffnung, in Glasbreiten (der Becher fuellt das Bild fast aus). */
+const KIPP_HALBBREIT = 0.36;
 /**
  * Abstand der Oeffnung vom Drehpunkt, in Glashoehen. Muss zum
  * `transform-origin: 50% 72%` von `.glas-koerper` passen.
  */
 const KIPP_DREHARM = 0.72;
 /**
- * Wie lange das Glas gekippt bleibt. Steht HIER und nicht in `App.tsx`,
- * damit Bewegung und Zeitgeber nicht auseinanderlaufen: der Strahl braucht
- * genauso lange (`guss-fliesst` in index.css), und ein Glas, das vorher
- * zurueckschnellt, giesst ins Nichts.
+ * Wie lange ein Guss dauert — die EINE Zahl, an der alles haengt: der
+ * Zeitgeber in `App.tsx`, die Bewegungen des Strahls (als `--guss-ms` an den
+ * Strahl gereicht, `guss-*` in index.css) und das Steigen im Zielglas
+ * (`GUSS_ANKUNFT`/`GUSS_FLIESST` in Glas.tsx).
+ *
+ * Bis zum 13.11.2026 waren es 540 ms, und der Strahl war davon nur rund
+ * 290 ms zu sehen — Josef: „laeuft nicht schoen fluessig". Das las sich als
+ * Aufblitzen, nicht als Giessen. Jetzt fliesst er gut eine halbe Sekunde, und seit das Glas
+ * zum Ziel hinfaehrt (13.11.2026), dauert der ganze Zug 1,1 s.
  */
-export const KIPP_MS = 540;
+export const KIPP_MS = 1100;
+/** Anteil von KIPP_MS, an dem der Saft den Rand der Quelle verlaesst (30 % in `guss-fliesst`). */
+export const GUSS_LOS = 0.3;
+/** Anteil von KIPP_MS, an dem der Kopf des Strahls im Zielglas ankommt (46 % in `guss-fliesst`). */
+export const GUSS_ANKUNFT = 0.46;
+/** Anteil von KIPP_MS, an dem das Ende des Strahls abreisst (72 % in `guss-fliesst`). */
+export const GUSS_ABRISS = 0.72;
 
 /** Ein Guss, der gezeichnet werden soll. `nr` zaehlt hoch und startet die Bewegung neu. */
 export interface Guss {
@@ -103,6 +117,8 @@ interface Strahl {
   hell: string;
   /** Das Spitzlicht auf dem Strang — die Farbe, zu Weiss hin aufgehellt. */
   glanz: string;
+  /** Wohin die Glanzlinien von der Mitte weg zur Lichtseite ruecken. */
+  glanzVersatz: { x: number; y: number };
   nr: number;
 }
 
@@ -224,65 +240,86 @@ export default function Brett({
     // von wo sie der Glaskoerper erbt — das kostet kein Neuzeichnen, und die
     // Werte stehen vor dem ersten Bild (`useLayoutEffect`).
     const dx = (b.left + b.width / 2) - (a.left + a.width / 2);
-    const winkel = dx >= 0 ? KIPP_WINKEL : -KIPP_WINKEL;
-    const bogen = (winkel * Math.PI) / 180;
-    // Was die Drehung allein schon schafft: die Oeffnung sitzt 0,72
-    // Glashoehen ueber dem Drehpunkt und beschreibt beim Kippen einen Bogen.
-    // Bei 54 x 140 px sind das rund 56 px — fast eine ganze Spalte.
-    const schwung = a.height * KIPP_DREHARM * Math.sin(bogen);
-    // Also wandert das Glas nur noch den REST bis ueber die Mitte des Ziels.
-    const wunsch = Math.max(-KIPP_MAX, Math.min(KIPP_MAX, dx - schwung));
-    /*
-      ... aber nur so weit, wie das Brett reicht. `<main>` schneidet ab, was
-      darueber hinausragt (das braucht der Tresen), und ein Glas in der
-      AEUSSERSTEN Spalte wanderte dort hinein: beim Giessen von ganz links
-      nach ganz links unten ist `dx` null, der Schwung schiebt die Oeffnung
-      aber nach rechts, also muss der Koerper nach links — und wurde am Rand
-      abgeschnitten. Ein Stueck Ueberhang ist in Ordnung, das Brett ist
-      schmaler als der Schirm; ein halbes Glas ist es nicht.
-    */
-    const linksRaum = (a.left - kasten.left) + KIPP_UEBERHANG;
-    const rechtsRaum = (kasten.width - (a.left - kasten.left + a.width)) + KIPP_UEBERHANG;
-    const kippX = Math.max(-linksRaum, Math.min(rechtsRaum, wunsch));
+    const richtung = dx >= 0 ? 1 : -1;
+    const halbBreit = a.width * KIPP_HALBBREIT;
+    const arm = a.height * KIPP_DREHARM;
 
     // Wohin der Strahl faellt: die Oeffnung des Zielglases.
     const x2 = b.left - kasten.left + b.width * 0.5;
     const y2 = b.top - kasten.top + b.height * 0.1;
+    const drehX = a.left - kasten.left + a.width * 0.5;
+    /*
+      Wie viel Platz das Glas zur Seite hat. `<main>` schneidet ab, was ueber
+      das Brett hinausragt (das braucht der Tresen); ein Stueck Ueberhang ist
+      in Ordnung, ein halbes Glas nicht.
+    */
+    const linksRaum = (a.left - kasten.left) + KIPP_UEBERHANG;
+    const rechtsRaum = (kasten.width - (a.left - kasten.left + a.width)) + KIPP_UEBERHANG;
 
     /*
-      DER HUB IST GERECHNET, NICHT FEST. Wo die Oeffnung der Quelle nach dem
-      Kippen laege, wenn das Glas nicht stiege — von dort aus muss sie UEBER
-      die Oeffnung des Ziels.
+      SO STEIL WIE DER PLATZ ERLAUBT. Bei 65 Grad liegt der Rand rund eine
+      Glashoehe neben der Mitte — fuer das Nachbarglas muesste die Quelle
+      dafuer weit zuruecktreten, und am Rand des Bretts geht das nicht. Dann
+      kippt sie eben weniger, in Schritten von 5 Grad bis 35.
 
-      Ein fester Hub war der Fehler: beim Giessen aus der unteren in die obere
-      Reihe hob sich das Glas um 54 px, das Ziel lag aber 220 px hoeher. Der
-      Strahl lief damit bergauf. Josef hat es sofort gesehen; kein Test konnte
-      es melden, weil im DOM alles stimmte.
+      Wo der Saft das Glas verlaesst: die UNTERE Ecke der Oeffnung, nicht ihre
+      Mitte. Das Glas dreht um `transform-origin: 50% 72%`; die Oeffnung liegt
+      `arm` ueber dem Drehpunkt, ihre Ecke `halbBreit` daneben. Nach der
+      Drehung zum Ziel hin liegt sie
+        seitlich: halbBreit * cos + arm * sin
+        hoch:     halbBreit * sin - arm * cos   (relativ zum Drehpunkt)
+      Der Saft verlaesst den Rand mit Schwung zur Seite und landet weiter
+      vorn — der Rand steht also kurz VOR der Mitte des Ziels.
     */
-    const muendungRuhe = (a.top - kasten.top) + a.height * KIPP_DREHARM * (1 - Math.cos(bogen));
-    // Nie weniger als der Grundhub, nie so hoch, dass das Glas aus dem Brett
-    // faellt — darueber liegt die Rueckwand, ein Stueck davon ist in Ordnung.
+    let grad = KIPP_WINKEL;
+    let schwung = 0;
+    let kippX = 0;
+    for (; grad >= 35; grad -= 5) {
+      const bg = (grad * Math.PI) / 180;
+      schwung = halbBreit * Math.cos(bg) + arm * Math.sin(bg);
+      const wunsch = (x2 - richtung * b.width * 0.28) - (drehX + richtung * schwung);
+      kippX = Math.max(-KIPP_MAX, Math.min(KIPP_MAX, wunsch));
+      if (kippX >= -linksRaum && kippX <= rechtsRaum) break;
+    }
+    grad = Math.max(35, grad);
+    kippX = Math.max(-linksRaum, Math.min(rechtsRaum, kippX));
+    const bogen = (grad * Math.PI) / 180;
+    const winkel = richtung * grad;
+    const randTief = halbBreit * Math.sin(bogen) - arm * Math.cos(bogen);
+
+    /*
+      DER HUB IST GERECHNET, NICHT FEST. Wo der Rand der Quelle nach dem
+      Kippen laege, wenn das Glas nicht stiege — von dort aus muss er UEBER
+      die Oeffnung des Ziels. Ein fester Hub liess den Strahl beim Giessen in
+      eine hoehere Reihe bergauf laufen (Josef, 27.09.2026).
+    */
+    const muendungRuhe = (a.top - kasten.top) + arm + randTief;
+    // Auch NACH UNTEN (13.11.2026): beim Giessen in eine tiefere Reihe fiel
+    // der Strahl vorher quer durch die Reihe dazwischen. Wer echt umleert,
+    // bringt das Glas ueber das Ziel — also faehrt die Quelle hin.
     const hub = Math.max(
       -(a.top - kasten.top) - a.height * 0.35,
-      Math.min(KIPP_HUB, y2 - KIPP_LUFT - muendungRuhe),
+      y2 - KIPP_LUFT - muendungRuhe,
     );
 
     const quelle = glasRefs.current[guss.von];
     quelle?.style.setProperty('--kipp-x', `${kippX}px`);
     quelle?.style.setProperty('--kipp-y', `${hub}px`);
     quelle?.style.setProperty('--kipp-winkel', `${winkel}deg`);
+    quelle?.style.setProperty('--guss-ms', `${KIPP_MS}ms`);
 
-    // Startpunkt ist die Oeffnung des GEKIPPTEN Glases, nicht seine Kante im
-    // Stand. Das Glas dreht um `transform-origin: 50% 72%`; die Oeffnung
-    // liegt 0,72 Glashoehen darueber und beschreibt damit einen Bogen, den
-    // der Strahl mitmachen muss — sonst haengt er in der Luft neben dem Glas.
-    const x1 = a.left - kasten.left + a.width * 0.5 + schwung + kippX;
+    const x1 = drehX + richtung * schwung + kippX;
     const y1 = muendungRuhe + hub;
-    // Der Bogen. Er richtet sich nach dem SEITLICHEN Abstand: steht das Glas
-    // fast senkrecht ueber dem Ziel, faellt die Fluessigkeit auch senkrecht,
-    // und ein hoher Steuerpunkt machte daraus eine unsinnige Ausbuchtung.
+    /*
+      EINE WURFPARABEL, KEIN BOGEN (13.11.2026). Vorher lag der Steuerpunkt
+      UEBER beiden Enden — der Saft stieg erst und fiel dann, wie ein
+      geworfener Ball. Fluessigkeit verlaesst den Rand aber fast waagrecht und
+      faellt dann immer steiler. Eine quadratische Kurve mit dem Steuerpunkt
+      auf halbem Weg in Hoehe des Startes IST genau diese Parabel: waagrecht
+      los, senkrecht werdend.
+    */
     const cx = (x1 + x2) / 2;
-    const cy = Math.min(y1, y2) - Math.min(26, Math.max(4, Math.abs(x2 - x1) * 0.35));
+    const cy = y1 + (y2 - y1) * 0.12;
 
     // Die Breite des Strahls. Sie haengt an der MENGE — vier Schichten auf
     // einmal sind ein Schwall, eine einzelne ein Rinnsal —, ist aber vor
@@ -290,10 +327,11 @@ export default function Brett({
     // Ganze wieder aus wie ein Strich, und genau das hat Josef beanstandet.
     // Ein Glas, das man umleert, gibt seinen Inhalt fast in voller Breite der
     // Oeffnung ab.
-    const wOben = a.width * Math.min(0.62, 0.34 + 0.05 * guss.menge);
+    // Am Rand schmaler als die ganze Oeffnung: der Saft laeuft ueber die Ecke.
+    const wOben = a.width * Math.min(0.46, 0.2 + 0.045 * guss.menge);
     // Schmaler unten: fallende Fluessigkeit wird schneller, und was schneller
     // wird, wird duenner.
-    const wUnten = wOben * 0.5;
+    const wUnten = wOben * 0.62;
     const b1 = band(x1, y1, cx, cy, x2, y2, wOben, wUnten);
 
     // Der Verlauf liegt QUER zum Strahl, nicht laengs — daher kommt die
@@ -326,6 +364,8 @@ export default function Brett({
         x2: mx - nx * halb, y2: my - ny * halb,
       },
       ziel: { x: x2, y: y2, r: wUnten * 0.9 },
+      // Die Glanzlinien liegen etwas zur Lichtseite hin, wie der Streifen im Verlauf.
+      glanzVersatz: { x: nx * halb * 0.3, y: ny * halb * 0.3 },
       tief: f.tief,
       ton: f.ton,
       hell: f.hell,
@@ -360,6 +400,9 @@ export default function Brett({
           innerRef={(el) => { glasRefs.current[i] = el; }}
           {...(guss && guss.nach === b
             ? { fuellt: { menge: guss.menge, nr: guss.nr } }
+            : {})}
+          {...(guss && guss.von === b && kippt === b
+            ? { leert: { farbe: guss.farbe, menge: guss.menge, nr: guss.nr } }
             : {})}
           {...(voll ? { fertig: { index: b } } : {})}
         />,
@@ -398,7 +441,11 @@ export default function Brett({
           key={strahl.nr}
           className="guss"
           aria-hidden="true"
-          style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }}
+          style={{
+            position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none',
+            // Die eine Zahl fuer alle Bewegungen des Strahls (siehe KIPP_MS).
+            ['--guss-ms' as string]: `${KIPP_MS}ms`,
+          }}
         >
           <defs>
             {/* Quer zum Strahl, nicht laengs: dunkle Kanten, ein Lichtstreifen
@@ -442,11 +489,33 @@ export default function Brett({
               />
             </mask>
           </defs>
-          <path
-            d={strahl.flaeche}
-            fill={`url(#ftm-guss-v${strahl.nr})`}
-            mask={`url(#ftm-guss-m${strahl.nr})`}
-          />
+          <g mask={`url(#ftm-guss-m${strahl.nr})`}>
+            <path d={strahl.flaeche} fill={`url(#ftm-guss-v${strahl.nr})`} />
+            {/* BEWEGUNG IM STRAHL (13.11.2026). Vorher war er ein starres
+                Bild, das eine Maske aufdeckte — fliessender Saft hat aber
+                Glanzlichter, die nach unten wandern. Zwei gestrichelte Linien
+                auf der Mittellinie, deren Muster mit dem Strahl faellt. */}
+            <path
+              className="guss-glanz"
+              d={strahl.mitte}
+              pathLength={1}
+              fill="none"
+              stroke={strahl.glanz}
+              strokeWidth={Math.max(1.5, strahl.maskeBreit * 0.14)}
+              strokeLinecap="round"
+              transform={`translate(${strahl.glanzVersatz.x} ${strahl.glanzVersatz.y})`}
+            />
+            <path
+              className="guss-glanz guss-glanz-2"
+              d={strahl.mitte}
+              pathLength={1}
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth={Math.max(1, strahl.maskeBreit * 0.06)}
+              strokeLinecap="round"
+              transform={`translate(${strahl.glanzVersatz.x * 1.4} ${strahl.glanzVersatz.y * 1.4})`}
+            />
+          </g>
           {/* Der Aufschlag. Ohne ihn endet der Strahl im Nichts, statt
               irgendwo anzukommen. */}
           <ellipse
@@ -457,6 +526,23 @@ export default function Brett({
             ry={strahl.ziel.r * 0.42}
             fill={strahl.hell}
           />
+          {/* Spritzer: ein paar Tropfen springen beim Auftreffen hoch und
+              fallen zurueck. Klein und kurz — sonst sieht es nach Unfall aus. */}
+          {[[-1, 1], [1, 0.8], [-0.5, 1.5], [0.6, 1.3]].map(([dx, dy], k) => (
+            <circle
+              key={k}
+              className="guss-tropfen"
+              cx={strahl.ziel.x}
+              cy={strahl.ziel.y}
+              r={Math.max(1.5, strahl.ziel.r * (k < 2 ? 0.22 : 0.15))}
+              fill={k % 2 ? strahl.hell : strahl.ton}
+              style={{
+                ['--dx' as string]: `${dx! * strahl.ziel.r * 1.6}px`,
+                ['--dy' as string]: `${-dy! * strahl.ziel.r * 1.7}px`,
+                animationDelay: `${k * 18}ms`,
+              }}
+            />
+          ))}
         </svg>
       )}
     </div>

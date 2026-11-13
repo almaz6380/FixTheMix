@@ -12,8 +12,8 @@
 //
 // Aufruf: npx tsx tools/test-klang.mts
 // Schneller: node tools/test-klang.mts
-import { readFileSync } from 'node:fs';
-import { LAUTSTAERKE, gussDauer, siegToene } from '../src/lib/klangregeln.ts';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { LAUTSTAERKE, gussDauer, gussTempo, siegToene } from '../src/lib/klangregeln.ts';
 
 let fehler = 0;
 const ok = (b: boolean, msg: string) => {
@@ -60,6 +60,19 @@ console.log('\n--- Die Siegmelodie ---');
      'ausserhalb von 1..3 wird geklemmt statt geworfen');
 }
 
+console.log('\n--- Tonhoehe nach Fuellstand ---');
+{
+  // Ein volleres Glas klingt heller. Steigt das Tempo nicht, klingt jeder
+  // Guss gleich; ist der Bereich zu weit, klingt es nach Zeichentrick.
+  let steigt = true;
+  for (let v = 0; v < 6; v++) if (gussTempo(v + 1, v + 2, 6) <= gussTempo(v, v + 1, 6)) steigt = false;
+  ok(steigt, 'das Tempo steigt mit dem Fuellstand');
+  ok(gussTempo(0, 1, 6) >= 0.9 && gussTempo(5, 6, 6) <= 1.15,
+     `und bleibt im Rahmen (${gussTempo(0, 1, 6).toFixed(2)}–${gussTempo(5, 6, 6).toFixed(2)})`);
+  ok(Number.isFinite(gussTempo(0, 0, 0)) && gussTempo(-3, 99, 6) <= 1.15,
+     'unsinnige Werte werden geklemmt');
+}
+
 console.log('\n--- Leise genug ---');
 {
   // Ein Sortierspiel wird nebenher gespielt, oft in der Bahn. Volle
@@ -68,26 +81,25 @@ console.log('\n--- Leise genug ---');
      `die Grundlautstaerke ist gedaempft (${LAUTSTAERKE})`);
 }
 
-console.log('\n--- Keine Tondateien im Bundle ---');
+console.log('\n--- Genau eine Tondatei, und die liegt im Bundle ---');
 {
-  // Der eigentliche Entwurf: alles wird im Browser erzeugt. Kaeme jemand auf
-  // die Idee, doch eine .mp3 beizulegen, waere der Offline-Betrieb wieder eine
-  // Frage — dieselbe Falle wie bei den Schriften, die deshalb im Repo liegen.
+  // Bis zum 13.11.2026 galt: KEINE Tondateien, alles wird im Browser erzeugt.
+  // Fuer das Giessen ist das gefallen — Josef hat den berechneten Klang
+  // zweimal abgelehnt und eine echte Aufnahme gewaehlt. Was bleibt, ist der
+  // Grund der alten Regel: offline darf nichts fehlen. Also genau EINE Datei,
+  // gebuendelt aus src/assets/ton/, und nichts aus dem Netz.
   const quelle = readFileSync(new URL('../src/lib/klang.ts', import.meta.url), 'utf8');
-  // Geprueft wird das LADEN, nicht das Wort: der erste Anlauf verbot schlicht
-  // „.mp3" und fiel ueber den eigenen Kommentar, der erklaert, warum es keine
-  // .mp3 gibt. Ein Test, der die Begruendung verbietet, ist kein Test.
-  const laedt = [
-    /from\s+['"][^'"]+\.(mp3|ogg|wav|m4a)['"]/,
-    /new\s+Audio\s*\(/,
-    /fetch\s*\(/,
-    /decodeAudioData/,
-  ];
-  for (const muster of laedt) {
-    ok(!muster.test(quelle), `klang.ts holt nichts ueber ${String(muster).slice(0, 34)}…`);
-  }
-  ok(quelle.includes('createOscillator') && quelle.includes('createBuffer'),
-     '... sondern erzeugt Toene und Rauschen selbst');
+  const importe = [...quelle.matchAll(/from\s+['"]([^'"]+\.(?:mp3|ogg|wav|m4a|aac))['"]/g)].map((m) => m[1]);
+  ok(importe.length === 1 && importe[0] === '../assets/ton/giessen.m4a',
+     `genau eine gebuendelte Tondatei (${importe.join(', ') || 'keine'})`);
+  ok(!/https?:\/\//.test(quelle.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')),
+     '... und nichts aus dem Netz');
+  ok(!/new\s+Audio\s*\(/.test(quelle), '... ohne <audio>-Element (das liesse sich nicht mischen)');
+  const datei = statSync(new URL('../src/assets/ton/giessen.m4a', import.meta.url));
+  ok(datei.size > 1000 && datei.size < 20000, `die Datei ist klein (${datei.size} Bytes)`);
+  ok(existsSync(new URL('../src/assets/ton/QUELLE.md', import.meta.url)),
+     '... und ihre Herkunft steht daneben');
+  ok(quelle.includes('createOscillator'), 'die uebrigen Geraeusche erzeugt klang.ts weiter selbst');
 
   // Und jeder Zugriff ist eingepackt: WebAudio fehlt in alten Browsern und ist
   // in manchen eingebetteten Ansichten gesperrt. Eine Ausnahme waere eine

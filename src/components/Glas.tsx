@@ -33,6 +33,7 @@ import type { Spielstand } from '../engine/typen.ts';
 import Symbol from './Symbole.tsx';
 import Garnitur from './Garnitur.tsx';
 import formen from '../assets/glas/formen.json';
+import { GUSS_ABRISS, GUSS_ANKUNFT, GUSS_LOS, KIPP_MS } from './Brett.tsx';
 import rueckwand from '../assets/glas/glas-becher-hinten.webp';
 import front from '../assets/glas/glas-becher-vorn.webp';
 
@@ -88,13 +89,22 @@ interface KoerperEigenschaften {
    * Eingiessen. `nr` zaehlt je Guss hoch und startet die Bewegung neu.
    */
   fuellt?: { menge: number; nr: number };
+  /**
+   * Es wird gerade AUS DIESEM Glas gegossen (13.11.2026). Der Spielstand ist
+   * da schon weitergezogen — ohne das kippte ein Glas, das bereits leer ist,
+   * und der Strahl kaeme aus dem Nichts. So steht der Saft noch darin und
+   * sinkt, waehrend er fliesst.
+   */
+  leert?: { farbe: number; menge: number; nr: number };
 }
 
 export function GlasKoerper({
   fuellung, hoehe, laufAb, hervor = false, symbole = false, saat = 0, kippt = false,
-  fuellt, fertig,
+  fuellt, fertig, leert,
 }: KoerperEigenschaften) {
   const fuell = fuellung.length;
+  // Was gezeichnet wird: beim Ausgiessen der Stand VOR dem Zug.
+  const zeige = leert ? [...fuellung, ...Array<number>(leert.menge).fill(leert.farbe)] : fuellung;
   // Bei sieben oder acht Schichten (den Experten-Leveln) ist eine Schicht nur
   // noch rund 16 px hoch — ein 16-px-Zeichen laege dann ueber der Kante.
   const zeichenGroesse = hoehe >= 7 ? 12 : 16;
@@ -119,8 +129,8 @@ export function GlasKoerper({
     schwach, um zu trennen.
   */
   const laeufe: { code: number; von: number; anzahl: number }[] = [];
-  for (let i = 0; i < fuell; i++) {
-    const code = fuellung[i]!;
+  for (let i = 0; i < zeige.length; i++) {
+    const code = zeige[i]!;
     const letzter = laeufe[laeufe.length - 1];
     if (letzter && letzter.code === code) letzter.anzahl++;
     else laeufe.push({ code, von: i, anzahl: 1 });
@@ -138,6 +148,8 @@ export function GlasKoerper({
     // Schichten, die einzeln nacheinander aufpoppen, waren wieder Bloecke.
     const kommtAn = fuellt !== undefined && lauf.von + n > abFuellt;
     const vorher = kommtAn ? Math.max(0, abFuellt - lauf.von) : n;
+    // Der oberste Lauf der Quelle sinkt, waehrend er ausfliesst.
+    const gehtWeg = leert !== undefined && istOben;
 
     return (
       <div
@@ -145,8 +157,8 @@ export function GlasKoerper({
         // laeuft: React nimmt sonst dasselbe Element wieder her, und eine
         // CSS-Bewegung, die schon gelaufen ist, laeuft an einem bestehenden
         // Element kein zweites Mal los.
-        key={kommtAn ? `${lauf.von}-${fuellt!.nr}` : lauf.von}
-        className={kommtAn ? 'schicht-fuellt' : undefined}
+        key={kommtAn ? `${lauf.von}-${fuellt!.nr}` : gehtWeg ? `${lauf.von}-w${leert!.nr}` : lauf.von}
+        className={kommtAn ? 'schicht-fuellt' : gehtWeg ? 'schicht-leert' : undefined}
         style={{
           position: 'relative',
           height: `${schichtAnteil * n}%`,
@@ -156,12 +168,20 @@ export function GlasKoerper({
           ...(kommtAn
             ? {
               ['--von' as string]: `${schichtAnteil * vorher}%`,
-              // 350 ms ist der Moment, in dem der Kopf des Strahls ankommt
-              // (66 % von KIPP_MS). Laufen die Zahlen auseinander, fuellt
-              // sich das Glas, bevor etwas fliesst — oder erst danach.
-              animationDelay: '350ms',
-              // Ein Schwall braucht laenger zum Steigen als ein Schluck.
-              animationDuration: `${190 + 55 * (n - vorher)}ms`,
+              // Es steigt, sobald der Kopf des Strahls ankommt, und ist voll,
+              // kurz nachdem das Ende abgerissen ist. Gerechnet aus KIPP_MS —
+              // laufen die Zahlen auseinander, fuellt sich das Glas, bevor
+              // etwas fliesst, oder erst danach.
+              animationDelay: `${Math.round(KIPP_MS * GUSS_ANKUNFT)}ms`,
+              animationDuration: `${Math.round(KIPP_MS * (GUSS_ABRISS - GUSS_ANKUNFT + 0.12))}ms`,
+            }
+            : {}),
+          ...(gehtWeg
+            ? {
+              ['--nach' as string]: `${schichtAnteil * (n - leert!.menge)}%`,
+              // Es sinkt, waehrend der Strahl steht: vom Kippen bis zum Abriss.
+              animationDelay: `${Math.round(KIPP_MS * GUSS_LOS)}ms`,
+              animationDuration: `${Math.round(KIPP_MS * (GUSS_ABRISS - GUSS_LOS))}ms`,
             }
             : {}),
           background: [
@@ -319,12 +339,21 @@ export function GlasKoerper({
           Huelle mit dem Innenumriss als Maske. */}
       <img className="glas-3d-bild" src={rueckwand} alt="" draggable={false} />
       <div className="glas-form" style={{ WebkitMask: MASKE, mask: MASKE }}>
+        {/* Im kippenden Glas dreht sich der Saft zurueck und bleibt waagrecht
+            (`.saft-dreher`). Darunter fuellt ein Block in der Farbe des
+            Bodens die tiefste Ecke, die das schraege Glas sonst leer zeigte. */}
+        <div className="saft-dreher">
+        {kippt && zeige.length > 0 && (
+          <div
+            className="saft-boden"
+            style={{ top: `${100 - BODEN}%`, background: farbeVon(zeige[0]!).tief }}
+          />
+        )}
         <div
+          className="saft-saeule"
           style={{
             position: 'absolute',
             top: 0,
-            left: 0,
-            right: 0,
             bottom: `${BODEN}%`,
             overflow: 'hidden',
             display: 'flex',
@@ -333,6 +362,7 @@ export function GlasKoerper({
         >
           {schichten}
           {blasen}
+        </div>
         </div>
       </div>
       <img className="glas-3d-bild" src={front} alt="" draggable={false} />
@@ -353,6 +383,8 @@ interface Eigenschaften {
   beschriftung: string;
   /** Es wird gerade hier hinein gegossen — siehe `GlasKoerper`. */
   fuellt?: { menge: number; nr: number };
+  /** Es wird gerade hieraus gegossen — siehe `GlasKoerper`. */
+  leert?: { farbe: number; menge: number; nr: number };
   /** Das Brett ist geloest — siehe `GlasKoerper`. */
   fertig?: { index: number };
   /**
@@ -365,7 +397,7 @@ interface Eigenschaften {
 }
 
 export default function Glas({
-  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef, fuellt, fertig,
+  stand, glas, gewaehlt, kippt, tipp, symbole, onTap, beschriftung, innerRef, fuellt, fertig, leert,
 }: Eigenschaften) {
   const hoehe = stand.hoehe;
   const fuell = stand.fuell[glas]!;
@@ -405,6 +437,7 @@ export default function Glas({
         saat={glas}
         kippt={kippt}
         {...(fuellt ? { fuellt } : {})}
+        {...(leert ? { leert } : {})}
         {...(fertig ? { fertig } : {})}
       />
     </button>

@@ -92,6 +92,20 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
+### Version 1.1.1 — echtes Umleeren (13.11.2026)
+
+iOS 1.1.1 (Build 3), Android 1.1.1 (vc3). Josef: „Ja mach ganz fertig".
+Das Glas fährt zum Ziel, kippt bis 65°, die Quelle leert sich sichtbar, der Saft bleibt
+waagrecht, der Strahl fällt als Wurfparabel, dazu das echte Gießgeräusch „Ton 2"
+(Einzelheiten unter „Gießstrahl und Bar-Geräusche"). Die neuen Store-Bilder hängen
+schon an der iOS-Version 1.1.1.
+
+**Versionshinweise 1.1.1** (als `NEU` in `scripts/asc-einreichen.py`):
+- DE: „Echteres Umleeren: Das Glas fährt zum Zielglas, kippt und gießt sichtbar
+  hinüber — mit echtem Gießgeräusch. Kleine Verbesserungen."
+- EN: „More realistic pouring: the glass moves over the target, tilts and pours —
+  with a real pouring sound. Small improvements."
+
 ### Version 1.1.0 — knappe Münzen, Videos als Hilfe, Rechtsnachzug (04.10.2026)
 
 Branch `claude/rechtspruefung-fixes`, iOS 1.1.0 (Build 2), Android 1.1.0 (vc2).
@@ -1238,9 +1252,57 @@ Bilder lagen hinter dem Ende. Was funktioniert: alle Bewegungen per `addStyleTag
 denselben Faktor strecken, die Kippstellung über die auf dem Quellglas
 stehengebliebenen CSS-Variablen festhalten, und ab dem Guss **absolut** messen.
 
-**Die Geräusche** (`src/lib/klang.ts`) kommen **ohne Tondateien** aus: gefiltertes
-Rauschen für das Gießen, ein paar Sinustöne für den Rest. Drei Gründe, der dritte ist
-der wichtigste:
+**Flüssiger, am 13.11.2026** (Josef: „läuft nicht schön flüssig", gemeint war der
+Strahl). Der Guss dauerte 540 ms, der Strahl war davon nur ~290 ms zu sehen, alles
+linear. Das las sich als Aufblitzen. Jetzt gilt:
+- `KIPP_MS` = **900 ms** ist die **eine** Zahl. `Brett` reicht sie als `--guss-ms` an
+  den Strahl, und `Glas.tsx` rechnet Verzögerung und Dauer des Steigens aus
+  `GUSS_ANKUNFT` (46 %) und `GUSS_ABRISS` (76 %). Die festen 350 ms sind weg.
+- Abschnitte: 0–30 % kippen, 30–46 % Kopf fällt (`ease-in`), 46–76 % fließen, 76–100 %
+  das Ende fällt hinterher.
+- **Bewegung im Strahl:** zwei gestrichelte Glanzlinien auf der Mittellinie, unter
+  derselben Maske, laufen endlos die Bahn hinab (`.guss-glanz`).
+- **Aufschlag:** der Kreis pulsiert, solange es fließt, dazu vier Tropfen
+  (`.guss-tropfen`, Richtung per `--dx`/`--dy`).
+- *Falle:* Die Maske hat runde Enden, und ein runder Strich der Länge 0 ist ein
+  **Punkt**. Er hing vorher am Anfang an der Öffnung. Deshalb ist die Maske außerhalb
+  des Fließens durchsichtig (`stroke-opacity` in `guss-fliesst`).
+- `will-change: transform` nur auf `.glas-kippt`, der Strahl auf eigener Ebene.
+
+**Echt umleeren, am 13.11.2026** (Josef, danach: „sieht nicht real aus wie wenn man
+etwas von einem Glas ins andere leert. Außerdem ist der Ton richtig schlecht."):
+- **Die Quelle fährt zum Ziel**: Der Rand ihrer Öffnung steht danach kurz vor der Mitte
+  des Zielglases, auch eine Reihe tiefer (`hub` darf positiv sein, `KIPP_MAX` 400).
+  Vorher goss sie aus der Ferne, und der Strahl fiel quer über andere Gläser.
+- **So steil wie der Platz erlaubt**: 65°, in 5°-Schritten bis 35°, wenn das Glas
+  sonst über den Brettrand müsste. Gerechnet wird mit der **unteren Ecke** der
+  Öffnung (`KIPP_HALBBREIT`), nicht mit ihrer Mitte.
+- **Wurfparabel**: Der Steuerpunkt liegt auf halbem Weg in Höhe des Starts; der Saft
+  verlässt den Rand waagrecht und fällt dann immer steiler.
+- **Die Quelle leert sich sichtbar** (`leert` an `GlasKoerper`, `.schicht-leert`). Der
+  Spielstand ist beim Tippen schon weiter; ohne das kippte ein leeres Glas.
+- **Der Saft bleibt waagrecht**: `.saft-dreher` dreht sich gegen das Glas zurück, die
+  Säule ist dafür viel breiter als das Glas, `.saft-boden` füllt die tiefste Ecke.
+- Der Kippzug ist **eine** Keyframe-Bewegung (`glas-kippen`) über `KIPP_MS` = 1100 ms.
+  Die Siegbewegungen starten deshalb 540 ms später als vorher.
+- **Der Ton ist eine echte Aufnahme** (siehe „Die Geräusche"). Er setzt erst ein,
+  wenn der Strahl ankommt (`GUSS_ANKUNFT`).
+
+**Das Gießen ist seit dem 13.11.2026 eine echte Aufnahme** — die einzige Tondatei im
+Spiel: `src/assets/ton/giessen.m4a` (7 KB, AAC mono). Josef hat den berechneten Klang
+zweimal abgelehnt („richtig schlecht", dann mit Bläschen „nicht gut") und aus drei
+gemeinfreien Aufnahmen „Ton 2" gewählt: Saft aus der Flasche in einen Becher
+(Wikimedia Commons, „Pouring wine", Autor cori, PD). Herkunft in
+`src/assets/ton/QUELLE.md`, Zuschnitt mit `node tools/giess-ton.mjs` aus
+`tools/vorlagen/giessen-roh.ogg`. Geladen wird sie beim ersten Antippen eines Glases.
+Die Länge hängt weiter an der Menge (`gussDauer`, danach ausgeblendet), die Tonhöhe am
+Füllstand des Ziels (`gussTempo`, Abspielrate 0,92–1,12). AAC und nicht Ogg, weil Safari
+Ogg nicht zuverlässig abspielt. *Achtung beim Testen:* Das Chromium von Playwright kann
+kein AAC. Dort bleibt der Guss still, ohne Fehler.
+
+**Die übrigen Geräusche** (`src/lib/klang.ts`) kommen **ohne Tondateien** aus: ein paar
+Sinustöne für Wahl, Sieg, Münzen. Für das Gießen galten bis zum 13.11.2026 dieselben
+drei Gründe:
 
 1. Null Bytes im Bundle. Fünf brauchbare `.mp3` wären schnell 150 KB — mehr als die
    halbe Levelfolge.

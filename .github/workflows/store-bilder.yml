@@ -64,6 +64,9 @@ jobs:
           name: store-bilder
           path: .store/
           retention-days: 14
+          # .store ist ein versteckter Ordner — ohne das legt upload-artifact
+          # gar nichts ab (beim ersten Lauf am 13.11.2026 passiert).
+          include-hidden-files: true
 
       - name: Python
         if: ${{ inputs.hochladen }}

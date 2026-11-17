@@ -178,9 +178,11 @@ dass die App **bei jedem Start** RevenueCat mit ihrer zufälligen Kennung fragt 
 auch ohne Kauf (lit. b bzw. f). AdMob mit Google Ireland/Google LLC, Einwilligung
 nach Art. 6 Abs. 1 lit. a DSGVO + § 165 Abs. 3 TKG, Speicherdauer nach Google, DPF/SCC.
 `docs/store-eintrag.md` behauptete, die Kennung verlasse das Gerät nicht — falsch,
-korrigiert; die Datenschutz-Formulare beider Stores müssen nachgezogen werden
-(Kennung → App-Funktionalität). Danach im Repo `almaz6380.github.io`
-`npm run erzeugen`, sonst zeigt der Store den alten Text.
+korrigiert. Die Datenschutz-Formulare beider Stores sind **nachgezogen am
+17.11.2026** (Josef, Schritt für Schritt): Apple Nutzer-ID → App-Funktionalität, kein
+Tracking; Google Geräte- oder andere IDs → App-Funktionen und Werbung. Im Repo
+`almaz6380.github.io` nach jeder Änderung `npm run erzeugen`, sonst zeigt der Store den
+alten Text (ob das für den Stand vom 04.10. gelaufen ist, war von hier nicht prüfbar).
 
 **Versionshinweise 1.1.0** (mit dem neuen Design, 08.11.2026):
 - DE: „Neues Design: 3D-Gläser, kräftigere Farben und ein neuer Startbildschirm.

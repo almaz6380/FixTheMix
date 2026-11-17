@@ -240,7 +240,8 @@ Daraus für die Formulare:
   **und** App-Funktionalität (die RevenueCat-Kennung, bei jedem Start übertragen);
   „App-Aktivität → In-App-Käufe" → erhoben.
 - **Apple:** zusätzlich „Kennungen → Nutzer-ID" (die RevenueCat-Kennung), Zweck
-  App-Funktionalität, nicht zum Tracking. In beiden Konsolen von Hand nachziehen. Verschlüsselung bei der Übertragung:
+  App-Funktionalität, nicht zum Tracking. In beiden Konsolen von Hand nachziehen —
+  **erledigt am 17.11.2026**. Verschlüsselung bei der Übertragung:
   ja. Löschanfrage möglich: ja, über die Adresse oben.
 
 **Sobald die Bestenliste live ist**, kommt dazu: die Kennung und das Tagesergebnis

@@ -28,13 +28,17 @@ import requests
 BUNDLE = 'at.gallab.fixthemix'
 API = 'https://api.appstoreconnect.apple.com'
 
-# Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.1").
+# Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.2").
 NEU = {
-    'de': 'Echteres Umleeren: Das Glas fährt zum Zielglas, kippt und gießt sichtbar hinüber '
-          '— mit echtem Gießgeräusch. Kleine Verbesserungen.',
-    'en': 'More realistic pouring: the glass moves over the target, tilts and pours — with a '
-          'real pouring sound. Small improvements.',
+    'de': 'Flüssigeres Umleeren: schneller, ohne Ruckeln, auch wenn du zügig spielst — '
+          'mit echtem Gießgeräusch.',
+    'en': 'Smoother pouring: faster and without stutter, even when you play quickly — with '
+          'a real pouring sound.',
 }
+
+BEARBEITBAR = ('PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED',
+               'METADATA_REJECTED', 'INVALID_BINARY')
+WARTET = ('WAITING_FOR_REVIEW', 'READY_FOR_REVIEW')
 
 KEY = base64.b64decode(''.join(os.environ['ASC_KEY_P8_BASE64'].split())).decode()
 
@@ -67,6 +71,8 @@ def main():
     a.add_argument('--nur-vorbereiten', action='store_true',
                    help='alles bis auf das eigentliche Einreichen')
     a.add_argument('--warten-min', type=int, default=45)
+    a.add_argument('--ersetzen', action='store_true',
+                   help='eine noch wartende aeltere Version zurueckziehen und durch diese ersetzen')
     arg = a.parse_args()
 
     # 1. App
@@ -103,6 +109,45 @@ def main():
     for v in versionen:
         print(f'  vorhanden: {v["attributes"]["versionString"]} — {v["attributes"]["appStoreState"]}')
     v = next((x for x in versionen if x['attributes']['versionString'] == arg.version), None)
+
+    # ERSETZEN (17.11.2026, Josef: „mach ganz fertig"). Apple laesst nur EINE
+    # offene Version zu. Wartet eine aeltere noch auf die Pruefung, wird ihre
+    # Pruefung abgebrochen und dieselbe Version auf die neue Nummer umbenannt —
+    # die Store-Bilder haengen schon daran. Was Apple GERADE prueft (IN_REVIEW),
+    # wird nicht angefasst.
+    if v is None and arg.ersetzen:
+        andere = [x for x in versionen if x['attributes']['versionString'] != arg.version]
+        if any(x['attributes']['appStoreState'] == 'IN_REVIEW' for x in andere):
+            print('Apple prueft gerade eine andere Version (IN_REVIEW) — nicht abgebrochen. '
+                  'Nach deren Freigabe erneut starten.')
+            return
+        alt = next((x for x in andere if x['attributes']['appStoreState'] in WARTET), None)
+        if alt is not None:
+            subs = call('GET', '/v1/reviewSubmissions', params={
+                'filter[app]': app, 'filter[platform]': 'IOS',
+                'filter[state]': 'WAITING_FOR_REVIEW,READY_FOR_REVIEW,UNRESOLVED_ISSUES'})['data']
+            for sub in subs:
+                call('PATCH', f'/v1/reviewSubmissions/{sub["id"]}', {'data': {
+                    'type': 'reviewSubmissions', 'id': sub['id'], 'attributes': {'canceled': True}}})
+                print(f'Pruefung {sub["id"]} abgebrochen.')
+            # Bis die Version wieder bearbeitbar ist, vergeht ein Moment.
+            for _ in range(30):
+                zust = call('GET', f'/v1/appStoreVersions/{alt["id"]}')['data']['attributes']['appStoreState']
+                print(f'  {alt["attributes"]["versionString"]}: {zust}')
+                if zust in BEARBEITBAR:
+                    break
+                time.sleep(10)
+            else:
+                raise SystemExit('Die alte Version wurde nicht wieder bearbeitbar.')
+        versionen = call('GET', f'/v1/apps/{app}/appStoreVersions',
+                         params={'filter[platform]': 'IOS', 'limit': 50})['data']
+        offen = next((x for x in versionen if x['attributes']['appStoreState'] in BEARBEITBAR), None)
+        if offen is not None:
+            print(f'Version {offen["attributes"]["versionString"]} wird zu {arg.version}.')
+            v = call('PATCH', f'/v1/appStoreVersions/{offen["id"]}', {'data': {
+                'type': 'appStoreVersions', 'id': offen['id'],
+                'attributes': {'versionString': arg.version}}})['data']
+
     if v is None:
         v = call('POST', '/v1/appStoreVersions', {'data': {
             'type': 'appStoreVersions',

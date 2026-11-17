@@ -16,6 +16,10 @@ on:
         description: 'Wirklich zur Pruefung einreichen? (aus = nur Version, Build und Neuerungen vorbereiten)'
         type: boolean
         default: true
+      ersetzen:
+        description: 'Eine noch wartende aeltere Version zurueckziehen und durch diese ersetzen?'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,4 +51,5 @@ jobs:
         run: |
           FLAG=""
           if [ "${{ inputs.einreichen }}" != "true" ]; then FLAG="--nur-vorbereiten"; fi
+          if [ "${{ inputs.ersetzen }}" = "true" ]; then FLAG="$FLAG --ersetzen"; fi
           python3 scripts/asc-einreichen.py --version "$VN" --build "$BN" $FLAG

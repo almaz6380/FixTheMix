@@ -131,12 +131,16 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const [, setWerbungGestartet] = useState(false);
   const [partie, setPartie] = useState(() => new Partie(FOLGE[startLevel(ladeFortschritt())]!));
   const [symbole, setSymbole] = useState(() => ladeEinstellung('symbole', false));
-  // Der Giessstrahl. `nr` zaehlt hoch, damit zweimal derselbe Zug auch zweimal
-  // fliesst — ohne das liefe die CSS-Bewegung nur beim ersten Mal.
-  const [guss, setGuss] = useState<Guss | null>(null);
+  // Die laufenden Guesse. Eine LISTE (17.11.2026, Josef: „soll fluessiger
+  // gehen"): vorher gab es nur einen, und wer goss, bevor der vorige fertig
+  // war, liess dessen Glas mitten in der Bewegung zurueckspringen und seinen
+  // Strahl verschwinden. Jetzt laeuft jeder Guss zu Ende und raeumt nach
+  // KIPP_MS nur sich selbst ab. `nr` zaehlt hoch, damit zweimal derselbe Zug
+  // auch zweimal fliesst.
+  const [guesse, setGuesse] = useState<Guss[]>([]);
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
-  const [kippt, setKippt] = useState<number | null>(null);
-  const kippUhr = useRef<number | undefined>(undefined);
+  const gussNr = useRef(0);
+  const gussUhren = useRef(new Map<number, number>());
 
   /**
    * Raeumt weg, was auf das ALTE Brett zeigt: den Strahl und das gekippte
@@ -147,10 +151,16 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
    * Rueckkauf raeumte ihn weg, der normale Undo-Knopf nicht.
    */
   const raeumeGuss = () => {
-    setGuss(null);
-    window.clearTimeout(kippUhr.current);
-    setKippt(null);
+    for (const uhr of gussUhren.current.values()) window.clearTimeout(uhr);
+    gussUhren.current.clear();
+    setGuesse([]);
   };
+  // Beim Verlassen des Bildschirms keine Zeitgeber zuruecklassen, die in
+  // einen ausgehaengten Zustand schreiben.
+  useEffect(() => {
+    const uhren = gussUhren.current;
+    return () => { for (const uhr of uhren.values()) window.clearTimeout(uhr); };
+  }, []);
   const [tippZiel, setTippZiel] = useState<number | null>(null);
   const [rechnet, setRechnet] = useState(false);
   const [muenzen, setMuenzen] = useState(() => ladeMuenzen());
@@ -369,15 +379,28 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
       klangGuss(e.menge, {
         vorher: stand.fuell[b]! - e.menge, nachher: stand.fuell[b]!, hoehe: stand.hoehe,
       }, (KIPP_MS * GUSS_ANKUNFT) / 1000);
-      setKippt(quelle);
-      // Der Zeitgeber wird ERSETZT, nicht gestapelt. Zwei Guesse kurz
-      // hintereinander liessen sonst den ersten Zeitgeber das zweite Glas
-      // aufrichten, mitten im Zug — sichtbar als Zucken bei schnellem Spiel.
-      window.clearTimeout(kippUhr.current);
-      kippUhr.current = window.setTimeout(() => setKippt(null), KIPP_MS);
-      // Der Strahl wird HIER angestossen, nach dem Zug: gezeichnet wird er
-      // gegen den neuen Stand, und aufhalten darf er nichts.
-      setGuss((alt) => ({ von: quelle, nach: b, farbe: e.farbe, menge: e.menge, nr: (alt?.nr ?? 0) + 1 }));
+      // Der Guss wird HIER angestossen, nach dem Zug: gezeichnet wird er
+      // gegen den neuen Stand, und aufhalten darf er nichts. Jeder Guss hat
+      // seinen eigenen Zeitgeber und nimmt nur sich selbst wieder heraus.
+      // Ein laufender Guss, der eines der beiden Glaeser schon benutzt, endet
+      // sofort — zwei Bewegungen auf einem Glas gingen durcheinander.
+      const nr = ++gussNr.current;
+      const neu: Guss = { von: quelle, nach: b, farbe: e.farbe, menge: e.menge, nr };
+      setGuesse((alt) => [
+        ...alt.filter((g) => {
+          const frei = g.von !== quelle && g.von !== b && g.nach !== quelle && g.nach !== b;
+          if (!frei) {
+            window.clearTimeout(gussUhren.current.get(g.nr));
+            gussUhren.current.delete(g.nr);
+          }
+          return frei;
+        }),
+        neu,
+      ]);
+      gussUhren.current.set(nr, window.setTimeout(() => {
+        gussUhren.current.delete(nr);
+        setGuesse((alt) => alt.filter((g) => g.nr !== nr));
+      }, KIPP_MS));
       setGewaehlt(null);
       neuZeichnen();
       if (partie.isSolved()) {
@@ -654,10 +677,9 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
           darueber ist die Rueckwand. */}
       <div className="flex flex-grow items-end justify-center px-4 pt-2 pb-[96px]">
         <Brett
-          guss={guss}
+          guesse={guesse}
           stand={stand}
           gewaehlt={gewaehlt}
-          kippt={kippt}
           tippZiel={tippZiel}
           symbole={symbole}
           onTap={antippen}
@@ -825,7 +847,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
                   fill={i < sterne ? 'var(--color-zitrus)' : 'none'}
                   stroke={i < sterne ? 'none' : '#2F4A6B'} strokeWidth="2.2" strokeLinejoin="round"
                   style={i < sterne
-                    ? { filter: 'drop-shadow(0 0 14px rgba(255,201,60,0.55))', animationDelay: `${1790 + i * 160}ms` }
+                    ? { filter: 'drop-shadow(0 0 14px rgba(255,201,60,0.55))', animationDelay: `${1440 + i * 160}ms` }
                     : undefined}>
                   <path d="M12 2.4l2.9 6.1 6.6.9-4.8 4.6 1.2 6.6L12 17.5 6.1 20.6l1.2-6.6L2.5 9.4l6.6-.9z" />
                 </svg>
@@ -971,7 +993,7 @@ function Funken() {
           ['--fx' as string]: `${Math.cos(winkel) * weite}px`,
           ['--fy' as string]: `${Math.sin(winkel) * weite * 0.8 - 90}px`,
           ['--dreh' as string]: `${((k * 53) % 360) - 180}deg`,
-          animationDelay: `${1320 + (k % 4) * 40}ms`,
+          animationDelay: `${970 + (k % 4) * 40}ms`,
         }}
       />,
     );

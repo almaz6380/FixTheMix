@@ -18,15 +18,15 @@ export const LAUTSTAERKE = 0.16;
  * Wie lange Saft ins Zielglas laeuft, in Sekunden — so lange klingt der Guss.
  *
  * Haengt an der MENGE: wer vier Schichten auf einmal umschuettet, soll es
- * laenger hoeren als bei einer. Der Deckel von 0,5 s ist das Fenster, in dem
- * der Strahl im Ziel ankommt (46 % bis Ende von KIPP_MS = 900 ms in
+ * laenger hoeren als bei einer. Der Deckel von 0,42 s ist das Fenster, in
+ * dem Saft im Ziel ankommt (40 % bis rund 95 % von KIPP_MS = 750 ms in
  * Brett.tsx); laenger klaenge es nach, wenn laengst nichts mehr fliesst.
- * Acht Schichten (Experten-Level) liegen knapp darunter, damit auch sieben
- * und acht verschieden lang klingen — `test-klang.mts` prueft genau das.
+ * Erst acht Schichten (Experten-Level) erreichen ihn, damit auch sieben und
+ * acht verschieden lang klingen — `test-klang.mts` prueft genau das.
  */
 export function gussDauer(menge: number): number {
   const m = Math.max(1, Math.min(8, Math.round(menge)));
-  return Math.min(0.5, 0.2 + m * 0.037);
+  return Math.min(0.42, 0.18 + m * 0.03);
 }
 
 /**

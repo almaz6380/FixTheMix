@@ -323,6 +323,10 @@ body {
 .glas-giesst {
   position: relative;
   z-index: 3;
+  /* Das gewaehlte Glas stand 14 px hoch (`.glas-gewaehlt`). Es bleibt dort,
+     solange es giesst, und setzt sich erst danach federnd ab — vorher sackte
+     es beim Losfahren erst ab und hob dann wieder an (17.11.2026). */
+  transform: translateY(-14px);
 }
 
 /* Der Giesszug als EINE Bewegung ueber die ganze Gussdauer (13.11.2026):
@@ -332,18 +336,25 @@ body {
 .glas-kippt {
   /* Eigene Ebene, solange es kippt — sonst ruckelt es auf billigen Androids. */
   will-change: transform;
-  animation: glas-kippen var(--guss-ms, 1100ms);
+  animation: glas-kippen var(--guss-ms, 750ms);
 }
 
+/* Drei Abschnitte, EINE Bewegung (17.11.2026, Josef: „soll schneller und
+   fluessiger gehen"): die Hinfahrt rollt aus statt hart zu bremsen, das
+   Nachkippen beim Giessen ist gleichmaessig, die Rueckfahrt laeuft weich an
+   und weich aus. Mit der Standardkurve bremste jeder Abschnitt auf null —
+   das war Stop-and-go. */
 @keyframes glas-kippen {
-  30% {
+  0% { animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1); }
+  28% {
     transform: translate(var(--kipp-x, 0px), var(--kipp-y, -54px))
       rotate(calc(var(--kipp-winkel, 65deg) * 0.85));
     animation-timing-function: linear;
   }
-  72% {
+  68% {
     transform: translate(var(--kipp-x, 0px), var(--kipp-y, -54px))
       rotate(var(--kipp-winkel, 65deg));
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 }
 
@@ -361,7 +372,7 @@ body {
 }
 
 .glas-kippt .saft-dreher {
-  animation: saft-gerade var(--guss-ms, 1100ms);
+  animation: saft-gerade var(--guss-ms, 750ms);
 }
 
 .glas-kippt .saft-saeule {
@@ -377,8 +388,9 @@ body {
 }
 
 @keyframes saft-gerade {
-  30% { transform: rotate(calc(var(--kipp-winkel, 65deg) * -0.85)); animation-timing-function: linear; }
-  72% { transform: rotate(calc(var(--kipp-winkel, 65deg) * -1)); }
+  0% { animation-timing-function: cubic-bezier(0.2, 0.8, 0.3, 1); }
+  28% { transform: rotate(calc(var(--kipp-winkel, 65deg) * -0.85)); animation-timing-function: linear; }
+  68% { transform: rotate(calc(var(--kipp-winkel, 65deg) * -1)); animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
 }
 
 .glas-schatten {
@@ -410,13 +422,13 @@ body {
    leuchtet in seiner eigenen Farbe — eines nach dem anderen, als Welle ueber
    die Bar. `--i` setzt `Glas.tsx`.
 
-   Die 1100 ms Vorlauf sind der letzte Guss (`KIPP_MS`): erst muss die
+   Die 750 ms Vorlauf sind der letzte Guss (`KIPP_MS`): erst muss die
    Fluessigkeit angekommen sein, dann jubelt das Glas. Das Siegfenster kommt
    danach (`.sieg-karte`), damit man das geloeste Brett auch SIEHT.
 */
 .glas-fertig {
   animation: glas-jubelt 560ms cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
-  animation-delay: calc(1100ms + var(--i, 0) * 70ms);
+  animation-delay: calc(750ms + var(--i, 0) * 70ms);
 }
 
 @keyframes glas-jubelt {
@@ -431,7 +443,7 @@ body {
   pointer-events: none;
   opacity: 0.32;
   animation: glas-jubel 900ms ease-out backwards;
-  animation-delay: calc(1100ms + var(--i, 0) * 70ms);
+  animation-delay: calc(750ms + var(--i, 0) * 70ms);
 }
 
 @keyframes glas-jubel {
@@ -933,7 +945,7 @@ body {
    es ist nur noch nicht zu sehen.
 */
 .sieg-schleier {
-  animation: sieg-schleier 400ms ease-out 1440ms backwards;
+  animation: sieg-schleier 400ms ease-out 1090ms backwards;
 }
 
 @keyframes sieg-schleier {
@@ -941,7 +953,7 @@ body {
 }
 
 .sieg-karte {
-  animation: sieg-karte 420ms cubic-bezier(0.2, 1.3, 0.4, 1) 1540ms backwards;
+  animation: sieg-karte 420ms cubic-bezier(0.2, 1.3, 0.4, 1) 1190ms backwards;
 }
 
 @keyframes sieg-karte {
@@ -1006,12 +1018,12 @@ body {
 /* EINE Dauer fuer alles: `--guss-ms` setzt Brett.tsx aus KIPP_MS.
    Die Abschnitte (13.11.2026, vorher 540 ms und alles linear — Josef:
    „laeuft nicht schoen fluessig"):
-     0–30 %   das Glas kippt, noch fliesst nichts
-     30–46 %  der Kopf faellt — `ease-in`, er wird schneller wie fallender Saft
-     46–72 %  der Strahl steht und fliesst (Glanzlichter wandern darin)
-     72–86 %  das Glas richtet sich auf, das Ende reisst ab und faellt
+     0–28 %   das Glas faehrt hin und kippt, noch fliesst nichts
+     28–40 %  der Kopf faellt — `ease-in`, er wird schneller wie fallender Saft
+     40–68 %  der Strahl steht und fliesst (Glanzlichter wandern darin)
+     68–84 %  das Glas richtet sich auf, das Ende reisst ab und faellt
               hinterher, wieder `ease-in`; danach faehrt das Glas zurueck
-   30/46/72 % stehen als GUSS_LOS/GUSS_ANKUNFT/GUSS_ABRISS in Brett.tsx; daran
+   28/40/68 % stehen als GUSS_LOS/GUSS_ANKUNFT/GUSS_ABRISS in Brett.tsx; daran
    haengen das Sinken in der Quelle und das Steigen im Ziel. */
 .guss {
   /* Eigene Ebene: der Strahl wird nicht mit dem Brett neu gerastert. */
@@ -1019,7 +1031,7 @@ body {
 }
 
 .guss-maske {
-  animation: guss-fliesst var(--guss-ms, 1100ms) linear forwards;
+  animation: guss-fliesst var(--guss-ms, 750ms) linear forwards;
 }
 
 /* Die Maske hat runde Enden, damit Kopf und Schwanz des Strahls weich sind.
@@ -1028,12 +1040,12 @@ body {
    ausserhalb des Fliessens durchsichtig. */
 @keyframes guss-fliesst {
   0%   { stroke-dasharray: 0 2; stroke-dashoffset: 0; stroke-opacity: 0; }
-  30%  { stroke-dasharray: 0 2; stroke-dashoffset: 0; stroke-opacity: 0; animation-timing-function: cubic-bezier(0.3, 0.1, 0.65, 0.9); }
-  31%  { stroke-opacity: 1; }
-  46%  { stroke-dasharray: 1 2; stroke-dashoffset: 0; }
-  72%  { stroke-dasharray: 1 2; stroke-dashoffset: 0; animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0.7); }
-  86%  { stroke-dasharray: 1 2; stroke-dashoffset: -1; stroke-opacity: 1; }
-  87%, 100% { stroke-dasharray: 1 2; stroke-dashoffset: -1; stroke-opacity: 0; }
+  28%  { stroke-dasharray: 0 2; stroke-dashoffset: 0; stroke-opacity: 0; animation-timing-function: cubic-bezier(0.3, 0.1, 0.65, 0.9); }
+  29%  { stroke-opacity: 1; }
+  40%  { stroke-dasharray: 1 2; stroke-dashoffset: 0; }
+  68%  { stroke-dasharray: 1 2; stroke-dashoffset: 0; animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0.7); }
+  84%  { stroke-dasharray: 1 2; stroke-dashoffset: -1; stroke-opacity: 1; }
+  85%, 100% { stroke-dasharray: 1 2; stroke-dashoffset: -1; stroke-opacity: 0; }
 }
 
 /* Glanzlichter, die IM Strahl nach unten wandern — ohne sie ist er ein
@@ -1063,15 +1075,15 @@ body {
   transform-box: fill-box;
   transform-origin: center;
   opacity: 0;
-  animation: guss-platscht var(--guss-ms, 1100ms) ease-out forwards;
+  animation: guss-platscht var(--guss-ms, 750ms) ease-out forwards;
 }
 
 @keyframes guss-platscht {
-  0%, 44% { opacity: 0; transform: scale(0.3); }
-  52%     { opacity: 0.7; transform: scale(1.1); }
-  60%     { opacity: 0.5; transform: scale(0.9); }
-  68%     { opacity: 0.6; transform: scale(1.05); }
-  78%     { opacity: 0.45; transform: scale(0.95); }
+  0%, 38% { opacity: 0; transform: scale(0.3); }
+  46%     { opacity: 0.7; transform: scale(1.1); }
+  54%     { opacity: 0.5; transform: scale(0.9); }
+  62%     { opacity: 0.6; transform: scale(1.05); }
+  74%     { opacity: 0.45; transform: scale(0.95); }
   100%    { opacity: 0; transform: scale(1.8); }
 }
 
@@ -1079,15 +1091,15 @@ body {
    zurueckfallen. Richtung und Hoehe (`--dx`/`--dy`) setzt Brett.tsx. */
 .guss-tropfen {
   opacity: 0;
-  animation: guss-tropft var(--guss-ms, 1100ms) linear forwards;
+  animation: guss-tropft var(--guss-ms, 750ms) linear forwards;
 }
 
 @keyframes guss-tropft {
-  0%, 46% { opacity: 0; transform: translate(0, 0) scale(0.6); }
-  50%     { opacity: 1; animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
-  60%     { transform: translate(calc(var(--dx) * 0.7), var(--dy)) scale(1); animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.5); }
-  72%     { opacity: 0.9; transform: translate(var(--dx), 0) scale(0.8); }
-  76%, 100% { opacity: 0; transform: translate(var(--dx), 0) scale(0.6); }
+  0%, 40% { opacity: 0; transform: translate(0, 0) scale(0.6); }
+  44%     { opacity: 1; animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  56%     { transform: translate(calc(var(--dx) * 0.7), var(--dy)) scale(1); animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.5); }
+  70%     { opacity: 0.9; transform: translate(var(--dx), 0) scale(0.8); }
+  74%, 100% { opacity: 0; transform: translate(var(--dx), 0) scale(0.6); }
 }
 
 /* Das Zielglas fuellt sich. DAS ist der Unterschied zwischen einem Strahl,

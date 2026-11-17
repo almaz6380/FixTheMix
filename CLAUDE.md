@@ -92,6 +92,22 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
+### Version 1.1.2 — flüssigeres Umleeren (17.11.2026)
+
+iOS 1.1.2 (Build 4), Android 1.1.2 (vc4). Josef: „das Umleeren soll schneller gehen
+… flüssiger" und danach „Ja mach ganz fertig". 750 ms statt 1100, mehrere Güsse
+gleichzeitig, weiche Kurven (Einzelheiten unter „Gießstrahl und Bar-Geräusche").
+Eine noch wartende iOS 1.1.1 wird ersetzt: `ios-einreichen.yml` hat dafür die Eingabe
+`ersetzen` (`--ersetzen` in `scripts/asc-einreichen.py`). Sie bricht die wartende
+Prüfung ab und benennt die Version um. Was Apple gerade prüft (`IN_REVIEW`), wird nicht
+angefasst.
+
+**Versionshinweise 1.1.2** (als `NEU` in `scripts/asc-einreichen.py`):
+- DE: „Flüssigeres Umleeren: schneller, ohne Ruckeln, auch wenn du zügig spielst —
+  mit echtem Gießgeräusch."
+- EN: „Smoother pouring: faster and without stutter, even when you play quickly —
+  with a real pouring sound."
+
 ### Version 1.1.1 — echtes Umleeren (13.11.2026)
 
 iOS 1.1.1 (Build 3), Android 1.1.1 (vc3). Josef: „Ja mach ganz fertig".
@@ -1287,6 +1303,22 @@ etwas von einem Glas ins andere leert. Außerdem ist der Ton richtig schlecht.")
   Die Siegbewegungen starten deshalb 540 ms später als vorher.
 - **Der Ton ist eine echte Aufnahme** (siehe „Die Geräusche"). Er setzt erst ein,
   wenn der Strahl ankommt (`GUSS_ANKUNFT`).
+
+**Schneller und flüssiger, am 17.11.2026** (Josef: „das Umleeren soll schneller gehen.
+Also generell von einem Glas zum anderen soll flüssiger gehen."):
+- `KIPP_MS` **750 ms** statt 1100. Abschnitte: 0–28 % hinfahren und ankippen, 28–68 %
+  gießen, 68–100 % zurück (`GUSS_LOS` 0,28, `GUSS_ANKUNFT` 0,40, `GUSS_ABRISS` 0,68).
+- **Mehrere Güsse gleichzeitig.** `App.tsx` führt eine Liste `guesse`, jeder Guss hat
+  einen eigenen Zeitgeber und nimmt nach `KIPP_MS` nur sich selbst heraus; `Brett.tsx`
+  misst und zeichnet je Guss einen Strahl. Vorher gab es nur einen: wer goss, bevor der
+  vorige fertig war, ließ dessen Glas mitten in der Bewegung zurückspringen und den
+  Strahl verschwinden. Berührt ein neuer Guss ein Glas, das schon in einem laufenden
+  steckt, endet der alte sofort.
+- **Eine Bewegung statt Stop-and-go:** Hinfahrt rollt aus (`cubic-bezier(0.2, 0.8, 0.3,
+  1)`), Nachkippen linear, Rückfahrt weich (`cubic-bezier(0.4, 0, 0.2, 1)`).
+- **Kein Absacken mehr:** `.glas-giesst` hält den Knopf auf −14 px wie
+  `.glas-gewaehlt`; das Glas setzt sich erst nach dem Guss federnd ab.
+- Siegbewegungen entsprechend 350 ms früher, `gussDauer` höchstens 0,42 s.
 
 **Das Gießen ist seit dem 13.11.2026 eine echte Aufnahme** — die einzige Tondatei im
 Spiel: `src/assets/ton/giessen.m4a` (7 KB, AAC mono). Josef hat den berechneten Klang

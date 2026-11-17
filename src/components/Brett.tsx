@@ -67,16 +67,17 @@ const KIPP_DREHARM = 0.72;
  *
  * Bis zum 13.11.2026 waren es 540 ms, und der Strahl war davon nur rund
  * 290 ms zu sehen — Josef: „laeuft nicht schoen fluessig". Das las sich als
- * Aufblitzen, nicht als Giessen. Jetzt fliesst er gut eine halbe Sekunde, und seit das Glas
- * zum Ziel hinfaehrt (13.11.2026), dauert der ganze Zug 1,1 s.
+ * Aufblitzen, nicht als Giessen. Seit das Glas zum Ziel hinfaehrt (13.11.2026), dauerte der
+ * ganze Zug 1,1 s — Josef am 17.11.: „soll schneller gehen". Jetzt 750 ms,
+ * und schnelles Spiel bricht keinen Guss mehr ab (`guesse` in App.tsx).
  */
-export const KIPP_MS = 1100;
-/** Anteil von KIPP_MS, an dem der Saft den Rand der Quelle verlaesst (30 % in `guss-fliesst`). */
-export const GUSS_LOS = 0.3;
-/** Anteil von KIPP_MS, an dem der Kopf des Strahls im Zielglas ankommt (46 % in `guss-fliesst`). */
-export const GUSS_ANKUNFT = 0.46;
-/** Anteil von KIPP_MS, an dem das Ende des Strahls abreisst (72 % in `guss-fliesst`). */
-export const GUSS_ABRISS = 0.72;
+export const KIPP_MS = 750;
+/** Anteil von KIPP_MS, an dem der Saft den Rand der Quelle verlaesst (28 % in `guss-fliesst`). */
+export const GUSS_LOS = 0.28;
+/** Anteil von KIPP_MS, an dem der Kopf des Strahls im Zielglas ankommt (40 % in `guss-fliesst`). */
+export const GUSS_ANKUNFT = 0.4;
+/** Anteil von KIPP_MS, an dem das Ende des Strahls abreisst (68 % in `guss-fliesst`). */
+export const GUSS_ABRISS = 0.68;
 
 /** Ein Guss, der gezeichnet werden soll. `nr` zaehlt hoch und startet die Bewegung neu. */
 export interface Guss {
@@ -91,12 +92,12 @@ export interface Guss {
 interface Eigenschaften {
   stand: Spielstand;
   gewaehlt: number | null;
-  kippt: number | null;
   tippZiel: number | null;
   symbole: boolean;
   onTap: (b: number) => void;
   textGlas: (i: number) => string;
-  guss: Guss | null;
+  /** Die laufenden Guesse — mehrere zugleich, wenn schnell gespielt wird. */
+  guesse: readonly Guss[];
 }
 
 interface Strahl {
@@ -192,7 +193,7 @@ function band(
 }
 
 export default function Brett({
-  stand, gewaehlt, kippt, tippZiel, symbole, onTap, textGlas, guss,
+  stand, gewaehlt, tippZiel, symbole, onTap, textGlas, guesse,
 }: Eigenschaften) {
   // Hoehere Glaeser brauchen mehr Platz nach unten, also lieber breitere
   // Zeilen als viele: bis 5 Glaeser eine Zeile, darueber gleichmaessig teilen.
@@ -212,7 +213,7 @@ export default function Brett({
 
   const rahmen = useRef<HTMLDivElement | null>(null);
   const glasRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [strahl, setStrahl] = useState<Strahl | null>(null);
+  const [strahlen, setStrahlen] = useState<readonly Strahl[]>([]);
 
   // `useLayoutEffect` und nicht `useEffect`: gemessen wird, BEVOR der Browser
   // zeichnet. Sonst blitzt der Strahl einen Bildwechsel lang an der Stelle des
@@ -223,16 +224,12 @@ export default function Brett({
   // das entsteht in App.tsx, wo es die Glaeser gar nicht gibt. Die Alternative
   // waere, ein Ref waehrend des Renderns zu lesen, und genau davon raet die
   // CLAUDE.md ab.
-  useLayoutEffect(() => {
-    // Kein Zuruecksetzen auf `null`, wenn gerade nichts fliesst: gezeichnet
-    // wird unten nur, wenn die gemessene Nummer zur aktuellen passt. Das
-    // spart nicht nur einen Zustandswechsel, es verhindert auch, dass fuer
-    // ein Bild lang der Strahl des VORIGEN Zuges ueber dem neuen Brett steht.
-    if (!guss) return;
+  /** Misst einen Guss aus und setzt die Kippstellung an seiner Quelle. */
+  function miss(guss: Guss): Strahl | null {
     const kasten = rahmen.current?.getBoundingClientRect();
     const a = glasRefs.current[guss.von]?.getBoundingClientRect();
     const b = glasRefs.current[guss.nach]?.getBoundingClientRect();
-    if (!kasten || !a || !b) return;
+    if (!kasten || !a || !b) return null;
 
     // Der Kippzug. Wohin das Glas sich neigt, kann nur hier entschieden
     // werden: `Glas` kennt seine eigene Lage nicht, und das Raster haengt an
@@ -349,7 +346,7 @@ export default function Brett({
     const halb = wOben / 2;
 
     const f = farbeVon(guss.farbe);
-    setStrahl({
+    return {
       flaeche: b1.d,
       mitte: `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`,
       maskeBreit: wOben + 8,
@@ -371,8 +368,33 @@ export default function Brett({
       hell: f.hell,
       glanz: heller(f.hell, 0.62),
       nr: guss.nr,
-    });
-  }, [guss]);
+    };
+  }
+
+  useLayoutEffect(() => {
+    // Gemessen wird nur, was neu ist: ein laufender Guss behaelt seinen
+    // Strahl, auch wenn daneben schon der naechste beginnt. Was nicht mehr in
+    // der Liste steht, faellt heraus.
+    const neue = guesse.filter((g) => !strahlen.some((st) => st.nr === g.nr));
+    const bleibt = strahlen.filter((st) => guesse.some((g) => g.nr === st.nr));
+    if (neue.length === 0 && bleibt.length === strahlen.length) return;
+    const gemessen = neue.map(miss).filter((st): st is Strahl => st !== null);
+    setStrahlen([...bleibt, ...gemessen]);
+    // `strahlen` gehoert bewusst nicht hierher: der Effekt soll nur laufen,
+    // wenn sich die Guesse aendern, und liest den Stand von eben.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guesse]);
+
+
+  // Was ein Glas gerade tut: es wird befuellt, oder es giesst aus.
+  const fuelltLeert = (b: number) => {
+    const rein = guesse.find((g) => g.nach === b);
+    const raus = guesse.find((g) => g.von === b);
+    return {
+      ...(rein ? { fuellt: { menge: rein.menge, nr: rein.nr } } : {}),
+      ...(raus ? { leert: { farbe: raus.farbe, menge: raus.menge, nr: raus.nr } } : {}),
+    };
+  };
 
   // Die Glaeser werden reihenweise ausgegeben, damit jede Reihe eine eigene
   // Leiste bekommt, auf der sie steht. Jede Reihe traegt dasselbe
@@ -392,18 +414,13 @@ export default function Brett({
           stand={stand}
           glas={b}
           gewaehlt={gewaehlt === b}
-          kippt={kippt === b}
+          kippt={guesse.some((g) => g.von === b)}
           tipp={tippZiel === b}
           symbole={symbole}
           onTap={() => onTap(b)}
           beschriftung={textGlas(b)}
           innerRef={(el) => { glasRefs.current[i] = el; }}
-          {...(guss && guss.nach === b
-            ? { fuellt: { menge: guss.menge, nr: guss.nr } }
-            : {})}
-          {...(guss && guss.von === b && kippt === b
-            ? { leert: { farbe: guss.farbe, menge: guss.menge, nr: guss.nr } }
-            : {})}
+          {...fuelltLeert(b)}
           {...(voll ? { fertig: { index: b } } : {})}
         />,
       );
@@ -434,7 +451,7 @@ export default function Brett({
         {zeilen}
       </div>
 
-      {guss && strahl && strahl.nr === guss.nr && (
+      {strahlen.map((strahl) => (
         // `key` erzwingt ein neues Element je Guss — eine CSS-Bewegung laeuft
         // sonst nicht noch einmal los, wenn zweimal dasselbe gegossen wird.
         <svg
@@ -544,7 +561,7 @@ export default function Brett({
             />
           ))}
         </svg>
-      )}
+      ))}
     </div>
   );
 }

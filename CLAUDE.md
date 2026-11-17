@@ -97,10 +97,13 @@ Code auf seinem Rechner laufen.
 iOS 1.1.2 (Build 4), Android 1.1.2 (vc4). Josef: „das Umleeren soll schneller gehen
 … flüssiger" und danach „Ja mach ganz fertig". 750 ms statt 1100, mehrere Güsse
 gleichzeitig, weiche Kurven (Einzelheiten unter „Gießstrahl und Bar-Geräusche").
-Eine noch wartende iOS 1.1.1 wird ersetzt: `ios-einreichen.yml` hat dafür die Eingabe
-`ersetzen` (`--ersetzen` in `scripts/asc-einreichen.py`). Sie bricht die wartende
-Prüfung ab und benennt die Version um. Was Apple gerade prüft (`IN_REVIEW`), wird nicht
-angefasst.
+**Eingereicht am 17.11.2026:** Android 1.1.2 (vc4) in Produktion, iOS 1.1.2 (Build 4)
+per `ios-einreichen.yml`; beide warten auf die Prüfung. iOS 1.1.1 war da schon im Store
+(`READY_FOR_SALE`), ersetzt werden musste nichts.
+`ios-einreichen.yml` hat seitdem die Eingabe `ersetzen` (`--ersetzen` in
+`scripts/asc-einreichen.py`): Wartet eine ältere Version noch auf die Prüfung, bricht sie
+diese Prüfung ab und benennt die Version um. Was Apple gerade prüft (`IN_REVIEW`), wird
+nicht angefasst.
 
 **Versionshinweise 1.1.2** (als `NEU` in `scripts/asc-einreichen.py`):
 - DE: „Flüssigeres Umleeren: schneller, ohne Ruckeln, auch wenn du zügig spielst —
@@ -111,6 +114,7 @@ angefasst.
 ### Version 1.1.1 — echtes Umleeren (13.11.2026)
 
 iOS 1.1.1 (Build 3), Android 1.1.1 (vc3). Josef: „Ja mach ganz fertig".
+Eingereicht am 13.11.2026, iOS seit dem 17.11.2026 im Store (`READY_FOR_SALE`).
 Das Glas fährt zum Ziel, kippt bis 65°, die Quelle leert sich sichtbar, der Saft bleibt
 waagrecht, der Strahl fällt als Wurfparabel, dazu das echte Gießgeräusch „Ton 2"
 (Einzelheiten unter „Gießstrahl und Bar-Geräusche"). Die neuen Store-Bilder hängen
@@ -124,8 +128,8 @@ schon an der iOS-Version 1.1.1.
 
 ### Version 1.1.0 — knappe Münzen, Videos als Hilfe, Rechtsnachzug (04.10.2026)
 
-Branch `claude/rechtspruefung-fixes`, iOS 1.1.0 (Build 2), Android 1.1.0 (vc2).
-Noch nicht gebaut, nicht eingereicht.
+iOS 1.1.0 (Build 2), Android 1.1.0 (vc2). Gebaut und eingereicht am 08.11.2026 (siehe
+unten), iOS seit dem 13.11.2026 im Store.
 
 **Die Ökonomie.** In 1.0 finanzierte jedes perfekte Level (25) mehr als einen Tipp
 (15) — die Münzen waren wirkungslos, der Tipp wieder eine Lösungsmaschine. Jetzt:
@@ -1717,9 +1721,11 @@ ist das einspeisbare `jetzt` im Löserbudget.
    die vier Rechtstexte stehen, zwanzig Sprachen sind vollständig (seit 02.10.2026). Was fehlt, braucht Konten
    — AdMob-Anzeigenblöcke, RevenueCat-Schlüssel, Store-Produkte — und kommt mit Phase 6.
 6. **Stores:** **EINGEREICHT (03.10.2026)**, iOS und Android, beide mit dem Kauf
-   „Werbung entfernen“ (2,99 €). Gebaut wird über die Release-Workflows auf Josefs
-   Mac (`laeufer: mac`). Offen ist nur noch die RevenueCat-Validierung der
-   Android-JSON. Die Fallen der ersten Einreichung stehen unter M9.
+   „Werbung entfernen“ (2,99 €). Gebaut wird seit 1.1.0 über die Release-Workflows auf
+   den GitHub-Rechnern (`laeufer: github`, das Repo ist öffentlich); Josefs Mac bleibt
+   als `laeufer: mac` möglich. Die RevenueCat-Android-JSON ist seit dem 06.10.2026
+   gültig. Ablauf und Stand der Versionen unter „Aktueller Stand"; die Fallen der
+   ersten Einreichung stehen unter M9.
 7. **Version 1.1: Duelle.** **FERTIG gegen Bots (26.09.2026).** Gleiches Brett,
    weniger Züge gewinnt, gleich viele sind ein Remis. Der Gegner spielt das Brett
    wirklich durch und passt sich an. Migration und Edge Function für menschliche

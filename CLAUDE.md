@@ -92,6 +92,24 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
+### Für 1.1.3 vorbereitet — Werbung nach der Siegfeier, Münz-Video im Siegfenster (22.11.2026)
+
+Code auf `claude/optimistic-darwin-k01rmb`, **nicht gebaut, Versionen stehen noch auf 1.1.2**.
+- **Das Interstitial kommt nicht mehr im Lösungsmoment.** Bis 1.1.2 lief es beim letzten Guss an
+  und überdeckte Welle, Sterne und Karte. Jetzt zwei Schritte in `src/lib/werbung.ts`:
+  `levelBeendet()` beim Lösen (zählt, fragt die Bremse, **lädt vor**) und
+  `zeigeFaelligesInterstitial()` beim Verlassen des Siegfensters. In `App.tsx` läuft jeder Ausgang
+  (Weiter, Nochmal, Levelwahl, Zur Folge, Duell nochmal) über `nachAnzeige()`. Lädt die Anzeige
+  nicht binnen 2,5 s, geht es ohne weiter, und die Bremse läuft nicht an.
+  `vielleichtInterstitial()` gibt es nicht mehr.
+- **„30 Münzen · Video" steht jetzt auch im Siegfenster** (`muenzVideo` in `App.tsx`), mit demselben
+  Tagesdeckel wie in den Einstellungen (3 je Ortstag, `videoKontingent`). Kein neuer Text
+  (`spiel.muenzenVideo`). Nicht im Duell.
+- **Nach jedem freiwilligen Video** entfällt die fällige Anzeige, und die Bremse läuft neu an
+  (`videoGesehen()`).
+- `tools/test-werbung.mts` prüft, dass im Lösungsmoment nur gezählt wird (55 Zusicherungen).
+  ⚠ Am Gerät ungetestet.
+
 ### Version 1.1.2 — flüssigeres Umleeren (17.11.2026)
 
 iOS 1.1.2 (Build 4), Android 1.1.2 (vc4). Josef: „das Umleeren soll schneller gehen
@@ -173,7 +191,7 @@ stand nach einem Kauf beim nächsten Öffnen wieder der Kaufknopf da.
 **Bewertung** (`src/lib/bewertung.ts`, `@capacitor-community/in-app-review` 8.0.0,
 per `npx cap sync` sauber in Package.swift und Gradle eingetragen): ab dem 10.
 gelösten Level, höchstens alle 90 Tage, nie im selben Moment wie ein Interstitial
-(`vielleichtInterstitial()` meldet jetzt zurück, ob eine Anzeige lief), nie im
+(`levelBeendet()` meldet, ob zu diesem Sieg eine Anzeige fällig ist), nie im
 Browser, ohne Belohnung. Regel als reine Funktion in `test-werbung.mts` geprüft.
 ⚠ Am Gerät ungetestet.
 

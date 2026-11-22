@@ -11,14 +11,15 @@
 // Aufruf: npx tsx tools/test-werbung.mts
 // Schneller: node tools/test-werbung.mts
 import { generate } from '../src/engine/generator.ts';
+import { readFileSync } from 'node:fs';
 import { solve } from '../src/engine/loeser.ts';
 import { Partie } from '../src/engine/verlauf.ts';
 import { replay } from '../src/engine/wiedergabe.ts';
 import { legaleZuege } from '../src/engine/zuege.ts';
 import { istGeloest, mitExtraGlas, pruefeInvariante, schluessel, standAusLevel } from '../src/engine/zustand.ts';
 import {
-  JEDES_NTE_LEVEL, MINDESTABSTAND_MS, belohnungMoeglich, darfInterstitial, setzeWerbefrei,
-  zeigeBelohnungsVideo,
+  JEDES_NTE_LEVEL, MINDESTABSTAND_MS, belohnungMoeglich, bremsStand, darfInterstitial, levelBeendet,
+  setzeWerbefrei, videoGesehen, zeigeBelohnungsVideo, zeigeFaelligesInterstitial,
 } from '../src/lib/werbung.ts';
 import { ABSTAND_MS, AB_LEVEL, darfBewertungFragen } from '../src/lib/bewertung.ts';
 
@@ -203,6 +204,24 @@ console.log('\n--- Die Bitte um eine Bewertung ---');
   ok(darfBewertungFragen({ geloest: 50, zuletzt: jetzt - ABSTAND_MS }, jetzt, false),
      'nach 90 Tagen wieder');
   ok(ABSTAND_MS === 90 * 24 * 3600 * 1000, 'der Abstand sind genau 90 Tage');
+}
+
+console.log('\n--- Anzeige erst beim Weitertippen (seit 1.1.3) ---');
+{
+  // Ohne Plugin (node, Browser) ist nie eine Anzeige faellig — aber der
+  // Zaehler laeuft mit, und der Knopf „Weiter" bleibt nie haengen.
+  const vorher = bremsStand().zaehler;
+  ok(levelBeendet() === false, 'ohne Plugin wird beim Sieg keine Anzeige faellig');
+  ok(bremsStand().zaehler === vorher + 1, 'der Levelzaehler laeuft trotzdem mit');
+  ok((await zeigeFaelligesInterstitial()) === false, 'beim Weitertippen kommt nichts, und der Aufruf loest auf');
+  const quelle = readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
+  const sieg = quelle.slice(quelle.indexOf('if (partie.isSolved()) {'), quelle.indexOf('        pruefeSackgasse();\n      }'));
+  ok(sieg.includes('levelBeendet()') && !sieg.includes('zeigeFaelligesInterstitial'),
+     'im Loesungsmoment wird nur gezaehlt und vorgeladen, nie gezeigt');
+  ok((quelle.match(/nachAnzeige\(/g) ?? []).length >= 5,
+     'jeder Ausgang aus dem Siegfenster laeuft ueber nachAnzeige');
+  videoGesehen();
+  ok(bremsStand().zuletzt > 0, 'nach einem freiwilligen Video laeuft die Bremse neu an');
 }
 
 console.log(fehler === 0 ? '\nAlles gruen.' : `\n${fehler} Fehler.`);

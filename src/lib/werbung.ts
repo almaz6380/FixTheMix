@@ -247,21 +247,72 @@ export async function aendereEinwilligung(): Promise<void> {
   }
 }
 
+// --- Das Interstitial: beim Sieg vorladen, beim WEITERTIPPEN zeigen ----------
+//
+// Bis 1.1.2 lief die Anzeige im Moment des letzten Gusses an — sie platzte in
+// die Siegfeier (Welle, Sterne, Karte) und ueberdeckte genau das, wofuer man
+// gespielt hat. Seit 1.1.3 sind es zwei Schritte:
+//
+//   1. `levelBeendet()` beim Loesen: zaehlt, fragt die Bremse, und laedt die
+//      Anzeige im Hintergrund VOR. Zu sehen ist nichts.
+//   2. `zeigeFaelligesInterstitial()` beim Verlassen des Siegfensters
+//      („Weiter", „Nochmal", „Levelwahl"): zeigt sie, falls eine faellig ist.
+//
+// Das Vorladen hat einen zweiten Nutzen: die Anzeige steht sofort, statt nach
+// dem Tipp noch Sekunden zu laden und in das naechste Level zu fallen.
+
+/** Ist seit dem letzten Sieg eine Anzeige faellig und noch nicht gezeigt? */
+let faellig = false;
+/** Laeuft bzw. lief das Vorladen? Loest mit „geladen ja/nein" auf. */
+let vorgeladen: Promise<boolean> | null = null;
+/** Laenger wartet der Tipp auf „Weiter" nicht auf eine ladende Anzeige. */
+const LADE_GEDULD_MS = 2500;
+
+function ladeVor(): Promise<boolean> {
+  return AdMob.prepareInterstitial({ adId: ids().interstitial })
+    .then(() => true)
+    .catch((e: unknown) => {
+      console.warn('Interstitial nicht geladen:', e);
+      return false;
+    });
+}
+
 /**
- * Nach einem beendeten Level aufrufen. Entscheidet selbst, ob wirklich eine
- * Anzeige erscheint. Wird auch ohne Werbung aufgerufen, damit der Zaehler
- * mitlaeuft — sonst kaeme nach dem Kauf „Werbung entfernen" und einem spaeteren
- * Widerruf sofort eine Anzeige.
+ * Nach einem geloesten Level aufrufen. Wird auch ohne Werbung aufgerufen, damit
+ * der Zaehler mitlaeuft — sonst kaeme nach dem Kauf „Werbung entfernen" und
+ * einem spaeteren Widerruf sofort eine Anzeige.
  *
- * Gibt zurueck, ob wirklich eine Anzeige lief — die Bitte um eine Bewertung
- * (bewertung.ts) darf nie im selben Moment kommen.
+ * Gibt zurueck, ob eine Anzeige faellig ist — die Bitte um eine Bewertung
+ * (bewertung.ts) darf nie zum selben Sieg kommen.
  */
-export async function vielleichtInterstitial(): Promise<boolean> {
+export function levelBeendet(): boolean {
   bremse.zaehler += 1;
   if (!bereit || werbefrei) return false;
-  if (!darfInterstitial(bremse, Date.now())) return false;
+  if (!faellig && !darfInterstitial(bremse, Date.now())) return false;
+  faellig = true;
+  vorgeladen ??= ladeVor();
+  return true;
+}
+
+/**
+ * Beim Verlassen des Siegfensters aufrufen. Zeigt die faellige Anzeige, wenn
+ * sie geladen ist; sonst geht es ohne weiter. Loest IMMER auf — der Knopf, an
+ * dem das haengt, darf nie stehenbleiben.
+ */
+export async function zeigeFaelligesInterstitial(): Promise<boolean> {
+  if (!faellig) return false;
+  faellig = false;
+  const laden = vorgeladen;
+  vorgeladen = null;
+  if (!bereit || werbefrei || !laden) return false;
   try {
-    await AdMob.prepareInterstitial({ adId: ids().interstitial });
+    const geladen = await Promise.race([
+      laden,
+      new Promise<boolean>((r) => setTimeout(() => r(false), LADE_GEDULD_MS)),
+    ]);
+    // Nicht geladen heisst: keine Anzeige, und die Bremse laeuft NICHT an —
+    // eine Luecke bei Google soll nicht zwei Minuten Sperre kosten.
+    if (!geladen) return false;
     await AdMob.showInterstitial();
     bremse.zuletzt = Date.now();
     return true;
@@ -269,6 +320,16 @@ export async function vielleichtInterstitial(): Promise<boolean> {
     console.warn('Interstitial fehlgeschlagen:', e);
     return false;
   }
+}
+
+/**
+ * Nach einem freiwillig gesehenen Video: die faellige Anzeige entfaellt, und
+ * die Bremse laeuft neu an. Wer gerade 30 Sekunden Werbung gesehen hat, bekommt
+ * nicht beim naechsten Tipp gleich noch eine.
+ */
+export function videoGesehen(): void {
+  faellig = false;
+  bremse.zuletzt = Date.now();
 }
 
 // --- Belohnte Anzeige ---------------------------------------------------------

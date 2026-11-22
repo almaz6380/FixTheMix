@@ -95,6 +95,7 @@ Code auf seinem Rechner laufen.
 ### Version 1.1.3 — Werbung nach der Siegfeier, Münz-Video im Siegfenster (22.11.2026)
 
 iOS 1.1.3 (Build 5), Android 1.1.3 (vc5).
+**Eingereicht am 22.11.2026** (PR #55, GitHub-Rechner): Android vc5 in Produktion (`android-release` 45038784218, committet), iOS Build 5 per `ios-einreichen.yml` eingereicht (Prüfung `e009bdb6-9b83-49ab-8152-7e5bee4b521d`). 1.1.2 war vorher freigegeben.
 - **Anzeige beim Öffnen der App, als Versuch (Josef, 22.11.) — eingebaut, aber AUS**, bis in
   `START_ANZEIGE.prod` (`src/lib/werbung.ts`) zwei echte Anzeigenblöcke vom Typ „App-Start" stehen.
   Regel `darfStartAnzeige()`: nie in der ersten Sitzung, höchstens alle 4 Stunden, nur beim

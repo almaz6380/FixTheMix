@@ -237,7 +237,7 @@ console.log('\n--- Die Anzeige beim Oeffnen der App ---');
   ok((await vielleichtStartAnzeige(() => true)) === false, 'ohne Plugin kommt nichts, und der Aufruf loest auf');
   const quelle = readFileSync(new URL('../src/lib/werbung.ts', import.meta.url), 'utf8');
   const block = /const START_ANZEIGE = \{([\s\S]*?)\n\};/.exec(quelle)?.[1] ?? '';
-  const prod = /prod: \{ ios: '([^']*)', android: '([^']*)' \}/.exec(block);
+  const prod = /prod: \{\s*ios: '([^']*)',\s*android: '([^']*)',?\s*\}/.exec(block);
   ok(prod !== null && (prod[1] === '') === (prod[2] === ''),
      'die Start-Anzeige ist auf beiden Plattformen an oder auf beiden aus');
   ok(prod !== null && [prod[1], prod[2]].every((id) => id === '' || /^ca-app-pub-8860791993288062\/\d+$/.test(id!)),

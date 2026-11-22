@@ -30,12 +30,10 @@ API = 'https://api.appstoreconnect.apple.com'
 
 # Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.3").
 NEU = {
-    'de': 'Die Werbung zwischen den Leveln kommt jetzt erst, wenn du weitertippst, und '
-          'nicht mehr mitten in die Siegfeier. Neu im Siegfenster: 30 Münzen per Video. '
-          'Kleine Verbesserungen.',
-    'en': 'Ads between levels now appear only when you tap to continue, no longer in the '
-          'middle of the win celebration. New on the win screen: 30 coins for a video. '
-          'Small improvements.',
+    'de': 'Beim Öffnen der App kann jetzt gelegentlich eine Anzeige erscheinen – nie beim '
+          'ersten Start und höchstens alle vier Stunden. Kleine Verbesserungen.',
+    'en': 'An ad may now occasionally appear when you open the app – never on the first '
+          'launch and at most once every four hours. Small improvements.',
 }
 
 BEARBEITBAR = ('PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED',

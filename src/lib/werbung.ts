@@ -79,7 +79,10 @@ const PROD = {
  * bisher nur „zwischen zwei Leveln").
  */
 const START_ANZEIGE = {
-  prod: { ios: '', android: '' },
+  prod: {
+    ios: 'ca-app-pub-8860791993288062/8656430113',
+    android: 'ca-app-pub-8860791993288062/9899947763',
+  },
   // Googles oeffentliche Test-Bloecke fuer App-Start-Anzeigen.
   test: {
     ios: 'ca-app-pub-3940256099942544/5575463023',

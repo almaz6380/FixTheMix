@@ -92,6 +92,40 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
+### Version 1.1.3 — Werbung nach der Siegfeier, Münz-Video im Siegfenster (22.11.2026)
+
+iOS 1.1.3 (Build 5), Android 1.1.3 (vc5).
+- **Anzeige beim Öffnen der App, als Versuch (Josef, 22.11.) — eingebaut, aber AUS**, bis in
+  `START_ANZEIGE.prod` (`src/lib/werbung.ts`) zwei echte Anzeigenblöcke vom Typ „App-Start" stehen.
+  Regel `darfStartAnzeige()`: nie in der ersten Sitzung, höchstens alle 4 Stunden, nur beim
+  Kaltstart und nur, solange der Startbildschirm offen ist (`Start.tsx`), nicht für Käufer von
+  „Werbung entfernen". Eine gezeigte Start-Anzeige lässt die Level-Bremse neu anlaufen.
+  ⚠ Beim Eintragen der IDs die Datenschutzerklärung ergänzen (dort steht nur „zwischen zwei
+  Leveln") und im Repo `almaz6380.github.io` neu erzeugen.
+  Nebenwirkung: Kaufstatus und Werbe-Start laufen jetzt schon am Startbildschirm, der
+  Einwilligungsdialog kommt beim ersten Öffnen also dort und nicht erst im ersten Level.
+
+**Versionshinweise 1.1.3** (als `NEU` in `scripts/asc-einreichen.py`):
+- DE: „Die Werbung zwischen den Leveln kommt jetzt erst, wenn du weitertippst, und nicht mehr
+  mitten in die Siegfeier. Neu im Siegfenster: 30 Münzen per Video. Kleine Verbesserungen."
+- EN: „Ads between levels now appear only when you tap to continue, no longer in the middle of
+  the win celebration. New on the win screen: 30 coins for a video. Small improvements."
+
+- **Das Interstitial kommt nicht mehr im Lösungsmoment.** Bis 1.1.2 lief es beim letzten Guss an
+  und überdeckte Welle, Sterne und Karte. Jetzt zwei Schritte in `src/lib/werbung.ts`:
+  `levelBeendet()` beim Lösen (zählt, fragt die Bremse, **lädt vor**) und
+  `zeigeFaelligesInterstitial()` beim Verlassen des Siegfensters. In `App.tsx` läuft jeder Ausgang
+  (Weiter, Nochmal, Levelwahl, Zur Folge, Duell nochmal) über `nachAnzeige()`. Lädt die Anzeige
+  nicht binnen 2,5 s, geht es ohne weiter, und die Bremse läuft nicht an.
+  `vielleichtInterstitial()` gibt es nicht mehr.
+- **„30 Münzen · Video" steht jetzt auch im Siegfenster** (`muenzVideo` in `App.tsx`), mit demselben
+  Tagesdeckel wie in den Einstellungen (3 je Ortstag, `videoKontingent`). Kein neuer Text
+  (`spiel.muenzenVideo`). Nicht im Duell.
+- **Nach jedem freiwilligen Video** entfällt die fällige Anzeige, und die Bremse läuft neu an
+  (`videoGesehen()`).
+- `tools/test-werbung.mts` prüft, dass im Lösungsmoment nur gezählt wird (55 Zusicherungen).
+  ⚠ Am Gerät ungetestet.
+
 ### Version 1.1.2 — flüssigeres Umleeren (17.11.2026)
 
 iOS 1.1.2 (Build 4), Android 1.1.2 (vc4). Josef: „das Umleeren soll schneller gehen
@@ -173,7 +207,7 @@ stand nach einem Kauf beim nächsten Öffnen wieder der Kaufknopf da.
 **Bewertung** (`src/lib/bewertung.ts`, `@capacitor-community/in-app-review` 8.0.0,
 per `npx cap sync` sauber in Package.swift und Gradle eingetragen): ab dem 10.
 gelösten Level, höchstens alle 90 Tage, nie im selben Moment wie ein Interstitial
-(`vielleichtInterstitial()` meldet jetzt zurück, ob eine Anzeige lief), nie im
+(`levelBeendet()` meldet, ob zu diesem Sieg eine Anzeige fällig ist), nie im
 Browser, ohne Belohnung. Regel als reine Funktion in `test-werbung.mts` geprüft.
 ⚠ Am Gerät ungetestet.
 

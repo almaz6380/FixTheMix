@@ -67,6 +67,31 @@ const PROD = {
   },
 };
 
+/**
+ * Die Anzeige beim Oeffnen der App („App-Start", seit 1.1.3, als Versuch).
+ * Eigene Anzeigenbloecke, getrennt von PROD/TEST, weil `test-release.mts` dort
+ * genau vier Bloecke zaehlt.
+ *
+ * ⚠ LEER HEISST AUS. Solange hier keine echten IDs stehen, laedt und zeigt die
+ * App keine Start-Anzeige. Eintragen: in AdMob je Plattform einen Block vom
+ * Typ „App-Start" anlegen. Und DANN auch die Datenschutzerklaerung ergaenzen
+ * (`legalContent.ts`, Abschnitt „Werbung und deine Einwilligung": dort steht
+ * bisher nur „zwischen zwei Leveln").
+ */
+const START_ANZEIGE = {
+  prod: { ios: '', android: '' },
+  // Googles oeffentliche Test-Bloecke fuer App-Start-Anzeigen.
+  test: {
+    ios: 'ca-app-pub-3940256099942544/5575463023',
+    android: 'ca-app-pub-3940256099942544/9257395921',
+  },
+};
+
+function startAnzeigeId(): string {
+  const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android';
+  return (TEST_ANZEIGEN ? START_ANZEIGE.test : START_ANZEIGE.prod)[platform];
+}
+
 function ids() {
   const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android';
   return (TEST_ANZEIGEN ? TEST : PROD)[platform];
@@ -247,26 +272,175 @@ export async function aendereEinwilligung(): Promise<void> {
   }
 }
 
+// --- Das Interstitial: beim Sieg vorladen, beim WEITERTIPPEN zeigen ----------
+//
+// Bis 1.1.2 lief die Anzeige im Moment des letzten Gusses an — sie platzte in
+// die Siegfeier (Welle, Sterne, Karte) und ueberdeckte genau das, wofuer man
+// gespielt hat. Seit 1.1.3 sind es zwei Schritte:
+//
+//   1. `levelBeendet()` beim Loesen: zaehlt, fragt die Bremse, und laedt die
+//      Anzeige im Hintergrund VOR. Zu sehen ist nichts.
+//   2. `zeigeFaelligesInterstitial()` beim Verlassen des Siegfensters
+//      („Weiter", „Nochmal", „Levelwahl"): zeigt sie, falls eine faellig ist.
+//
+// Das Vorladen hat einen zweiten Nutzen: die Anzeige steht sofort, statt nach
+// dem Tipp noch Sekunden zu laden und in das naechste Level zu fallen.
+
+/** Ist seit dem letzten Sieg eine Anzeige faellig und noch nicht gezeigt? */
+let faellig = false;
+/** Laeuft bzw. lief das Vorladen? Loest mit „geladen ja/nein" auf. */
+let vorgeladen: Promise<boolean> | null = null;
+/** Laenger wartet der Tipp auf „Weiter" nicht auf eine ladende Anzeige. */
+const LADE_GEDULD_MS = 2500;
+
+function ladeVor(): Promise<boolean> {
+  return AdMob.prepareInterstitial({ adId: ids().interstitial })
+    .then(() => true)
+    .catch((e: unknown) => {
+      console.warn('Interstitial nicht geladen:', e);
+      return false;
+    });
+}
+
 /**
- * Nach einem beendeten Level aufrufen. Entscheidet selbst, ob wirklich eine
- * Anzeige erscheint. Wird auch ohne Werbung aufgerufen, damit der Zaehler
- * mitlaeuft — sonst kaeme nach dem Kauf „Werbung entfernen" und einem spaeteren
- * Widerruf sofort eine Anzeige.
+ * Nach einem geloesten Level aufrufen. Wird auch ohne Werbung aufgerufen, damit
+ * der Zaehler mitlaeuft — sonst kaeme nach dem Kauf „Werbung entfernen" und
+ * einem spaeteren Widerruf sofort eine Anzeige.
  *
- * Gibt zurueck, ob wirklich eine Anzeige lief — die Bitte um eine Bewertung
- * (bewertung.ts) darf nie im selben Moment kommen.
+ * Gibt zurueck, ob eine Anzeige faellig ist — die Bitte um eine Bewertung
+ * (bewertung.ts) darf nie zum selben Sieg kommen.
  */
-export async function vielleichtInterstitial(): Promise<boolean> {
+export function levelBeendet(): boolean {
   bremse.zaehler += 1;
   if (!bereit || werbefrei) return false;
-  if (!darfInterstitial(bremse, Date.now())) return false;
+  if (!faellig && !darfInterstitial(bremse, Date.now())) return false;
+  faellig = true;
+  vorgeladen ??= ladeVor();
+  return true;
+}
+
+/**
+ * Beim Verlassen des Siegfensters aufrufen. Zeigt die faellige Anzeige, wenn
+ * sie geladen ist; sonst geht es ohne weiter. Loest IMMER auf — der Knopf, an
+ * dem das haengt, darf nie stehenbleiben.
+ */
+export async function zeigeFaelligesInterstitial(): Promise<boolean> {
+  if (!faellig) return false;
+  faellig = false;
+  const laden = vorgeladen;
+  vorgeladen = null;
+  if (!bereit || werbefrei || !laden) return false;
   try {
-    await AdMob.prepareInterstitial({ adId: ids().interstitial });
+    const geladen = await Promise.race([
+      laden,
+      new Promise<boolean>((r) => setTimeout(() => r(false), LADE_GEDULD_MS)),
+    ]);
+    // Nicht geladen heisst: keine Anzeige, und die Bremse laeuft NICHT an —
+    // eine Luecke bei Google soll nicht zwei Minuten Sperre kosten.
+    if (!geladen) return false;
     await AdMob.showInterstitial();
     bremse.zuletzt = Date.now();
     return true;
   } catch (e) {
     console.warn('Interstitial fehlgeschlagen:', e);
+    return false;
+  }
+}
+
+/**
+ * Nach einem freiwillig gesehenen Video: die faellige Anzeige entfaellt, und
+ * die Bremse laeuft neu an. Wer gerade 30 Sekunden Werbung gesehen hat, bekommt
+ * nicht beim naechsten Tipp gleich noch eine.
+ */
+export function videoGesehen(): void {
+  faellig = false;
+  bremse.zuletzt = Date.now();
+}
+
+// --- Die Anzeige beim Oeffnen der App ----------------------------------------
+//
+// Ein Versuch (Josef, 22.11.2026), bewusst eng gefasst:
+//   - nur beim Kaltstart und nur, solange der Startbildschirm offen ist —
+//     nie in ein Level hinein („keine Werbung mitten im Level" gilt weiter);
+//   - nie in der allerersten Sitzung: dort kommen schon Einwilligungsdialog
+//     und Tracking-Frage, und wer die App zum ersten Mal oeffnet, soll das
+//     Spiel sehen;
+//   - hoechstens alle vier Stunden;
+//   - nicht fuer Kaeufer von „Werbung entfernen".
+// Eine gezeigte Start-Anzeige laesst die Bremse der Level-Anzeige neu
+// anlaufen — nie zwei Vollbilder kurz hintereinander.
+
+export const START_ABSTAND_MS = 4 * 60 * 60 * 1000;
+const START_SCHLUESSEL = 'fixthemix.startanzeige.v1';
+const START_LADE_GEDULD_MS = 4000;
+
+export interface StartStand {
+  /** Wie oft die App schon geoeffnet wurde, die laufende Sitzung mitgezaehlt. */
+  sitzungen: number;
+  /** Zeitpunkt der letzten Start-Anzeige, 0 wenn noch keine. */
+  zuletzt: number;
+}
+
+/** Die Regel als reine Funktion, pruefbar ohne Plugin (`tools/test-werbung.mts`). */
+export function darfStartAnzeige(stand: StartStand, jetzt: number): boolean {
+  if (stand.sitzungen < 2) return false;
+  if (stand.zuletzt > 0 && jetzt - stand.zuletzt < START_ABSTAND_MS) return false;
+  return true;
+}
+
+function ladeStartStand(): StartStand {
+  try {
+    const roh = JSON.parse(localStorage.getItem(START_SCHLUESSEL) ?? 'null') as Partial<StartStand> | null;
+    return {
+      sitzungen: Number.isFinite(roh?.sitzungen) ? Math.max(0, Math.trunc(roh!.sitzungen!)) : 0,
+      zuletzt: Number.isFinite(roh?.zuletzt) ? Math.max(0, roh!.zuletzt!) : 0,
+    };
+  } catch {
+    return { sitzungen: 0, zuletzt: 0 };
+  }
+}
+
+function speichereStartStand(stand: StartStand): void {
+  try {
+    localStorage.setItem(START_SCHLUESSEL, JSON.stringify(stand));
+  } catch {
+    // Kein Speicher — dann gilt jede Sitzung als die erste, und es kommt nie eine.
+  }
+}
+
+/** Einmal je Sitzung (Lebensdauer des JS-Kontexts). */
+let startAnzeigeVersucht = false;
+
+/**
+ * Beim Kaltstart vom Startbildschirm aus aufrufen, NACH `starteWerbung()`.
+ * `nochAmStart` wird unmittelbar vor dem Zeigen gefragt: wer inzwischen in
+ * ein Level getippt hat, bekommt nichts mehr.
+ */
+export async function vielleichtStartAnzeige(nochAmStart: () => boolean): Promise<boolean> {
+  if (startAnzeigeVersucht) return false;
+  startAnzeigeVersucht = true;
+  if (!nativ) return false;
+
+  const stand = ladeStartStand();
+  stand.sitzungen += 1;
+  speichereStartStand(stand);
+
+  const adId = startAnzeigeId();
+  if (!adId || !bereit || werbefrei) return false;
+  if (!darfStartAnzeige(stand, Date.now())) return false;
+  try {
+    const geladen = await Promise.race([
+      AdMob.loadAppOpen({ adId }).then(() => true),
+      new Promise<boolean>((r) => setTimeout(() => r(false), START_LADE_GEDULD_MS)),
+    ]);
+    if (!geladen || !nochAmStart()) return false;
+    await AdMob.showAppOpen();
+    const jetzt = Date.now();
+    speichereStartStand({ ...stand, zuletzt: jetzt });
+    bremse.zuletzt = jetzt;
+    return true;
+  } catch (e) {
+    console.warn('Start-Anzeige fehlgeschlagen:', e);
     return false;
   }
 }

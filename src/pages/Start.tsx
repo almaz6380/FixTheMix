@@ -13,6 +13,7 @@
 // Fortschritt steht als eine Zeile da und nicht als Tabelle — wer weiterspielen
 // will, soll einen Knopf sehen und nicht eine Bilanz.
 
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { GlasKoerper } from '../components/Glas.tsx';
@@ -25,6 +26,8 @@ import { ladeFortschritt } from '../lib/fortschritt.ts';
 import { ladeMuenzen } from '../lib/muenzen.ts';
 import { heute, ladeTaeglich, serieLaeuft } from '../lib/serie.ts';
 import { ladeBilanz } from '../lib/duell.ts';
+import { werbefreiPruefen } from '../lib/kauf.ts';
+import { starteWerbung, vielleichtStartAnzeige } from '../lib/werbung.ts';
 
 /** Wie in App.tsx: der Tag wird EINMAL beim Laden festgehalten. */
 const HEUTE = heute();
@@ -85,6 +88,24 @@ export default function Start() {
   const taeglich = ladeTaeglich();
   const bilanz = ladeBilanz();
   const muenzen = ladeMuenzen();
+
+  // Die Anzeige beim Oeffnen der App (lib/werbung.ts). Erst der Kaufstatus,
+  // dann die Werbung — wie im Spielbildschirm: wer „Werbung entfernen" gekauft
+  // hat, bekommt weder Einwilligungsdialog noch Anzeige. Im Browser tut das
+  // alles nichts. Gezeigt wird nur, solange dieser Bildschirm noch offen ist,
+  // und nicht in das WellApps-Intro hinein (~3,4 s).
+  useEffect(() => {
+    let offen = true;
+    const beginn = Date.now();
+    void (async () => {
+      if (await werbefreiPruefen()) return;
+      await starteWerbung();
+      const rest = 3800 - (Date.now() - beginn);
+      if (rest > 0) await new Promise((r) => setTimeout(r, rest));
+      await vielleichtStartAnzeige(() => offen && window.location.pathname === '/');
+    })();
+    return () => { offen = false; };
+  }, []);
 
   const gesamtSterne = Object.values(fortschritt.sterne).reduce((a, b) => a + b, 0);
   const angefangen = fortschritt.hoechstes > 0 || gesamtSterne > 0;

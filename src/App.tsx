@@ -31,7 +31,8 @@ import {
   speichereEinstellung, speichereFortschritt,
 } from './lib/fortschritt.ts';
 import {
-  KOSTEN_RUECKKAUF, KOSTEN_TIPP, ladeMuenzen, lohnFuer, reichtFuer, speichereMuenzen,
+  BELOHNUNG_VIDEO, KOSTEN_RUECKKAUF, KOSTEN_TIPP, ladeMuenzen, ladeVideoStand, lohnFuer, reichtFuer,
+  speichereMuenzen, speichereVideoStand, videoKontingent, zaehleVideo,
 } from './lib/muenzen.ts';
 import {
   heute, ladeTaeglich, merkeTag, speichereTaeglich,
@@ -47,7 +48,8 @@ import {
 import { werbefreiPruefen } from './lib/kauf.ts';
 import { vielleichtBewerten } from './lib/bewertung.ts';
 import {
-  belohnungMoeglich, starteWerbung, vielleichtInterstitial, zeigeBelohnungsVideo,
+  belohnungMoeglich, levelBeendet, starteWerbung, videoGesehen, zeigeBelohnungsVideo,
+  zeigeFaelligesInterstitial,
   type VideoErgebnis,
 } from './lib/werbung.ts';
 import roheFolge from './levels/folge.json';
@@ -123,6 +125,8 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
   const [tagLaedt, setTagLaedt] = useState(false);
   const [kopiert, setKopiert] = useState(false);
   const [videoLaeuft, setVideoLaeuft] = useState(false);
+  // Der Tagesdeckel fuer „Video fuer Muenzen" — derselbe wie in den Einstellungen.
+  const [videoStand, setVideoStand] = useState(() => ladeVideoStand());
   // Was nach einem Video ohne Belohnung gesagt wird — abgebrochen oder gar
   // keins da. Ein i18n-Schluessel, kein fertiger Text.
   const [videoHinweis, setVideoHinweis] = useState<string | null>(null);
@@ -423,16 +427,15 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
             return neu;
           });
         }
-        // Die Bremse entscheidet, ob wirklich eine Anzeige kommt: jedes dritte
-        // Level und nie oefter als alle zwei Minuten. Das Tagesraetsel zaehlt
-        // MIT, bekommt aber keine eigene Gelegenheit — nach dem einen Raetsel
-        // am Tag zuverlaessig Werbung waere die unangenehmste Stelle im Spiel.
-        // Danach, und nie im selben Moment wie eine Anzeige, vielleicht die
-        // Bitte um eine Bewertung (lib/bewertung.ts, ab dem zehnten Sieg).
-        void (async () => {
-          const anzeige = imTag ? false : await vielleichtInterstitial();
-          await vielleichtBewerten(anzeige);
-        })();
+        // Die Bremse entscheidet, ob eine Anzeige FAELLIG wird: jedes dritte
+        // Level und nie oefter als alle zwei Minuten. Gezeigt wird sie erst
+        // beim Verlassen des Siegfensters (`nachAnzeige`), nie in die Feier
+        // hinein. Das Tagesraetsel bekommt keine Gelegenheit — nach dem einen
+        // Raetsel am Tag zuverlaessig Werbung waere die unangenehmste Stelle
+        // im Spiel. Zum selben Sieg kommt nie auch die Bitte um eine
+        // Bewertung (lib/bewertung.ts, ab dem zehnten Sieg).
+        const anzeige = imTag ? false : levelBeendet();
+        void vielleichtBewerten(anzeige);
         if (imDuell) {
           duellEnde(partie.zugzahl);
         } else if (imTag) {
@@ -465,6 +468,14 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
     }
   };
 
+  /**
+   * Das Siegfenster verlassen: erst die faellige Anzeige (falls eine da ist),
+   * dann weiter. `zeigeFaelligesInterstitial` loest immer auf.
+   */
+  const nachAnzeige = (dann: () => void) => {
+    void zeigeFaelligesInterstitial().then(dann, dann);
+  };
+
   /** Sagt, warum es keine Belohnung gab. */
   const videoMelden = (e: VideoErgebnis) => {
     setVideoHinweis(e === 'aborted' ? 'spiel.videoNichts' : 'spiel.videoKeins');
@@ -479,9 +490,31 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
         const e = await zeigeBelohnungsVideo();
         setVideoLaeuft(false);
         if (e !== 'earned') { videoMelden(e); return; }
+        videoGesehen();
         belohnung();
       })();
     }, 30);
+  };
+
+  /**
+   * „30 Muenzen · Video" im Siegfenster (seit 1.1.3). Dasselbe Angebot wie in
+   * den Einstellungen, mit DEMSELBEN Tagesdeckel (`videoKontingent`) — nur an
+   * der Stelle, an der man gerade an Muenzen denkt. Vorher fand es kaum jemand.
+   */
+  const muenzVideo = () => {
+    if (videoKontingent(ladeVideoStand(), HEUTE) <= 0) return;
+    mitVideo(() => {
+      // Erst verbuchen, dann gutschreiben: der Deckel zaehlt nur gesehene Videos.
+      const stand = zaehleVideo(ladeVideoStand(), HEUTE);
+      speichereVideoStand(stand);
+      setVideoStand(stand);
+      klangMuenze();
+      setMuenzen(() => {
+        const neu = ladeMuenzen() + BELOHNUNG_VIDEO;
+        speichereMuenzen(neu);
+        return neu;
+      });
+    });
   };
 
   /**
@@ -911,11 +944,19 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
               </p>
             )}
             <div className="mt-6 flex flex-col gap-2.5">
+              {/* Freiwilliges Video fuer Muenzen. Nicht im Duell (dort gibt es
+                  keine Muenzen) und nur, solange der Tagesdeckel reicht. */}
+              {geloest && !imDuell && belohnungMoeglich() && videoKontingent(videoStand, HEUTE) > 0 && (
+                <button type="button" className="knopf" disabled={videoLaeuft} onClick={muenzVideo}
+                  data-muenzvideo>
+                  {t('spiel.muenzenVideo', { n: BELOHNUNG_VIDEO })}
+                </button>
+              )}
               {/* Beim letzten Level fuehrt der Hauptknopf in die Levelwahl.
                   Vorher stand hier ein abgeschalteter Knopf mit der Aufschrift
                   „Ende" — eine Sackgasse als Belohnung. */}
               {imDuell ? (
-                <button type="button" onClick={starteDuell} className="knopf knopf-an">
+                <button type="button" onClick={() => nachAnzeige(starteDuell)} className="knopf knopf-an">
                   {t('spiel.duellNochmal')}
                 </button>
               ) : imTag ? (
@@ -925,7 +966,7 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => (letztes ? navigate('/level') : wechsle(index + 1))}
+                  onClick={() => nachAnzeige(() => (letztes ? navigate('/level') : wechsle(index + 1)))}
                   className="knopf knopf-an"
                 >
                   {letztes ? t('spiel.levelwahl') : t('spiel.weiter')}
@@ -936,16 +977,16 @@ export default function App({ startModus = 'folge' }: Eigenschaften = {}) {
                     Gegner hat seine Zugzahl bereits, ein zweiter Anlauf waere
                     also gegen einen Gegner, der nicht mehr mitspielt. */}
                 {!imDuell && (
-                  <button type="button" className="knopf flex-grow" onClick={neustart}>
+                  <button type="button" className="knopf flex-grow" onClick={() => nachAnzeige(neustart)}>
                     {t('spiel.nochmal')}
                   </button>
                 )}
                 {imTag || imDuell ? (
-                  <button type="button" className="knopf flex-grow" onClick={zurFolge}>
+                  <button type="button" className="knopf flex-grow" onClick={() => nachAnzeige(zurFolge)}>
                     {t('spiel.zurFolge')}
                   </button>
                 ) : !letztes && (
-                  <button type="button" className="knopf flex-grow" onClick={() => navigate('/level')}>
+                  <button type="button" className="knopf flex-grow" onClick={() => nachAnzeige(() => navigate('/level'))}>
                     {t('spiel.levelwahl')}
                   </button>
                 )}

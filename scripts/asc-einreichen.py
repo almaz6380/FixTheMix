@@ -28,12 +28,14 @@ import requests
 BUNDLE = 'at.gallab.fixthemix'
 API = 'https://api.appstoreconnect.apple.com'
 
-# Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.2").
+# Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.3").
 NEU = {
-    'de': 'Flüssigeres Umleeren: schneller, ohne Ruckeln, auch wenn du zügig spielst — '
-          'mit echtem Gießgeräusch.',
-    'en': 'Smoother pouring: faster and without stutter, even when you play quickly — with '
-          'a real pouring sound.',
+    'de': 'Die Werbung zwischen den Leveln kommt jetzt erst, wenn du weitertippst, und '
+          'nicht mehr mitten in die Siegfeier. Neu im Siegfenster: 30 Münzen per Video. '
+          'Kleine Verbesserungen.',
+    'en': 'Ads between levels now appear only when you tap to continue, no longer in the '
+          'middle of the win celebration. New on the win screen: 30 coins for a video. '
+          'Small improvements.',
 }
 
 BEARBEITBAR = ('PREPARE_FOR_SUBMISSION', 'DEVELOPER_REJECTED', 'REJECTED',

@@ -92,6 +92,16 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
+### Version 1.1.4 vorbereitet — Anzeige beim Öffnen EIN (22.11.2026)
+
+iOS 1.1.4 (Build 6), Android 1.1.4 (vc6). **Noch nicht gebaut** (wartet auf Josefs „ja“).
+Josef hat am 22.11. in AdMob zwei Anzeigenblöcke „App-Start“ angelegt; sie stehen in
+`START_ANZEIGE.prod` (`src/lib/werbung.ts`): iOS `…/8656430113`, Android `…/9899947763`.
+Damit ist der Versuch eingeschaltet (Regeln siehe 1.1.3). Datenschutzerklärung DE+EN nennt die
+Anzeige beim Öffnen, `STAND` 22.11.2026.
+⚠ Im Repo `almaz6380.github.io` `npm run erzeugen` laufen lassen, sonst zeigen die Stores den alten Text.
+⚠ iOS 1.1.3 (Build 5) wartet noch auf die Prüfung; für 1.1.4 `ios-einreichen.yml` mit `ersetzen`.
+
 ### Version 1.1.3 — Werbung nach der Siegfeier, Münz-Video im Siegfenster (22.11.2026)
 
 iOS 1.1.3 (Build 5), Android 1.1.3 (vc5).

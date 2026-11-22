@@ -60,7 +60,7 @@ export const BETREIBER = {
 const bDE = `${BETREIBER.name}\n${BETREIBER.adresse}\n${BETREIBER.ort}\nE-Mail: ${BETREIBER.email}`;
 const bEN = `${BETREIBER.name}\n${BETREIBER.adresse}\n${BETREIBER.ort}\nEmail: ${BETREIBER.email}`;
 
-export const STAND = '04.10.2026';
+export const STAND = '22.11.2026';
 
 export interface RechtsAbschnitt {
   titel: string;
@@ -194,7 +194,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             'Lehnst du ab, siehst du weiterhin Werbung, aber ohne Personalisierung. Auf iOS fragen wir zusätzlich über Apples Dialog zur App-Tracking-Transparenz.\n\n' +
             'Rechtsgrundlage für personalisierte Werbung und den dafür nötigen Zugriff auf dein Gerät (Werbe-ID, Speicher) ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO in Verbindung mit § 165 Abs. 3 TKG 2021). Für nicht personalisierte Werbung, mit der wir die kostenlose App finanzieren, stützen wir uns auf unser berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO); auch dafür greift Google nur so weit auf dein Gerät zu, wie es für die Auslieferung und gegen Betrug unbedingt nötig ist.\n\n' +
             'Wie lange Google diese Daten speichert, legt Google fest; Einzelheiten stehen in Googles Datenschutzerklärung unter policies.google.com/privacy und unter policies.google.com/technologies/partner-sites.\n\n' +
-            'Wir zeigen keine Werbung mitten in einem Level. Zwischen zwei Leveln erscheint höchstens eine Anzeige, und auch das nur mit Abstand. Videos gibt es ausschließlich freiwillig — du startest sie selbst, um Münzen, einen Tipp, einen Zug zurück oder ein Extra-Glas zu erhalten. Hast du „Werbung entfernen" gekauft, entfallen die Anzeigen zwischen den Leveln; die freiwilligen Videos bleiben als Angebot bestehen.\n\n' +
+            'Wir zeigen keine Werbung mitten in einem Level. Zwischen zwei Leveln erscheint höchstens eine Anzeige, und auch das nur mit Abstand. Beim Öffnen der App kann eine Anzeige erscheinen — nie beim ersten Start und höchstens alle vier Stunden. Videos gibt es ausschließlich freiwillig — du startest sie selbst, um Münzen, einen Tipp, einen Zug zurück oder ein Extra-Glas zu erhalten. Hast du „Werbung entfernen" gekauft, entfallen die Anzeigen zwischen den Leveln und beim Öffnen; die freiwilligen Videos bleiben als Angebot bestehen.\n\n' +
             'Die Web-App unter fixthemix.almaz6380.workers.dev zeigt keine Werbung.',
         },
         {
@@ -262,7 +262,7 @@ export const rechtsTexte: Record<RechtsSchluessel, { de: RechtsText; en: RechtsT
             'If you decline, you still see advertising, but without personalisation. On iOS we additionally ask via Apple’s App Tracking Transparency dialog.\n\n' +
             'The legal basis for personalised advertising and the access to your device it requires (advertising ID, storage) is your consent (Art. 6(1)(a) GDPR in conjunction with sec. 165(3) of the Austrian Telecommunications Act 2021). For non-personalised advertising, which finances the free app, we rely on our legitimate interest (Art. 6(1)(f) GDPR); here too Google only accesses your device as far as strictly necessary to deliver ads and prevent fraud.\n\n' +
             'How long Google keeps this data is determined by Google; details are in Google’s privacy policy at policies.google.com/privacy and at policies.google.com/technologies/partner-sites.\n\n' +
-            'We show no advertising in the middle of a level. Between two levels there is at most one ad, and only with a gap. Videos are always voluntary — you start them yourself to receive coins, a hint, an undo or an extra glass. If you have bought “Remove ads”, the ads between levels are gone; the voluntary videos remain available as an option.\n\n' +
+            'We show no advertising in the middle of a level. Between two levels there is at most one ad, and only with a gap. An ad may appear when you open the app — never on the first launch and at most once every four hours. Videos are always voluntary — you start them yourself to receive coins, a hint, an undo or an extra glass. If you have bought “Remove ads”, the ads between levels and on opening are gone; the voluntary videos remain available as an option.\n\n' +
             'The web app at fixthemix.almaz6380.workers.dev shows no advertising.',
         },
         {

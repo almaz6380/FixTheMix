@@ -92,9 +92,25 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
-### Für 1.1.3 vorbereitet — Werbung nach der Siegfeier, Münz-Video im Siegfenster (22.11.2026)
+### Version 1.1.3 — Werbung nach der Siegfeier, Münz-Video im Siegfenster (22.11.2026)
 
-Code auf `claude/optimistic-darwin-k01rmb`, **nicht gebaut, Versionen stehen noch auf 1.1.2**.
+iOS 1.1.3 (Build 5), Android 1.1.3 (vc5).
+- **Anzeige beim Öffnen der App, als Versuch (Josef, 22.11.) — eingebaut, aber AUS**, bis in
+  `START_ANZEIGE.prod` (`src/lib/werbung.ts`) zwei echte Anzeigenblöcke vom Typ „App-Start" stehen.
+  Regel `darfStartAnzeige()`: nie in der ersten Sitzung, höchstens alle 4 Stunden, nur beim
+  Kaltstart und nur, solange der Startbildschirm offen ist (`Start.tsx`), nicht für Käufer von
+  „Werbung entfernen". Eine gezeigte Start-Anzeige lässt die Level-Bremse neu anlaufen.
+  ⚠ Beim Eintragen der IDs die Datenschutzerklärung ergänzen (dort steht nur „zwischen zwei
+  Leveln") und im Repo `almaz6380.github.io` neu erzeugen.
+  Nebenwirkung: Kaufstatus und Werbe-Start laufen jetzt schon am Startbildschirm, der
+  Einwilligungsdialog kommt beim ersten Öffnen also dort und nicht erst im ersten Level.
+
+**Versionshinweise 1.1.3** (als `NEU` in `scripts/asc-einreichen.py`):
+- DE: „Die Werbung zwischen den Leveln kommt jetzt erst, wenn du weitertippst, und nicht mehr
+  mitten in die Siegfeier. Neu im Siegfenster: 30 Münzen per Video. Kleine Verbesserungen."
+- EN: „Ads between levels now appear only when you tap to continue, no longer in the middle of
+  the win celebration. New on the win screen: 30 coins for a video. Small improvements."
+
 - **Das Interstitial kommt nicht mehr im Lösungsmoment.** Bis 1.1.2 lief es beim letzten Guss an
   und überdeckte Welle, Sterne und Karte. Jetzt zwei Schritte in `src/lib/werbung.ts`:
   `levelBeendet()` beim Lösen (zählt, fragt die Bremse, **lädt vor**) und

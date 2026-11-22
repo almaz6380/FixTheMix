@@ -67,6 +67,31 @@ const PROD = {
   },
 };
 
+/**
+ * Die Anzeige beim Oeffnen der App („App-Start", seit 1.1.3, als Versuch).
+ * Eigene Anzeigenbloecke, getrennt von PROD/TEST, weil `test-release.mts` dort
+ * genau vier Bloecke zaehlt.
+ *
+ * ⚠ LEER HEISST AUS. Solange hier keine echten IDs stehen, laedt und zeigt die
+ * App keine Start-Anzeige. Eintragen: in AdMob je Plattform einen Block vom
+ * Typ „App-Start" anlegen. Und DANN auch die Datenschutzerklaerung ergaenzen
+ * (`legalContent.ts`, Abschnitt „Werbung und deine Einwilligung": dort steht
+ * bisher nur „zwischen zwei Leveln").
+ */
+const START_ANZEIGE = {
+  prod: { ios: '', android: '' },
+  // Googles oeffentliche Test-Bloecke fuer App-Start-Anzeigen.
+  test: {
+    ios: 'ca-app-pub-3940256099942544/5575463023',
+    android: 'ca-app-pub-3940256099942544/9257395921',
+  },
+};
+
+function startAnzeigeId(): string {
+  const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android';
+  return (TEST_ANZEIGEN ? START_ANZEIGE.test : START_ANZEIGE.prod)[platform];
+}
+
 function ids() {
   const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android';
   return (TEST_ANZEIGEN ? TEST : PROD)[platform];
@@ -330,6 +355,94 @@ export async function zeigeFaelligesInterstitial(): Promise<boolean> {
 export function videoGesehen(): void {
   faellig = false;
   bremse.zuletzt = Date.now();
+}
+
+// --- Die Anzeige beim Oeffnen der App ----------------------------------------
+//
+// Ein Versuch (Josef, 22.11.2026), bewusst eng gefasst:
+//   - nur beim Kaltstart und nur, solange der Startbildschirm offen ist —
+//     nie in ein Level hinein („keine Werbung mitten im Level" gilt weiter);
+//   - nie in der allerersten Sitzung: dort kommen schon Einwilligungsdialog
+//     und Tracking-Frage, und wer die App zum ersten Mal oeffnet, soll das
+//     Spiel sehen;
+//   - hoechstens alle vier Stunden;
+//   - nicht fuer Kaeufer von „Werbung entfernen".
+// Eine gezeigte Start-Anzeige laesst die Bremse der Level-Anzeige neu
+// anlaufen — nie zwei Vollbilder kurz hintereinander.
+
+export const START_ABSTAND_MS = 4 * 60 * 60 * 1000;
+const START_SCHLUESSEL = 'fixthemix.startanzeige.v1';
+const START_LADE_GEDULD_MS = 4000;
+
+export interface StartStand {
+  /** Wie oft die App schon geoeffnet wurde, die laufende Sitzung mitgezaehlt. */
+  sitzungen: number;
+  /** Zeitpunkt der letzten Start-Anzeige, 0 wenn noch keine. */
+  zuletzt: number;
+}
+
+/** Die Regel als reine Funktion, pruefbar ohne Plugin (`tools/test-werbung.mts`). */
+export function darfStartAnzeige(stand: StartStand, jetzt: number): boolean {
+  if (stand.sitzungen < 2) return false;
+  if (stand.zuletzt > 0 && jetzt - stand.zuletzt < START_ABSTAND_MS) return false;
+  return true;
+}
+
+function ladeStartStand(): StartStand {
+  try {
+    const roh = JSON.parse(localStorage.getItem(START_SCHLUESSEL) ?? 'null') as Partial<StartStand> | null;
+    return {
+      sitzungen: Number.isFinite(roh?.sitzungen) ? Math.max(0, Math.trunc(roh!.sitzungen!)) : 0,
+      zuletzt: Number.isFinite(roh?.zuletzt) ? Math.max(0, roh!.zuletzt!) : 0,
+    };
+  } catch {
+    return { sitzungen: 0, zuletzt: 0 };
+  }
+}
+
+function speichereStartStand(stand: StartStand): void {
+  try {
+    localStorage.setItem(START_SCHLUESSEL, JSON.stringify(stand));
+  } catch {
+    // Kein Speicher — dann gilt jede Sitzung als die erste, und es kommt nie eine.
+  }
+}
+
+/** Einmal je Sitzung (Lebensdauer des JS-Kontexts). */
+let startAnzeigeVersucht = false;
+
+/**
+ * Beim Kaltstart vom Startbildschirm aus aufrufen, NACH `starteWerbung()`.
+ * `nochAmStart` wird unmittelbar vor dem Zeigen gefragt: wer inzwischen in
+ * ein Level getippt hat, bekommt nichts mehr.
+ */
+export async function vielleichtStartAnzeige(nochAmStart: () => boolean): Promise<boolean> {
+  if (startAnzeigeVersucht) return false;
+  startAnzeigeVersucht = true;
+  if (!nativ) return false;
+
+  const stand = ladeStartStand();
+  stand.sitzungen += 1;
+  speichereStartStand(stand);
+
+  const adId = startAnzeigeId();
+  if (!adId || !bereit || werbefrei) return false;
+  if (!darfStartAnzeige(stand, Date.now())) return false;
+  try {
+    const geladen = await Promise.race([
+      AdMob.loadAppOpen({ adId }).then(() => true),
+      new Promise<boolean>((r) => setTimeout(() => r(false), START_LADE_GEDULD_MS)),
+    ]);
+    if (!geladen || !nochAmStart()) return false;
+    await AdMob.showAppOpen();
+    const jetzt = Date.now();
+    speichereStartStand({ ...stand, zuletzt: jetzt });
+    bremse.zuletzt = jetzt;
+    return true;
+  } catch (e) {
+    console.warn('Start-Anzeige fehlgeschlagen:', e);
+    return false;
+  }
 }
 
 // --- Belohnte Anzeige ---------------------------------------------------------

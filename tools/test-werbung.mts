@@ -19,7 +19,8 @@ import { legaleZuege } from '../src/engine/zuege.ts';
 import { istGeloest, mitExtraGlas, pruefeInvariante, schluessel, standAusLevel } from '../src/engine/zustand.ts';
 import {
   JEDES_NTE_LEVEL, MINDESTABSTAND_MS, belohnungMoeglich, bremsStand, darfInterstitial, levelBeendet,
-  setzeWerbefrei, videoGesehen, zeigeBelohnungsVideo, zeigeFaelligesInterstitial,
+  START_ABSTAND_MS, darfStartAnzeige, setzeWerbefrei, videoGesehen, vielleichtStartAnzeige,
+  zeigeBelohnungsVideo, zeigeFaelligesInterstitial,
 } from '../src/lib/werbung.ts';
 import { ABSTAND_MS, AB_LEVEL, darfBewertungFragen } from '../src/lib/bewertung.ts';
 
@@ -222,6 +223,25 @@ console.log('\n--- Anzeige erst beim Weitertippen (seit 1.1.3) ---');
      'jeder Ausgang aus dem Siegfenster laeuft ueber nachAnzeige');
   videoGesehen();
   ok(bremsStand().zuletzt > 0, 'nach einem freiwilligen Video laeuft die Bremse neu an');
+}
+
+console.log('\n--- Die Anzeige beim Oeffnen der App ---');
+{
+  const jetzt = 10_000_000_000;
+  ok(!darfStartAnzeige({ sitzungen: 1, zuletzt: 0 }, jetzt), 'nie in der allerersten Sitzung');
+  ok(darfStartAnzeige({ sitzungen: 2, zuletzt: 0 }, jetzt), 'ab der zweiten Sitzung erlaubt');
+  ok(!darfStartAnzeige({ sitzungen: 9, zuletzt: jetzt - START_ABSTAND_MS + 1 }, jetzt),
+     'nicht innerhalb von vier Stunden nach der letzten');
+  ok(darfStartAnzeige({ sitzungen: 9, zuletzt: jetzt - START_ABSTAND_MS }, jetzt), 'nach vier Stunden wieder');
+  ok(START_ABSTAND_MS >= 60 * 60 * 1000, 'der Abstand betraegt mindestens eine Stunde');
+  ok((await vielleichtStartAnzeige(() => true)) === false, 'ohne Plugin kommt nichts, und der Aufruf loest auf');
+  const quelle = readFileSync(new URL('../src/lib/werbung.ts', import.meta.url), 'utf8');
+  const block = /const START_ANZEIGE = \{([\s\S]*?)\n\};/.exec(quelle)?.[1] ?? '';
+  const prod = /prod: \{ ios: '([^']*)', android: '([^']*)' \}/.exec(block);
+  ok(prod !== null && (prod[1] === '') === (prod[2] === ''),
+     'die Start-Anzeige ist auf beiden Plattformen an oder auf beiden aus');
+  ok(prod !== null && [prod[1], prod[2]].every((id) => id === '' || /^ca-app-pub-8860791993288062\/\d+$/.test(id!)),
+     'eingetragene Start-Anzeigen gehoeren zum eigenen AdMob-Konto');
 }
 
 console.log(fehler === 0 ? '\nAlles gruen.' : `\n${fehler} Fehler.`);

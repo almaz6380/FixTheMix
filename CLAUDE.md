@@ -103,7 +103,10 @@ Josef hat am 22.11. in AdMob zwei Anzeigenblöcke „App-Start“ angelegt; sie 
 `START_ANZEIGE.prod` (`src/lib/werbung.ts`): iOS `…/8656430113`, Android `…/9899947763`.
 Damit ist der Versuch eingeschaltet (Regeln siehe 1.1.3). Datenschutzerklärung DE+EN nennt die
 Anzeige beim Öffnen, `STAND` 22.11.2026.
-⚠ Im Repo `almaz6380.github.io` `npm run erzeugen` laufen lassen, sonst zeigen die Stores den alten Text.
+✅ Rechtsseiten auf almaz6380.github.io am 22.11.2026 neu erzeugt (PR almaz6380.github.io#8, Pages-Deploy grün).
+Dabei `werkzeug/erzeugen.mjs` korrigiert: Es setzte fest „Stand 04.10.2026“ ein und überschrieb so jeden neueren
+`STAND` der App; jetzt gewinnt das spätere Datum. ⚠ Das Skript erwartet den Klon als `fixthemix` (klein) und baut
+sonst ALLE Apps neu (löscht vorher deren Ordner) — mit unvollständigen Klonen nur den FixTheMix-Teil laufen lassen.
 
 ### Version 1.1.3 — Werbung nach der Siegfeier, Münz-Video im Siegfenster (22.11.2026)
 

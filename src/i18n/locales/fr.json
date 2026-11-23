@@ -125,5 +125,15 @@
       "zeile1": "999 niveaux à la solution la plus courte prouvée",
       "zeile2": "Énigme du jour · Mode daltonien"
     }
+  },
+  "wellapps": {
+    "titel": "Plus de WellApps",
+    "mahjong": "Mahjong solitaire, duels et Riichi",
+    "anigosha": "Quiz anime et duels",
+    "swaply": "Remplace tes mauvaises habitudes",
+    "weltgeschichteName": "Histoire du monde",
+    "weltgeschichte": "Époques, frise chronologique et quiz",
+    "watten": "Jeux de cartes alpins classiques",
+    "fullrep": "Suivi d’entraînement et de nutrition"
   }
 }

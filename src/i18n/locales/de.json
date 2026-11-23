@@ -125,5 +125,15 @@
       "zeile1": "999 Level mit bewiesen kürzester Lösung",
       "zeile2": "Tagesrätsel · Farbenblind-Modus"
     }
+  },
+  "wellapps": {
+    "titel": "Mehr von WellApps",
+    "mahjong": "Mahjong-Solitaire, Duelle & Riichi",
+    "anigosha": "Anime-Quiz & Duelle",
+    "swaply": "Schlechte Gewohnheiten tauschen",
+    "weltgeschichteName": "Weltgeschichte",
+    "weltgeschichte": "Epochen, Zeitleiste & Quiz",
+    "watten": "Kartenspiele mit dem doppeldeutschen Blatt",
+    "fullrep": "Training & Ernährung tracken"
   }
 }

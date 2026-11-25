@@ -92,6 +92,14 @@ Code auf seinem Rechner laufen.
 
 ## Aktueller Stand
 
+### Version 1.1.5 — „Mehr von WellApps“ in den Store-Apps (25.11.2026)
+
+iOS 1.1.5 (Build 7), Android 1.1.5 (vc7). Einziger neuer Inhalt: der Bereich „Mehr von WellApps“
+in den Einstellungen (ee632d2), der bis dahin nur im Web lief. `NEU` in `scripts/asc-einreichen.py`
+nennt zusätzlich die Anzeige beim Öffnen aus 1.1.4, falls 1.1.4 per `ersetzen` übersprungen wird.
+Android-Notes (Workflow-Eingabe, de): „Neu in den Einstellungen: ‚Mehr von WellApps‘ mit unseren
+anderen Apps. Kleine Verbesserungen.“
+
 ### Version 1.1.4 — Anzeige beim Öffnen EIN (22.11.2026)
 
 iOS 1.1.4 (Build 6), Android 1.1.4 (vc6). **Eingereicht am 22.11.2026** (GitHub-Rechner): Android vc6 in

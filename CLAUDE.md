@@ -99,6 +99,10 @@ in den Einstellungen (ee632d2), der bis dahin nur im Web lief. `NEU` in `scripts
 nennt zusätzlich die Anzeige beim Öffnen aus 1.1.4, falls 1.1.4 per `ersetzen` übersprungen wird.
 Android-Notes (Workflow-Eingabe, de): „Neu in den Einstellungen: ‚Mehr von WellApps‘ mit unseren
 anderen Apps. Kleine Verbesserungen.“
+**Ausgeliefert 25.11.2026:** Android vc7 in Produktion an alle (`android-release` 45687927803, committet),
+iOS Build 7 (`ios-release` 45687932466) eingereicht, Prüfung `af4ce01f-827e-4784-87c3-11b4f0e64b88`,
+WAITING_FOR_REVIEW. 1.1.4 war da schon freigegeben (READY_FOR_SALE); der Satz zur Anzeige beim Öffnen
+in `NEU` ist damit doppelt, aber nicht falsch — beim nächsten Release aus `NEU` streichen.
 
 ### Version 1.1.4 — Anzeige beim Öffnen EIN (22.11.2026)
 

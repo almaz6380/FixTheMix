@@ -125,5 +125,15 @@
       "zeile1": "999 levels, each with a proven shortest solution",
       "zeile2": "Daily puzzle · Colourblind mode"
     }
+  },
+  "wellapps": {
+    "titel": "More from WellApps",
+    "mahjong": "Mahjong solitaire, duels & Riichi",
+    "anigosha": "Anime quiz & duels",
+    "swaply": "Swap bad habits for good ones",
+    "weltgeschichteName": "World History",
+    "weltgeschichte": "Eras, timeline & quiz",
+    "watten": "Classic Alpine card games",
+    "fullrep": "Workout & nutrition tracker"
   }
 }

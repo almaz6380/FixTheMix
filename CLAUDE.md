@@ -1635,6 +1635,20 @@ Farben kommen jetzt über `codeVon()` aus `farben.ts`, und `.start-glas` ist nur
 ein Maßrahmen: die verschiedenen **Breiten** (38–64 px) geben die verschiedenen Höhen,
 weil der Körper sein Seitenverhältnis hält.
 
+### „Mehr von WellApps" — die anderen eigenen Apps (23.11.2026)
+
+In den Einstellungen (`/einstellungen`), direkt über den Rechtstexten: eine Karte mit den
+sechs anderen Apps (Symbol, Name, Kurzzeile), jede Zeile ein Link in den Store. Nie im
+Spiel, nie in einem Fenster, nie beim Start.
+- Liste, Store-IDs und Link-Regel: `src/components/MehrVonWellApps.tsx` (`APPS`). iOS (App
+  oder iPhone/iPad-Browser) → App Store, sonst → Google Play.
+- Geöffnet wird mit `<a target="_blank">`; Capacitor gibt fremde Adressen ans System weiter,
+  also außerhalb der WebView. Kein Plugin, kein Zählen der Klicks, nichts wird nachgeladen.
+- Symbole (144 px WebP) in `src/assets/wellapps/<id>.webp`, Texte unter `wellapps.*` in
+  allen zwanzig Sprachdateien (`wellapps.weltgeschichteName` ist der einzige übersetzte Name).
+- App ergänzen: Symbol ablegen, Eintrag in `APPS`, Schlüssel `wellapps.<id>` in jeder Sprache.
+  **Die Liste wird in allen sieben Apps gleich gepflegt** (Reihenfolge, IDs, Kurzzeilen).
+
 ### Sprachen
 
 **Zwanzig Sprachen seit dem 02.10.2026** (vorher fünf): Dateien in

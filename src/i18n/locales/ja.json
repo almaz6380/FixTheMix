@@ -125,5 +125,15 @@
       "zeile1": "最短手順が証明済みの999レベル",
       "zeile2": "デイリーパズル · 色覚サポートモード"
     }
+  },
+  "wellapps": {
+    "titel": "WellAppsのほかのアプリ",
+    "mahjong": "麻雀ソリティア、対戦、リーチ麻雀",
+    "anigosha": "アニメクイズと対戦",
+    "swaply": "悪い習慣を良い習慣に置き換えよう",
+    "weltgeschichteName": "世界史",
+    "weltgeschichte": "時代・年表・クイズ",
+    "watten": "アルプス地方の伝統カードゲーム",
+    "fullrep": "トレーニングと食事の記録"
   }
 }

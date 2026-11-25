@@ -125,5 +125,15 @@
       "zeile1": "최단 풀이가 증명된 999개 레벨",
       "zeile2": "오늘의 퍼즐 · 색각 이상 모드"
     }
+  },
+  "wellapps": {
+    "titel": "WellApps의 다른 앱",
+    "mahjong": "마작 솔리테어, 대결, 리치 마작",
+    "anigosha": "애니메이션 퀴즈와 대결",
+    "swaply": "나쁜 습관을 좋은 습관으로 바꾸기",
+    "weltgeschichteName": "세계사",
+    "weltgeschichte": "시대, 연표, 퀴즈",
+    "watten": "알프스 지방의 전통 카드 게임",
+    "fullrep": "운동과 식단 기록"
   }
 }

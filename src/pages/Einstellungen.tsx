@@ -26,6 +26,7 @@ import {
 import {
   aendereEinwilligung, belohnungMoeglich, einwilligungAenderbar, zeigeBelohnungsVideo,
 } from '../lib/werbung.ts';
+import MehrVonWellApps from '../components/MehrVonWellApps.tsx';
 import {
   RECHTS_PFADE, rechtsTexte, type RechtsSchluessel,
 } from './legal/legalContent.ts';
@@ -245,6 +246,11 @@ export default function Einstellungen() {
           </div>
         </>
       )}
+
+      {/* Die anderen Apps des Studios. Hier und nur hier: nie im Spiel, nie in
+          einem Fenster, nie beim Start. */}
+      {titel(t('wellapps.titel'))}
+      <MehrVonWellApps />
 
       {/* Recht und Daten: eine Liste mit Pfeilen statt vier grosser Knoepfe. */}
       {titel(t('spiel.datenschutz'))}

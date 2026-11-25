@@ -28,11 +28,15 @@ import requests
 BUNDLE = 'at.gallab.fixthemix'
 API = 'https://api.appstoreconnect.apple.com'
 
-# Die Versionshinweise stehen auch in CLAUDE.md („Versionshinweise 1.1.3").
+# Die Versionshinweise stehen auch in CLAUDE.md („Version 1.1.5"). Der Satz zur
+# Anzeige beim Öffnen bleibt drin: Falls 1.1.4 noch in der Prüfung hängt und per
+# `ersetzen` durch 1.1.5 ersetzt wird, bekommen iOS-Nutzer beides auf einmal.
 NEU = {
-    'de': 'Beim Öffnen der App kann jetzt gelegentlich eine Anzeige erscheinen – nie beim '
+    'de': 'Neu in den Einstellungen: „Mehr von WellApps“ mit unseren anderen Apps. '
+          'Beim Öffnen der App kann gelegentlich eine Anzeige erscheinen – nie beim '
           'ersten Start und höchstens alle vier Stunden. Kleine Verbesserungen.',
-    'en': 'An ad may now occasionally appear when you open the app – never on the first '
+    'en': 'New in Settings: “More from WellApps” with our other apps. '
+          'An ad may occasionally appear when you open the app – never on the first '
           'launch and at most once every four hours. Small improvements.',
 }
 
